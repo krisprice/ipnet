@@ -46,6 +46,31 @@ impl std::ops::Deref for Ipv6Net {
     }
 }
 
+impl IpNet {
+    pub fn supernet(&self) -> IpNet {
+        match *self {
+            IpNet::V4(ref a) => IpNet::V4(a.supernet()),
+            IpNet::V6(ref a) => IpNet::V6(a.supernet()),
+        }
+    }
+
+    pub fn contains(&self, other: &IpNet) -> bool {
+        match (*self, *other) {
+            (IpNet::V4(ref a), IpNet::V4(ref b)) => a.contains(b),
+            (IpNet::V6(ref a), IpNet::V6(ref b)) => a.contains(b),
+            (_, _) => false,
+        }
+    }
+
+    pub fn sibling(&self, other: &IpNet) -> bool {
+        match (*self, *other) {
+            (IpNet::V4(ref a), IpNet::V4(ref b)) => a.sibling(b),
+            (IpNet::V6(ref a), IpNet::V6(ref b)) => a.sibling(b),
+            (_, _) => false,
+        }
+    }
+}
+
 impl Ipv4Net {
     pub fn new(ip: Ipv4Addr, prefix_len: u8) -> Ipv4Net {
         // TODO: Should error if prefix_len > 32 as prefix_len <= 32 is
@@ -85,6 +110,18 @@ impl Ipv4Net {
     pub fn broadcast(&self) -> Ipv4Addr {
         // BitOr is not implemented for Ipv4Addr.
         Ipv4Addr::from(u32::from(self.addr) | u32::from(self.hostmask()))
+    }
+
+    pub fn supernet(&self) -> Ipv4Net {
+        Ipv4Net::new(Ipv4Addr::from(self.octets()), self.prefix_len - 1)
+    }
+
+    pub fn contains(&self, other: &Ipv4Net) -> bool {
+        self.network() <= other.network() && self.broadcast() >= other.broadcast()
+    }
+
+    pub fn sibling(&self, other: &Ipv4Net) -> bool {
+        self.prefix_len == other.prefix_len && self.supernet().contains(other)
     }
 }
 
@@ -144,6 +181,18 @@ impl Ipv6Net {
             ip[0] | m[0], ip[1] | m[1], ip[2] | m[2], ip[3] | m[3],
             ip[4] | m[4], ip[5] | m[5], ip[6] | m[6], ip[7] | m[7]
         )
+    }
+
+    pub fn supernet(&self) -> Ipv6Net {
+        Ipv6Net::new(Ipv6Addr::from(self.segments()), self.prefix_len - 1)
+    }
+
+    pub fn contains(&self, other: &Ipv6Net) -> bool {
+        self.network() <= other.network() && self.broadcast() >= other.broadcast()
+    }
+
+    pub fn sibling(&self, other: &Ipv6Net) -> bool {
+        self.prefix_len == other.prefix_len && self.supernet().contains(other)
     }
 }
 
