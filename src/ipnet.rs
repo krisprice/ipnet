@@ -1,6 +1,6 @@
 use std;
 use std::fmt;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
 pub enum IpNet {
@@ -222,7 +222,7 @@ impl Ipv6Net {
         }
 
         let mut network = ipv6_addr_into_double_u64(self.network());
-        let mut broadcast = ipv6_addr_into_double_u64(self.broadcast());
+        let broadcast = ipv6_addr_into_double_u64(self.broadcast());
 
         let mask: [u64; 2] = [
             if new_prefix_len < 64 { 0xffff_ffff_ffff_ffff >> new_prefix_len } else { 0x0 },
