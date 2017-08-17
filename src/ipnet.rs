@@ -224,8 +224,6 @@ impl Ipv6Net {
         let mut network = ipv6_addr_into_double_u64(self.network());
         let mut broadcast = ipv6_addr_into_double_u64(self.broadcast());
 
-        let mask = ipv6_addr_into_double_u64(Ipv6Net::new(self.addr.clone(), new_prefix_len).hostmask());
-
         let mask: [u64; 2] = [
             if new_prefix_len < 64 { 0xffff_ffff_ffff_ffff >> new_prefix_len } else { 0x0 },
             if new_prefix_len >= 64 && new_prefix_len < 128 { 0xffff_ffff_ffff_ffff >> new_prefix_len - 64 } else { 0x0 }
