@@ -24,6 +24,7 @@ pub struct Ipv6Net {
 
 // For the time being deref method calls to the IpAddr implemenations.
 
+// TODO: Not sure if there is a way to do this?
 /*impl std::ops::Deref for IpNet {
     type Target = IpAddr;
     fn deref(&self) -> &Self::Target {
@@ -49,6 +50,35 @@ impl std::ops::Deref for Ipv6Net {
 }
 
 impl IpNet {
+    
+    pub fn netmask(&self) -> IpNet {
+        match *self {
+            IpNet::V4(ref a) => IpNet::V4(a.netmask()),
+            IpNet::V6(ref a) => IpNet::V6(a.netmask()),
+        }
+    }
+
+    pub fn hostmask(&self) -> IpNet {
+        match *self {
+            IpNet::V4(ref a) => IpNet::V4(a.hostmask()),
+            IpNet::V6(ref a) => IpNet::V6(a.hostmask()),
+        }
+    }
+    
+    pub fn network(&self) -> IpNet {
+        match *self {
+            IpNet::V4(ref a) => IpNet::V4(a.network()),
+            IpNet::V6(ref a) => IpNet::V6(a.network()),
+        }
+    }
+    
+    pub fn broadcast(&self) -> IpNet {
+        match *self {
+            IpNet::V4(ref a) => IpNet::V4(a.broadcast()),
+            IpNet::V6(ref a) => IpNet::V6(a.broadcast()),
+        }
+    }
+    
     pub fn supernet(&self) -> IpNet {
         match *self {
             IpNet::V4(ref a) => IpNet::V4(a.supernet()),
@@ -64,16 +94,19 @@ impl IpNet {
         }
     }
 
-    pub fn sibling(&self, other: &IpNet) -> bool {
+    pub fn sibling_of(&self, other: &IpNet) -> bool {
         match (*self, *other) {
-            (IpNet::V4(ref a), IpNet::V4(ref b)) => a.sibling(b),
-            (IpNet::V6(ref a), IpNet::V6(ref b)) => a.sibling(b),
+            (IpNet::V4(ref a), IpNet::V4(ref b)) => a.sibling_of(b),
+            (IpNet::V6(ref a), IpNet::V6(ref b)) => a.sibling_of(b),
             (_, _) => false,
         }
     }
 }
 
 impl Ipv4Net {
+    // TODO: Should new() precompute the netmask, hostmask, network, and
+    // broadcast addresses and store these to save recomputing everytime
+    // the methods are called?
     pub fn new(ip: Ipv4Addr, prefix_len: u8) -> Ipv4Net {
         // TODO: Should error if prefix_len > 32 as prefix_len <= 32 is
         // assumed in subsequent methods.
@@ -90,57 +123,54 @@ impl Ipv4Net {
 
     pub fn network(&self) -> Ipv4Addr {
         // BitAnd is not implemented for Ipv4Addr.
-        Ipv4Addr::from(u32::from(self.addr) & u32::from(self.netmask()))
+        Ipv4Addr::from(u32::from(self.addr) & 0xffffffffu32.saturating_shl(32 - self.prefix_len))
     }
 
     pub fn broadcast(&self) -> Ipv4Addr {
         // BitOr is not implemented for Ipv4Addr.
-        Ipv4Addr::from(u32::from(self.addr) | u32::from(self.hostmask()))
+        Ipv4Addr::from(u32::from(self.addr) | 0xffffffffu32.saturating_shr(self.prefix_len))
     }
 
     pub fn supernet(&self) -> Ipv4Net {
         Ipv4Net::new(self.addr.clone(), self.prefix_len - 1)
     }
 
-    // TODO: Should the parameter be depth, as in the number of
-    // divisions to make, or new_prefix_len (self explanatory), or
-    // num_subnets? I suspect in use the later two will be more useful.
     // TODO: Should this be an iterator?
     pub fn subnets(&self, new_prefix_len: u8) -> Vec<Ipv4Net> {
-        // TODO: Need to test bounds of new_prefix_len and error.
-        // Or perhaps just set to 32 in that case.
-        // TODO: std::ops::Add missing for Ipv4Addr
-        let rng = 2u32.pow(32 - new_prefix_len as u32);
-        let mut net = u32::from(self.network());
-        let end = u32::from(self.broadcast());
+        // TODO: It would be nice to imeplement Add for Ipv4Addr.
+        // TODO: Need to implement a proper error handling scheme.
+        if new_prefix_len <= self.prefix_len { return Vec::new(); }
+        let new_prefix_len = if new_prefix_len > 32 { 32 } else { new_prefix_len };
+
+        let mut network = u32::from(self.network());
+        let broadcast = u32::from(self.broadcast());
+        let step = 2u32.pow(32 - new_prefix_len as u32);
         let mut res: Vec<Ipv4Net> = Vec::new();
 
-        while net < end {
-            res.push(Ipv4Net::new(Ipv4Addr::from(net), new_prefix_len));
-            net += rng;
+        while network < broadcast {
+            res.push(Ipv4Net::new(Ipv4Addr::from(network), new_prefix_len));
+            network += step;
         }
         res
-
     }
 
     pub fn contains(&self, other: &Ipv4Net) -> bool {
         self.network() <= other.network() && self.broadcast() >= other.broadcast()
     }
 
-    pub fn sibling(&self, other: &Ipv4Net) -> bool {
+    pub fn sibling_of(&self, other: &Ipv4Net) -> bool {
         self.prefix_len == other.prefix_len && self.supernet().contains(other)
     }
 }
 
 impl Ipv6Net {
+    // TODO: Should new() precompute the netmask, hostmask, network, and
+    // broadcast addresses and store these to save recomputing everytime
+    // the methods are called?
     pub fn new(ip: Ipv6Addr, prefix_len: u8) -> Ipv6Net {
         // TODO: Should error if prefix_len > 128 as prefix_len <= 128
         // is assumed in subsequent methods.
         Ipv6Net { addr: ip, prefix_len: prefix_len, }
-    }
-
-    pub fn addr(&self) -> Ipv6Addr {
-        self.addr
     }
 
     // The u128 type would be nice here, but it's not marked stable yet.
@@ -177,12 +207,13 @@ impl Ipv6Net {
         )
     }
 
-    // TODO: Technically there is no such thing as a broadcast. Perhaps
-    // we should change the network() and broadcast() methods to be
-    // first() and last() or similar.
+    // TODO: Technically there is no such thing as a broadcast address
+    // for IPv6. Perhaps we should change the network() and broadcast()
+    // methods to be first() and last() or similar.
+    //
     // The u128 type would be nice here, but it's not marked stable yet.
     pub fn broadcast(&self) -> Ipv6Addr {
-        // BitOr is not implemented for Ipv4Addr.
+        // BitOr is not implemented for Ipv6Addr.
         let ip = self.segments();
         let m = self.hostmask().segments();
 
@@ -201,9 +232,8 @@ impl Ipv6Net {
     // iterator instead of a vector?
     pub fn subnets(&self, new_prefix_len: u8) -> Vec<Ipv6Net> {
         // TODO: Need to implement a proper error handling scheme.
-        if new_prefix_len <= self.prefix_len {
-            return Vec::new();
-        }
+        if new_prefix_len <= self.prefix_len { return Vec::new(); }
+        let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
 
         let mut network = ipv6_addr_into_double_u64(self.network());
         let broadcast = ipv6_addr_into_double_u64(self.broadcast());
@@ -228,7 +258,6 @@ impl Ipv6Net {
                 network[0] += 1;
             }
         }
-
         res
     }
 
@@ -236,12 +265,23 @@ impl Ipv6Net {
         self.network() <= other.network() && self.broadcast() >= other.broadcast()
     }
 
-    pub fn sibling(&self, other: &Ipv6Net) -> bool {
+    pub fn sibling_of(&self, other: &Ipv6Net) -> bool {
         self.prefix_len == other.prefix_len && self.supernet().contains(other)
     }
 }
 
-// TODO: It would be nice to implement From on Ipv6Addr for this.
+/// Convert a [u64; 2] slice to an Ipv6Addr.
+///
+/// TODO: It would be nice to implement From on Ipv6Addr for this.
+///
+/// # Examples
+///
+/// ```
+/// use std::net::Ipv6Addr;
+/// use std::str::FromStr;
+/// use ipnet::ipv6_addr_from_double_u64;
+/// assert_eq!(ipv6_addr_from_double_u64([0u64, 1u64]), Ipv6Addr::from_str("::1").unwrap());
+/// ```
 pub fn ipv6_addr_from_double_u64(segments: [u64; 2]) -> Ipv6Addr {
     let (hi, lo) = (segments[0], segments[1]);
     Ipv6Addr::new(
@@ -250,7 +290,19 @@ pub fn ipv6_addr_from_double_u64(segments: [u64; 2]) -> Ipv6Addr {
     )
 }
 
-// TODO: It would be nice to implement From on Ipv6Addr for this.
+
+/// Convert an Ipv6Addr to a [u64; 2] slice.
+///
+/// TODO: It would be nice to implement From on Ipv6Addr for this.
+///
+/// # Examples
+///
+/// ```
+/// use std::net::Ipv6Addr;
+/// use std::str::FromStr;
+/// use ipnet::ipv6_addr_into_double_u64;
+/// assert_eq!(ipv6_addr_into_double_u64(Ipv6Addr::from_str("::1").unwrap()), [0u64, 1u64]);
+/// ```
 pub fn ipv6_addr_into_double_u64(ip: Ipv6Addr) -> [u64; 2] {
     let ip = ip.octets();
     [
