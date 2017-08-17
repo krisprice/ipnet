@@ -2,6 +2,48 @@ use std;
 use std::fmt;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
+// TODO: Would it be possible to get something like this in libcore?
+trait SaturatingShl<RHS> {
+    type Output;
+    fn saturating_shl(self, rhs: RHS) -> Self::Output;
+}
+
+macro_rules! saturating_shl_impl {
+    ($t:ty, $f:ty, $w:expr) => (
+        impl SaturatingShl<$f> for $t {
+            type Output = $t;
+
+            #[inline]
+            fn saturating_shl(self, other: $f) -> $t {
+                if other < $w { self << other } else { 0 }
+            }
+        }
+    )
+}
+
+trait SaturatingShr<RHS> {
+    type Output;
+    fn saturating_shr(self, rhs: RHS) -> Self::Output;
+}
+
+macro_rules! saturating_shr_impl {
+    ($t:ty, $f:ty, $w:expr) => (
+        impl SaturatingShr<$f> for $t {
+            type Output = $t;
+
+            #[inline]
+            fn saturating_shr(self, other: $f) -> $t {
+                if other < $w { self >> other } else { 0 }
+            }
+        }
+    )
+}
+
+saturating_shl_impl!(u32, u8, 32);
+saturating_shr_impl!(u32, u8, 32);
+saturating_shl_impl!(u64, u8, 64);
+saturating_shr_impl!(u64, u8, 64);
+
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
 pub enum IpNet {
     V4(Ipv4Net),
@@ -79,27 +121,11 @@ impl Ipv4Net {
     }
 
     pub fn netmask(&self) -> Ipv4Addr {
-        Ipv4Addr::from(
-            // Avoid deny(exceeding_bitshifts)
-            if self.prefix_len > 0 {
-                0xffffffff << 32 - self.prefix_len
-            }
-            else {
-                0x00000000
-            }
-        )
+        Ipv4Addr::from(0xffffffffu32.saturating_shl(32 - self.prefix_len))
     }
 
     pub fn hostmask(&self) -> Ipv4Addr {
-        Ipv4Addr::from(
-            // Avoid deny(exceeding_bitshifts)
-            if self.prefix_len < 32 {
-                0xffffffff >> self.prefix_len
-            }
-            else {
-                0x00000000
-            } 
-        )
+        Ipv4Addr::from(0xffffffffu32.saturating_shr(self.prefix_len))
     }
 
     pub fn network(&self) -> Ipv4Addr {
@@ -159,9 +185,8 @@ impl Ipv6Net {
 
     // The u128 type would be nice here, but it's not marked stable yet.
     pub fn netmask(&self) -> Ipv6Addr {
-        // Avoid deny(exceeding_bitshifts)
-        let a: u64 = if self.prefix_len > 0 { 0xffff_ffff_ffff_ffff << 64u8.saturating_sub(self.prefix_len) } else { 0x0 };
-        let b: u64 = if self.prefix_len > 64 { 0xffff_ffff_ffff_ffff << 128 - self.prefix_len } else { 0x0 };
+        let a = 0xffff_ffff_ffff_ffffu64.saturating_shl(64u8.saturating_sub(self.prefix_len));
+        let b = 0xffff_ffff_ffff_ffffu64.saturating_shl(128u8.saturating_sub(self.prefix_len));
         
         Ipv6Addr::new(
             (a >> 48) as u16, (a >> 32) as u16, (a >> 16) as u16, a as u16,
@@ -171,9 +196,8 @@ impl Ipv6Net {
 
     // The u128 type would be nice here, but it's not marked stable yet.
     pub fn hostmask(&self) -> Ipv6Addr {
-        // Avoid deny(exceeding_bitshifts)
-        let a: u64 = if self.prefix_len < 64 { 0xffff_ffff_ffff_ffff >> self.prefix_len } else { 0x0 };
-        let b: u64 = if self.prefix_len < 128 { 0xffff_ffff_ffff_ffff >> self.prefix_len.saturating_sub(64) } else { 0x0 };
+        let a = 0xffff_ffff_ffff_ffffu64.saturating_shr(self.prefix_len);
+        let b = 0xffff_ffff_ffff_ffffu64.saturating_shr(self.prefix_len.saturating_sub(64));
         
         Ipv6Addr::new(
             (a >> 48) as u16, (a >> 32) as u16, (a >> 16) as u16, a as u16,
@@ -225,8 +249,8 @@ impl Ipv6Net {
         let broadcast = ipv6_addr_into_double_u64(self.broadcast());
 
         let mask: [u64; 2] = [
-            if new_prefix_len < 64 { 0xffff_ffff_ffff_ffff >> new_prefix_len } else { 0x0 },
-            if new_prefix_len >= 64 && new_prefix_len < 128 { 0xffff_ffff_ffff_ffff >> new_prefix_len - 64 } else { 0x0 }
+            0xffff_ffff_ffff_ffffu64.saturating_shr(new_prefix_len),
+            0xffff_ffff_ffff_ffffu64.saturating_shr(new_prefix_len.saturating_sub(64)),
         ];
 
         let mut res: Vec<Ipv6Net> = Vec::new();
