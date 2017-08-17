@@ -2,47 +2,7 @@ use std;
 use std::fmt;
 use std::net::{Ipv4Addr, Ipv6Addr};
 
-// TODO: Would it be possible to get something like this in libcore?
-trait SaturatingShl<RHS> {
-    type Output;
-    fn saturating_shl(self, rhs: RHS) -> Self::Output;
-}
-
-macro_rules! saturating_shl_impl {
-    ($t:ty, $f:ty, $w:expr) => (
-        impl SaturatingShl<$f> for $t {
-            type Output = $t;
-
-            #[inline]
-            fn saturating_shl(self, other: $f) -> $t {
-                if other < $w { self << other } else { 0 }
-            }
-        }
-    )
-}
-
-trait SaturatingShr<RHS> {
-    type Output;
-    fn saturating_shr(self, rhs: RHS) -> Self::Output;
-}
-
-macro_rules! saturating_shr_impl {
-    ($t:ty, $f:ty, $w:expr) => (
-        impl SaturatingShr<$f> for $t {
-            type Output = $t;
-
-            #[inline]
-            fn saturating_shr(self, other: $f) -> $t {
-                if other < $w { self >> other } else { 0 }
-            }
-        }
-    )
-}
-
-saturating_shl_impl!(u32, u8, 32);
-saturating_shr_impl!(u32, u8, 32);
-saturating_shl_impl!(u64, u8, 64);
-saturating_shr_impl!(u64, u8, 64);
+use saturating_shifts::{SaturatingShl, SaturatingShr};
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
 pub enum IpNet {

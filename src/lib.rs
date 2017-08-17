@@ -10,3 +10,4 @@ mod ipnet;
 // because it's private. So it's reimplemented in parser.rs to add
 // parsing for network types.
 mod parser;
+mod saturating_shifts;
