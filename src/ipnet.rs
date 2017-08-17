@@ -1,6 +1,6 @@
 use std;
 use std::fmt;
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use saturating_shifts::{SaturatingShl, SaturatingShr};
 
@@ -50,32 +50,31 @@ impl std::ops::Deref for Ipv6Net {
 }
 
 impl IpNet {
-    
-    pub fn netmask(&self) -> IpNet {
+    pub fn netmask(&self) -> IpAddr {
         match *self {
-            IpNet::V4(ref a) => IpNet::V4(a.netmask()),
-            IpNet::V6(ref a) => IpNet::V6(a.netmask()),
+            IpNet::V4(ref a) => IpAddr::V4(a.netmask()),
+            IpNet::V6(ref a) => IpAddr::V6(a.netmask()),
         }
     }
 
-    pub fn hostmask(&self) -> IpNet {
+    pub fn hostmask(&self) -> IpAddr {
         match *self {
-            IpNet::V4(ref a) => IpNet::V4(a.hostmask()),
-            IpNet::V6(ref a) => IpNet::V6(a.hostmask()),
+            IpNet::V4(ref a) => IpAddr::V4(a.hostmask()),
+            IpNet::V6(ref a) => IpAddr::V6(a.hostmask()),
         }
     }
     
-    pub fn network(&self) -> IpNet {
+    pub fn network(&self) -> IpAddr {
         match *self {
-            IpNet::V4(ref a) => IpNet::V4(a.network()),
-            IpNet::V6(ref a) => IpNet::V6(a.network()),
+            IpNet::V4(ref a) => IpAddr::V4(a.network()),
+            IpNet::V6(ref a) => IpAddr::V6(a.network()),
         }
     }
     
-    pub fn broadcast(&self) -> IpNet {
+    pub fn broadcast(&self) -> IpAddr {
         match *self {
-            IpNet::V4(ref a) => IpNet::V4(a.broadcast()),
-            IpNet::V6(ref a) => IpNet::V6(a.broadcast()),
+            IpNet::V4(ref a) => IpAddr::V4(a.broadcast()),
+            IpNet::V6(ref a) => IpAddr::V6(a.broadcast()),
         }
     }
     
@@ -106,7 +105,10 @@ impl IpNet {
 impl Ipv4Net {
     // TODO: Should new() precompute the netmask, hostmask, network, and
     // broadcast addresses and store these to save recomputing everytime
-    // the methods are called?
+    // the methods are called? Also, should it truncate the input IpAddr
+    // to the prefix_len (see network()) and store that instead of the
+    // supplied address? Technically it doesn't matter, its more of a
+    // user preference matter.
     pub fn new(ip: Ipv4Addr, prefix_len: u8) -> Ipv4Net {
         // TODO: Should error if prefix_len > 32 as prefix_len <= 32 is
         // assumed in subsequent methods.
