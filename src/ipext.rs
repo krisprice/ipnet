@@ -1,5 +1,4 @@
-use std;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{Ipv4Addr, Ipv6Addr};
 use emu128::emu128;
 
 /// Convert an emulated u128 to an Ipv6Addr.
@@ -49,7 +48,7 @@ pub fn ipv6_addr_into_emu128(ip: Ipv6Addr) -> emu128 {
 
 pub trait IpAdd<RHS = Self> {
     type Output;
-    fn add(self, rhs: RHS) -> Self::Output;
+    fn saturating_add(self, rhs: RHS) -> Self::Output;
 }
 
 pub trait IpSub<RHS = Self> {
@@ -73,7 +72,7 @@ macro_rules! ip_add_impl {
         impl IpAdd<$f> for $t {
             type Output = $t;
             #[inline]
-            fn add(self, rhs: $f) -> $t {
+            fn saturating_add(self, rhs: $f) -> $t {
                 Self::from(u32::from(self).saturating_add(u32::from(rhs)))
             }
         }

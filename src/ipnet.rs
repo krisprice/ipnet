@@ -143,15 +143,15 @@ impl Ipv4Net {
         // TODO: Need to implement a proper error handling scheme.
         if new_prefix_len <= self.prefix_len { return Vec::new(); }
         let new_prefix_len = if new_prefix_len > 32 { 32 } else { new_prefix_len };
-
-        let mut network = u32::from(self.network());
-        let broadcast = u32::from(self.broadcast());
+        
+        let mut network = self.network();
+        let broadcast = self.broadcast();
         let step = 2u32.pow(32 - new_prefix_len as u32);
         let mut res: Vec<Ipv4Net> = Vec::new();
 
-        while network < broadcast {
-            res.push(Ipv4Net::new(Ipv4Addr::from(network), new_prefix_len));
-            network.saturating_add(step);
+        while network <= broadcast {
+            res.push(Ipv4Net::new(network, new_prefix_len));
+            network = network.saturating_add(step);
         }
         res
     }
