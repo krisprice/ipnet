@@ -143,7 +143,7 @@ impl Ipv4Net {
         // TODO: Need to implement a proper error handling scheme.
         if new_prefix_len <= self.prefix_len { return Vec::new(); }
         let new_prefix_len = if new_prefix_len > 32 { 32 } else { new_prefix_len };
-        
+
         let mut network = self.network();
         let broadcast = self.broadcast();
         let step = 2u32.pow(32 - new_prefix_len as u32);
@@ -221,7 +221,7 @@ impl Ipv6Net {
         
         let mut res: Vec<Ipv6Net> = Vec::new();
         
-        while network < broadcast {
+        while network <= broadcast {
             res.push(Ipv6Net::new(ipv6_addr_from_emu128(network), new_prefix_len));
             network = network.saturating_add(step);
         }
@@ -280,60 +280,81 @@ fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
     intervals
 }
 
-pub fn aggregate_ipv4_networks(networks: &Vec<Ipv4Net>) -> Vec<Ipv4Net> {
-    let mut intervals: Vec<(u32, u32)> = networks.iter().map(|n|
-        (
-            u32::from(n.network()),
-            u32::from(n.broadcast()).saturating_add(1)
-        )
-    ).collect();
-    
-    intervals = merge_intervals(intervals);
-    let mut res: Vec<Ipv4Net> = Vec::new();
-    
-    // Break up merged intervals into the largest subnets that will fit.
-    for (start, end) in intervals {
-        let mut new_start = start;
-        while new_start < end {
-            let r = end - new_start;
-            let n = 32u32.saturating_sub(r.leading_zeros()).saturating_sub(1);
-            let prefix_len = 32 - min(n, new_start.trailing_zeros());
-            res.push(Ipv4Net::new(Ipv4Addr::from(new_start), prefix_len as u8));
-            new_start += 2u32.pow(32-prefix_len);
-        }
-    }
-    res
+impl IpNet {
+    //pub fn aggregate(networks: &Vec<IpNet>) -> Vec<IpNet> {
+    //    Vec::new()
+    //}
 }
 
-pub fn aggregate_ipv6_networks(networks: &Vec<Ipv6Net>) -> Vec<Ipv6Net> {
-    let mut intervals: Vec<(emu128, emu128)> = networks.iter().map(|n|
+impl Ipv4Net {
+    // TODO: Will be interesting to experiment with Range types.
+    fn interval(&self) -> (u32, u32) {
         (
-            ipv6_addr_into_emu128(n.network()),
-            ipv6_addr_into_emu128(n.broadcast()).saturating_add(emu128 { hi: 0, lo: 1 })
+            u32::from(self.network()),
+            u32::from(self.broadcast()).saturating_add(1),
         )
-    ).collect();
-
-    intervals = merge_intervals(intervals);
-    let mut res: Vec<Ipv6Net> = Vec::new();
-
-    // Break up merged intervals into the largest subnets that will fit.
-    for (start, end) in intervals {
-        let mut new_start = start;
-        while new_start < end {
-            let r = end.saturating_sub(new_start);
-            let n = 128u32.saturating_sub(r.leading_zeros()).saturating_sub(1);
-            let prefix_len = 128 - min(n, new_start.trailing_zeros());
-
-            res.push(Ipv6Net::new(ipv6_addr_from_emu128(new_start), prefix_len as u8));
-
-            let step = if prefix_len <= 64 {
-                emu128 { hi: 1 << (64 - prefix_len), lo: 0 }
-            }
-            else {
-                emu128 { hi: 0, lo: 1 << (128 - prefix_len) }
-            };
-            new_start = new_start.saturating_add(step);
-        }
     }
-    res
+
+    // EXPERIMENT
+    fn next(&self) -> Ipv4Net {
+        Ipv4Net::new(Ipv4Addr::from(u32::from(self.network()) + 1u32 << self.prefix_len), self.prefix_len)
+    }
+    // EXPERIMENT
+    fn interval2(&self) -> (Ipv4Addr, Ipv4Addr) {
+        (self.network(), self.next().network())
+    }
+
+    // TODO: Should this return an iterator instead?
+    pub fn aggregate(networks: &Vec<Ipv4Net>) -> Vec<Ipv4Net> {
+        let mut intervals: Vec<(_, _)> = networks.iter().map(|n| n.interval()).collect();
+        
+        intervals = merge_intervals(intervals);
+        let mut res: Vec<Ipv4Net> = Vec::new();
+
+        for (start, end) in intervals {
+            let mut start = start;
+            while start < end {
+                let range = end - start;
+                let num_bits = 32u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
+                let prefix_len = 32 - min(num_bits, start.trailing_zeros());
+                res.push(Ipv4Net::new(Ipv4Addr::from(start), prefix_len as u8));
+                let step = 2u32.pow(32 - prefix_len);
+                start = start.saturating_add(step);
+            }
+        }
+        res
+    }
+}
+
+impl Ipv6Net {
+    // TODO: Will be interesting to experiment with Range types.
+    fn interval(&self) -> (emu128, emu128) {
+        (
+            ipv6_addr_into_emu128(self.network()),
+            ipv6_addr_into_emu128(self.broadcast()).saturating_add(emu128 { hi: 0, lo: 1 }),
+        )
+    }
+
+    // TODO: Should this return an iterator instead?
+    pub fn aggregate(networks: &Vec<Ipv6Net>) -> Vec<Ipv6Net> {
+        let mut intervals: Vec<(_, _)> = networks.iter().map(|n| n.interval()).collect();
+
+        intervals = merge_intervals(intervals);
+        let mut res: Vec<Ipv6Net> = Vec::new();
+
+        // Break up merged intervals into the largest subnets that will fit.
+        for (start, end) in intervals {
+            let mut start = start;
+            while start < end {
+                let range = end.saturating_sub(new_start);
+                let num_bits = 128u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
+                let prefix_len = 128 - min(num_bits, start.trailing_zeros());
+                res.push(Ipv6Net::new(ipv6_addr_from_emu128(start), prefix_len as u8));
+                let step = if prefix_len <= 64 { emu128 { hi: 1 << (64 - prefix_len), lo: 0 } }
+                else { emu128 { hi: 0, lo: 1 << (128 - prefix_len) } };
+                start = start.saturating_add(step);
+            }
+        }
+        res
+    }
 }
