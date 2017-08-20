@@ -108,14 +108,14 @@ impl IpNet {
 impl Ipv4Net {
     // TODO: Should new() precompute the netmask, hostmask, network, and
     // broadcast addresses and store these to save recomputing everytime
-    // the methods are called? Also, should it truncate the input IpAddr
-    // to the prefix_len (see network()) and store that instead of the
-    // supplied address? Technically it doesn't matter, its more of a
-    // user preference matter.
+    // the methods are called?
+    // TODO: Should new() truncate the input IpAddr to the prefix_len and
+    // store that instead of the supplied address? Technically it doesn't
+    // matter, but users may expect that.
     pub fn new(ip: Ipv4Addr, prefix_len: u8) -> Ipv4Net {
-        // TODO: Should error if prefix_len > 32 as prefix_len <= 32 is
-        // assumed in subsequent methods.
-        Ipv4Net { addr: ip, prefix_len: prefix_len, }
+        // TODO: Need to implement a proper error handling scheme.
+        let prefix_len = if prefix_len > 32 { 32 } else { prefix_len };
+        Ipv4Net { addr: ip, prefix_len: prefix_len }
     }
 
     pub fn netmask(&self) -> Ipv4Addr {
@@ -127,13 +127,11 @@ impl Ipv4Net {
     }
 
     pub fn network(&self) -> Ipv4Addr {
-        // BitAnd is not implemented for Ipv4Addr.
-        Ipv4Addr::from(u32::from(self.addr) & 0xffffffffu32.saturating_shl(32 - self.prefix_len))
+        self.addr.bitand(0xffffffffu32.saturating_shl(32 - self.prefix_len))
     }
 
     pub fn broadcast(&self) -> Ipv4Addr {
-        // BitOr is not implemented for Ipv4Addr.
-        Ipv4Addr::from(u32::from(self.addr) | 0xffffffffu32.saturating_shr(self.prefix_len))
+        self.addr.bitor(0xffffffffu32.saturating_shr(self.prefix_len))
     }
 
     pub fn supernet(&self) -> Ipv4Net {
@@ -142,7 +140,6 @@ impl Ipv4Net {
 
     // TODO: Should this be an iterator?
     pub fn subnets(&self, new_prefix_len: u8) -> Vec<Ipv4Net> {
-        // TODO: It would be nice to imeplement Add for Ipv4Addr.
         // TODO: Need to implement a proper error handling scheme.
         if new_prefix_len <= self.prefix_len { return Vec::new(); }
         let new_prefix_len = if new_prefix_len > 32 { 32 } else { new_prefix_len };
@@ -159,6 +156,7 @@ impl Ipv4Net {
         res
     }
 
+    // TODO: Contains should also work for IP addresses.
     pub fn contains(&self, other: &Ipv4Net) -> bool {
         self.network() <= other.network() && self.broadcast() >= other.broadcast()
     }
@@ -168,64 +166,35 @@ impl Ipv4Net {
     }
 }
 
+// The u128 type would be nice here, but it's not marked stable yet. We
+// use an emulated u128 type defined in emu128.rs to make life simpler.
 impl Ipv6Net {
     // TODO: Should new() precompute the netmask, hostmask, network, and
     // broadcast addresses and store these to save recomputing everytime
     // the methods are called?
     pub fn new(ip: Ipv6Addr, prefix_len: u8) -> Ipv6Net {
-        // TODO: Should error if prefix_len > 128 as prefix_len <= 128
-        // is assumed in subsequent methods.
-        Ipv6Net { addr: ip, prefix_len: prefix_len, }
+        // TODO: Need to implement a proper error handling scheme.
+        let prefix_len = if prefix_len > 128 { 128 } else { prefix_len };
+        Ipv6Net { addr: ip, prefix_len: prefix_len }
     }
 
-    // The u128 type would be nice here, but it's not marked stable yet.
     pub fn netmask(&self) -> Ipv6Addr {
-        let a = 0xffff_ffff_ffff_ffffu64.saturating_shl(64u8.saturating_sub(self.prefix_len));
-        let b = 0xffff_ffff_ffff_ffffu64.saturating_shl(128u8.saturating_sub(self.prefix_len));
-        
-        Ipv6Addr::new(
-            (a >> 48) as u16, (a >> 32) as u16, (a >> 16) as u16, a as u16,
-            (b >> 48) as u16, (b >> 32) as u16, (b >> 16) as u16, b as u16
-        )
+        ipv6_addr_from_emu128(emu128::max_value().saturating_shl(128 - self.prefix_len))
     }
 
-    // The u128 type would be nice here, but it's not marked stable yet.
     pub fn hostmask(&self) -> Ipv6Addr {
-        let a = 0xffff_ffff_ffff_ffffu64.saturating_shr(self.prefix_len);
-        let b = 0xffff_ffff_ffff_ffffu64.saturating_shr(self.prefix_len.saturating_sub(64));
-        
-        Ipv6Addr::new(
-            (a >> 48) as u16, (a >> 32) as u16, (a >> 16) as u16, a as u16,
-            (b >> 48) as u16, (b >> 32) as u16, (b >> 16) as u16, b as u16
-        )
+        ipv6_addr_from_emu128(emu128::max_value().saturating_shr(self.prefix_len))
     }
 
-    // The u128 type would be nice here, but it's not marked stable yet.
     pub fn network(&self) -> Ipv6Addr {
-        // BitAnd is not implemented for Ipv6Addr.
-        let ip = self.segments();
-        let m = self.netmask().segments();
-
-        Ipv6Addr::new(
-            ip[0] & m[0], ip[1] & m[1], ip[2] & m[2], ip[3] & m[3],
-            ip[4] & m[4], ip[5] & m[5], ip[6] & m[6], ip[7] & m[7]
-        )
+        self.addr.bitand(emu128::max_value().saturating_shl(128 - self.prefix_len))
     }
 
     // TODO: Technically there is no such thing as a broadcast address
-    // for IPv6. Perhaps we should change the network() and broadcast()
-    // methods to be first() and last() or similar.
-    //
-    // The u128 type would be nice here, but it's not marked stable yet.
+    // in IPv6. Perhaps we should change these method names to first()
+    // and last() or start() and end().
     pub fn broadcast(&self) -> Ipv6Addr {
-        // BitOr is not implemented for Ipv6Addr.
-        let ip = self.segments();
-        let m = self.hostmask().segments();
-
-        Ipv6Addr::new(
-            ip[0] | m[0], ip[1] | m[1], ip[2] | m[2], ip[3] | m[3],
-            ip[4] | m[4], ip[5] | m[5], ip[6] | m[6], ip[7] | m[7]
-        )
+        self.addr.bitor(emu128::max_value().saturating_shr(self.prefix_len))
     }
 
     pub fn supernet(&self) -> Ipv6Net {
@@ -259,6 +228,7 @@ impl Ipv6Net {
         res
     }
 
+    // TODO: Contains should also work for IP addresses.
     pub fn contains(&self, other: &Ipv6Net) -> bool {
         self.network() <= other.network() && self.broadcast() >= other.broadcast()
     }

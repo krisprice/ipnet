@@ -130,3 +130,19 @@ macro_rules! ip_bitor_impl {
 }
 
 ip_bitor_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
+
+impl IpBitAnd<emu128> for Ipv6Addr {
+    type Output = Ipv6Addr;
+    #[inline]
+    fn bitand(self, rhs: emu128) -> Ipv6Addr {
+        ipv6_addr_from_emu128(ipv6_addr_into_emu128(self) & rhs)
+    }
+}
+
+impl IpBitOr<emu128> for Ipv6Addr {
+    type Output = Ipv6Addr;
+    #[inline]
+    fn bitor(self, rhs: emu128) -> Ipv6Addr {
+        ipv6_addr_from_emu128(ipv6_addr_into_emu128(self) | rhs)
+    }
+}

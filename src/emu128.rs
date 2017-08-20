@@ -1,8 +1,8 @@
 use std;
-use std::ops::{Shr, Shl};
-use std::u64::MAX;
+use std::ops::{BitAnd, BitOr, Shr, Shl};
 
-// Emulate a 128 bit uint using two 64 bit uints.
+// Emulate a 128 bit uint using two 64 bit uints. When the i128 feature
+// is stable this can be removed.
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct emu128 {
@@ -13,12 +13,20 @@ pub struct emu128 {
 // TODO: Proper testing to make sure these functions work correctly.
 
 impl emu128 {
+    pub fn min_value() -> emu128 {
+        emu128 { hi: 0, lo: 0 }
+    }
+
+    pub fn max_value() -> emu128 {
+        emu128 { hi: std::u64::MAX, lo: std::u64::MAX }
+    }
+
     pub fn saturating_add(self, other: emu128) -> emu128 {
         let (lo, ov) = self.lo.overflowing_add(other.lo);
         let res = self.hi.checked_add(other.hi).and_then(|x| x.checked_add(if ov { 1 } else { 0 }));
         match res {
             Some(hi) => emu128 { hi: hi, lo: lo },
-            None => emu128 { hi: MAX, lo: MAX },
+            None => emu128::max_value(),
         }
     }
 
@@ -27,7 +35,7 @@ impl emu128 {
         let res = self.hi.checked_sub(other.hi).and_then(|x| x.checked_sub(if ov { 1 } else { 0 }));
         match res {
             Some(hi) => emu128 { hi: hi, lo: lo },
-            None => emu128 { hi: 0, lo: 0 },
+            None => emu128::min_value(),
         }
     }
 
@@ -73,8 +81,30 @@ impl Shr<u8> for emu128 {
         else {
             emu128 {
                 hi: 0,
-                lo: self.hi >> (rhs-64)
+                lo: self.hi >> (rhs-64),
             }
+        }
+    }
+}
+
+impl BitAnd for emu128 {
+    type Output = Self;
+
+    fn bitand(self, rhs: emu128) -> emu128 {
+        emu128 {
+            hi: self.hi & rhs.hi,
+            lo: self.lo & rhs.lo,
+        }
+    }
+}
+
+impl BitOr for emu128 {
+    type Output = Self;
+
+    fn bitor(self, rhs: emu128) -> emu128 {
+        emu128 {
+            hi: self.hi | rhs.hi,
+            lo: self.lo | rhs.lo,
         }
     }
 }
