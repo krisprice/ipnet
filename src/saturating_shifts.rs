@@ -5,19 +5,21 @@
 // an integer and a negative is supplied it will panic at runtime. Easy
 // change to fix below if needed.
 
+use emu128::emu128;
+
 pub trait SaturatingShl<RHS> {
     type Output;
     fn saturating_shl(self, rhs: RHS) -> Self::Output;
 }
 
 macro_rules! saturating_shl_impl {
-    ($t:ty, $f:ty, $w:expr) => (
+    ($t:ty, $f:ty, $w:expr, $z:expr) => (
         impl SaturatingShl<$f> for $t {
             type Output = $t;
 
             #[inline]
-            fn saturating_shl(self, other: $f) -> $t {
-                if other < $w { self << other } else { 0 }
+            fn saturating_shl(self, rhs: $f) -> $t {
+                if rhs < $w { self << rhs } else { $z }
             }
         }
     )
@@ -29,22 +31,24 @@ pub trait SaturatingShr<RHS> {
 }
 
 macro_rules! saturating_shr_impl {
-    ($t:ty, $f:ty, $w:expr) => (
+    ($t:ty, $f:ty, $w:expr, $z:expr) => (
         impl SaturatingShr<$f> for $t {
             type Output = $t;
 
             #[inline]
-            fn saturating_shr(self, other: $f) -> $t {
-                if other < $w { self >> other } else { 0 }
+            fn saturating_shr(self, rhs: $f) -> $t {
+                if rhs < $w { self >> rhs } else { $z }
             }
         }
     )
 }
 
-saturating_shl_impl!(u32, u8, 32);
-saturating_shr_impl!(u32, u8, 32);
-saturating_shl_impl!(u64, u8, 64);
-saturating_shr_impl!(u64, u8, 64);
+saturating_shl_impl!(u32, u8, 32, 0);
+saturating_shr_impl!(u32, u8, 32, 0);
+saturating_shl_impl!(u64, u8, 64, 0);
+saturating_shr_impl!(u64, u8, 64, 0);
+saturating_shl_impl!(emu128, u8, 128, emu128 { hi: 0, lo: 0 });
+saturating_shr_impl!(emu128, u8, 128, emu128 { hi: 0, lo: 0 });
 
 #[cfg(test)]
 mod tests {

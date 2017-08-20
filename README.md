@@ -1,1 +1,1 @@
-Rust types for working with IPv4 and IPv6 network addresses
+Rust types for working with IPv4 and IPv6 network addresses. Aims to mimic the style of Rust's built in IpAddr, Ipv4Addr, and Ipv6Addr types but extend their capability to handling IP prefixes.

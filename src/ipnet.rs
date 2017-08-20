@@ -1,7 +1,10 @@
 use std;
+use std::cmp::{min, max};
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
+use emu128::emu128;
+use ipext::{ipv6_addr_from_emu128, ipv6_addr_into_emu128, IpAdd, IpSub, IpBitAnd, IpBitOr};
 use saturating_shifts::{SaturatingShl, SaturatingShr};
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
@@ -151,7 +154,7 @@ impl Ipv4Net {
 
         while network < broadcast {
             res.push(Ipv4Net::new(Ipv4Addr::from(network), new_prefix_len));
-            network += step;
+            network.saturating_add(step);
         }
         res
     }
@@ -237,28 +240,21 @@ impl Ipv6Net {
         if new_prefix_len <= self.prefix_len { return Vec::new(); }
         let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
 
-        let mut network = ipv6_addr_into_double_u64(self.network());
-        let broadcast = ipv6_addr_into_double_u64(self.broadcast());
+        let mut network = ipv6_addr_into_emu128(self.network());
+        let broadcast = ipv6_addr_into_emu128(self.broadcast());
 
-        let mask: [u64; 2] = [
-            0xffff_ffff_ffff_ffffu64.saturating_shr(new_prefix_len),
-            0xffff_ffff_ffff_ffffu64.saturating_shr(new_prefix_len.saturating_sub(64)),
-        ];
-
+        let step = if new_prefix_len <= 64 {
+            emu128 { hi: 1 << (64 - new_prefix_len), lo: 0 }
+        }
+        else {
+            emu128 { hi: 0, lo: 1 << (128 - new_prefix_len) }
+        };
+        
         let mut res: Vec<Ipv6Net> = Vec::new();
-
+        
         while network < broadcast {
-            res.push(Ipv6Net::new(ipv6_addr_from_double_u64(network), new_prefix_len));
-            
-            network[0] |= mask[0];
-            network[1] |= mask[1];
-
-            let (lo, ov) = network[1].overflowing_add(1);
-            network[1] = lo;
-            
-            if ov {
-                network[0] += 1;
-            }
+            res.push(Ipv6Net::new(ipv6_addr_from_emu128(network), new_prefix_len));
+            network = network.saturating_add(step);
         }
         res
     }
@@ -270,53 +266,6 @@ impl Ipv6Net {
     pub fn sibling_of(&self, other: &Ipv6Net) -> bool {
         self.prefix_len == other.prefix_len && self.supernet().contains(other)
     }
-}
-
-/// Convert a [u64; 2] slice to an Ipv6Addr.
-///
-/// TODO: It would be nice to implement From on Ipv6Addr for this.
-///
-/// # Examples
-///
-/// ```
-/// use std::net::Ipv6Addr;
-/// use std::str::FromStr;
-/// use ipnet::ipv6_addr_from_double_u64;
-/// assert_eq!(ipv6_addr_from_double_u64([0u64, 1u64]), Ipv6Addr::from_str("::1").unwrap());
-/// ```
-pub fn ipv6_addr_from_double_u64(segments: [u64; 2]) -> Ipv6Addr {
-    let (hi, lo) = (segments[0], segments[1]);
-    Ipv6Addr::new(
-        (hi >> 48) as u16, (hi >> 32) as u16, (hi >> 16) as u16, hi as u16,
-        (lo >> 48) as u16, (lo >> 32) as u16, (lo >> 16) as u16, lo as u16
-    )
-}
-
-
-/// Convert an Ipv6Addr to a [u64; 2] slice.
-///
-/// TODO: It would be nice to implement From on Ipv6Addr for this.
-///
-/// # Examples
-///
-/// ```
-/// use std::net::Ipv6Addr;
-/// use std::str::FromStr;
-/// use ipnet::ipv6_addr_into_double_u64;
-/// assert_eq!(ipv6_addr_into_double_u64(Ipv6Addr::from_str("::1").unwrap()), [0u64, 1u64]);
-/// ```
-pub fn ipv6_addr_into_double_u64(ip: Ipv6Addr) -> [u64; 2] {
-    let ip = ip.octets();
-    [
-        ((ip[0] as u64) << 56) + ((ip[1] as u64) << 48) +
-        ((ip[2] as u64) << 40) + ((ip[3] as u64) << 32) +
-        ((ip[4] as u64) << 24) + ((ip[5] as u64) << 16) +
-        ((ip[6] as u64) << 8) + (ip[7] as u64),
-        ((ip[8] as u64) << 56) + ((ip[9] as u64) << 48) +
-        ((ip[10] as u64) << 40) + ((ip[11] as u64) << 32) +
-        ((ip[12] as u64) << 24) + ((ip[13] as u64) << 16) +
-        ((ip[14] as u64) << 8) + (ip[15] as u64), 
-    ]
 }
 
 impl fmt::Display for IpNet {
@@ -338,4 +287,83 @@ impl fmt::Display for Ipv6Net {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{}/{}", self.addr, self.prefix_len)
     }
+}
+
+// Generic function for merging any intervals.
+fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
+    // Sort by (end, start) because we work backwards below.
+    intervals.sort_by_key(|k| (k.1, k.0)); 
+
+    // Work backwards from the end of the list to the front.
+    let mut i = intervals.len()-1;
+    while i >= 1 {
+        let (l_start, l_end) = intervals[i-1];
+        let (r_start, r_end) = intervals[i];
+        
+        if r_start <= l_end {
+            intervals[i-1].0 = min(l_start, r_start);
+            intervals[i-1].1 = max(l_end, r_end);
+            intervals.remove(i);
+        }
+        i -= 1;
+    }
+    intervals
+}
+
+pub fn aggregate_ipv4_networks(networks: &Vec<Ipv4Net>) -> Vec<Ipv4Net> {
+    let mut intervals: Vec<(u32, u32)> = networks.iter().map(|n|
+        (
+            u32::from(n.network()),
+            u32::from(n.broadcast()).saturating_add(1)
+        )
+    ).collect();
+    
+    intervals = merge_intervals(intervals);
+    let mut res: Vec<Ipv4Net> = Vec::new();
+    
+    // Break up merged intervals into the largest subnets that will fit.
+    for (start, end) in intervals {
+        let mut new_start = start;
+        while new_start < end {
+            let r = end - new_start;
+            let n = 32u32.saturating_sub(r.leading_zeros()).saturating_sub(1);
+            let prefix_len = 32 - min(n, new_start.trailing_zeros());
+            res.push(Ipv4Net::new(Ipv4Addr::from(new_start), prefix_len as u8));
+            new_start += 2u32.pow(32-prefix_len);
+        }
+    }
+    res
+}
+
+pub fn aggregate_ipv6_networks(networks: &Vec<Ipv6Net>) -> Vec<Ipv6Net> {
+    let mut intervals: Vec<(emu128, emu128)> = networks.iter().map(|n|
+        (
+            ipv6_addr_into_emu128(n.network()),
+            ipv6_addr_into_emu128(n.broadcast()).saturating_add(emu128 { hi: 0, lo: 1 })
+        )
+    ).collect();
+
+    intervals = merge_intervals(intervals);
+    let mut res: Vec<Ipv6Net> = Vec::new();
+
+    // Break up merged intervals into the largest subnets that will fit.
+    for (start, end) in intervals {
+        let mut new_start = start;
+        while new_start < end {
+            let r = end.saturating_sub(new_start);
+            let n = 128u32.saturating_sub(r.leading_zeros()).saturating_sub(1);
+            let prefix_len = 128 - min(n, new_start.trailing_zeros());
+
+            res.push(Ipv6Net::new(ipv6_addr_from_emu128(new_start), prefix_len as u8));
+
+            let step = if prefix_len <= 64 {
+                emu128 { hi: 1 << (64 - prefix_len), lo: 0 }
+            }
+            else {
+                emu128 { hi: 0, lo: 1 << (128 - prefix_len) }
+            };
+            new_start = new_start.saturating_add(step);
+        }
+    }
+    res
 }
