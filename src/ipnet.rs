@@ -280,10 +280,18 @@ fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
     intervals
 }
 
+// TODO: How can we make all of this aggregation section more generic?
 impl IpNet {
-    //pub fn aggregate(networks: &Vec<IpNet>) -> Vec<IpNet> {
-    //    Vec::new()
-    //}
+    pub fn aggregate(networks: &Vec<IpNet>) -> Vec<IpNet> {
+        let mut aggs: Vec<IpNet> = Ipv4Net::aggregate(
+            &networks.iter().filter_map(|p| if let IpNet::V4(x) = *p { Some(x) } else { None }).collect()
+        ).into_iter().map(|n| IpNet::V4(n)).collect();
+
+        aggs.extend::<Vec<IpNet>>(Ipv6Net::aggregate(
+            &networks.iter().filter_map(|p| if let IpNet::V6(x) = *p { Some(x) } else { None }).collect()
+        ).into_iter().map(|n| IpNet::V6(n)).collect());
+        aggs
+    }
 }
 
 impl Ipv4Net {
