@@ -346,7 +346,7 @@ impl Ipv6Net {
         for (start, end) in intervals {
             let mut start = start;
             while start < end {
-                let range = end.saturating_sub(new_start);
+                let range = end.saturating_sub(start);
                 let num_bits = 128u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
                 let prefix_len = 128 - min(num_bits, start.trailing_zeros());
                 res.push(Ipv6Net::new(ipv6_addr_from_emu128(start), prefix_len as u8));
