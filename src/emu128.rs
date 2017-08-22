@@ -1,16 +1,31 @@
+//! An emulated 128 bit unsigned integer.
+//!
+//! This module provides [`emu128`], a 128 bit unsigned integer emulated
+//! from two standard `u64` types. This is useful for operations on IPv6
+//! address, which are 128 bit unsigned integers at heart.
+//!
+//! `emu128` only implements operations that have been useful for
+//! building the `Ipv6Net` type. It's not intended to be a full `u128`
+//! implementation.
+//!
+//! # TODO:
+//!
+//! * Implement proper tests to ensure these methods work correctly.
+//! * Convert implementations to macro's to reduce duplication and
+//!   implement across all other potential RHS types.
+//!
+//! [`emu128`]: struct.emu128.html
+
 use std;
 use std::ops::{BitAnd, BitOr, Shr, Shl};
 
-// Emulate a 128 bit uint using two 64 bit uints. When the i128 feature
-// is stable this can be removed.
-
+/// Emulate a 128 bit uint using two 64 bit uints. When the i128 feature
+/// is stable this can be removed.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct emu128 {
     pub hi: u64,
     pub lo: u64,
 }
-
-// TODO: Proper testing to make sure these functions work correctly.
 
 impl emu128 {
     pub fn min_value() -> emu128 {
@@ -48,7 +63,6 @@ impl emu128 {
     }
 }
 
-// TODO: Convert to macro to implement for other RHS types.
 impl Shl<u8> for emu128 {
     type Output = Self;
 
