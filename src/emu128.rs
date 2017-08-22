@@ -1,11 +1,11 @@
 //! An emulated 128 bit unsigned integer.
 //!
-//! This module provides [`Emu128`], a 128 bit unsigned integer emulated
-//! from two standard `u64` types. This is useful for operations on IPv6
-//! address, which are 128 bit unsigned integers at heart.
+//! This module provides [`Emu128`], a 128 bit unsigned integer that is
+//! emulated using two `u64` types. This is useful for operations on
+//! IPv6 address, which are 128 bit unsigned integers.
 //!
-//! `Emu128` only implements operations that have been useful for
-//! building the `Ipv6Net` type. It's not intended to be a full `u128`
+//! Currently `Emu128` only implements those operations that are useful
+//! for the `Ipv6Net` type. It is not intended to become a full `u128`
 //! implementation.
 //!
 //! [`Emu128`]: struct.Emu128.html
@@ -15,24 +15,24 @@ use std::ops::{BitAnd, BitOr, Shr, Shl};
 
 /// An emulated 128 bit unsigned integer.
 ///
-/// This module provides `Emu128`, a 128 bit unsigned integer emulated
-/// from two standard `u64` types. This is useful for operations on IPv6
-/// address, which are 128 bit unsigned integers at heart.
+/// This module provides [`Emu128`], a 128 bit unsigned integer that is
+/// emulated using two `u64` types. This is useful for operations on
+/// IPv6 address, which are 128 bit unsigned integers.
 ///
-/// `Emu128` only implements operations that have been useful for
-/// building the `Ipv6Net` type. It's not intended to be a full `u128`
+/// Currently `Emu128` only implements those operations that are useful
+/// for the `Ipv6Net` type. It is not intended to become a full `u128`
 /// implementation.
 ///
 /// # Examples
 ///
 /// ```
+/// use std::u64;
 /// use ipnet::Emu128;
 ///
-///
 /// let i0 = Emu128::min_value();
-/// let i1 = Emu128 { hi: 1, lo: 1 };
+/// let i1 = Emu128::from([1, 1]);
 /// let i2 = Emu128::max_value();
-/// let i3 = Emu128 { hi: 1, lo: std::u64::MAX };
+/// let i3 = Emu128::from([1, u64::MAX]);
 ///
 /// assert_eq!(i0, Emu128 { hi: 0, lo: 0 });
 /// assert_eq!(i2, Emu128 { hi: std::u64::MAX, lo: std::u64::MAX });
@@ -150,5 +150,42 @@ impl BitOr for Emu128 {
             hi: self.hi | rhs.hi,
             lo: self.lo | rhs.lo,
         }
+    }
+}
+
+/// Convert an a `[u64; 2]` slice into an `Emu128`.
+///
+/// # Examples
+///
+/// ```
+/// use ipnet::Emu128;
+///
+/// let u = Emu128::from([123u64, 123u64]);
+/// let v: [u64; 2] = u.into();
+/// assert_eq!(v, [123u64, 123u64]);
+/// ```
+impl From<[u64; 2]> for Emu128 {
+    fn from(slice: [u64; 2]) -> Self {
+        Emu128 {
+            hi: slice[0],
+            lo: slice[1],
+        }
+    }
+}
+
+/// Convert an Emu128 into a `[u64; 2]` slice.
+///
+/// # Examples
+///
+/// ```
+/// use ipnet::Emu128;
+///
+/// let u = Emu128::from([123u64, 123u64]);
+/// let v: [u64; 2] = u.into();
+/// assert_eq!(v, [123u64, 123u64]);
+/// ```
+impl From<Emu128> for [u64; 2] {
+    fn from(u: Emu128) -> Self {
+        [u.hi, u.lo]
     }
 }
