@@ -14,16 +14,12 @@
 //!   addresses.
 //! * The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
 //!   the `Ipv4Addr` and `Ipv6Addr` types to include these operations.
-//! * [`ipv6_addr_from_emu128`] and [`ipv6_addr_into_emu128`] functions
-//!   convert the between the Ipv6Addr type and the [`emu128`] type.
 //! * [`emu128`] is an emulated 128 bit unsigned integer implemented in
 //!   this module using a struct of two `u64` types. This is necessary
 //!   because Rust's `u128` type is not yet marked stable. This can be
 //!   replaced when `u128` is stable.
 //!
 //! # TODO:
-//!
-//! * Implement tests and complete documentation of `IpNet`, etc.
 //! * Convert subnets() and aggregate() methods to iterators?
 //! * Can we implement the `std::ops::{Add, Sub, BitAnd, BitOr}` traits
 //!   for `Ipv4Addr` and `Ipv6Addr` in the standard library? These are
