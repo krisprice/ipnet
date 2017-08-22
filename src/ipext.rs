@@ -1,45 +1,86 @@
-//! Types for IPv4 and IPv6 network addresses.
-
-//! Extensions to IP address types for Add, Sub, BitAnd, and BitOr operations.
+//! Extensions to the standard IP address types for common operations.
+//!
+//! The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
+//! the `Ipv4Addr` and `Ipv6Addr` types to provide their respective
+//! operations.
 //!
 //! # TODO:
+//!
+//! * Can we implement the `std::ops::{Add, Sub, BitAnd, BitOr}` traits
+//!   for `Ipv4Addr` and `Ipv6Addr` in the standard library? These are
+//!   common operations on IP addresses.
 //!
 //! * Tests and documentation.
 
 use std::net::{Ipv4Addr, Ipv6Addr};
 use emu128::emu128;
 
-/// Convert an emulated u128 to an Ipv6Addr.
-///
-/// TODO: It would be nice to implement From on Ipv6Addr for this.
+/// Convert an `Ipv6Addr` into an `emu128`.
 ///
 /// # Examples
 ///
 /// ```
 /// use std::net::Ipv6Addr;
 /// use std::str::FromStr;
-/// use ipnet::ipv6_addr_from_double_u64;
-/// assert_eq!(ipv6_addr_from_double_u64([0u64, 1u64]), Ipv6Addr::from_str("::1").unwrap());
+/// use ipnet::Emu128;
+///
+/// let a = Ipv6Addr::from_str("fd00::1").unwrap();
+/// let u = Emu128 { hi: 0xfd00_0000_0000_0000, lo: 1 };
+/// let a2: Ipv6Addr = u.into();
+///
+/// assert_eq!(a, a2);
+/// assert_eq!(u, a.into());
+/// assert_eq!(u, Emu128::from(a));
 /// ```
-pub fn ipv6_addr_from_emu128(ip: emu128) -> Ipv6Addr {
+impl From<Ipv6Addr> for emu128 {
+    fn from(ip: Ipv6Addr) -> Self {
+        let ip = ip.octets();
+        emu128 {
+            hi: ((ip[0] as u64) << 56) + ((ip[1] as u64) << 48) +
+                ((ip[2] as u64) << 40) + ((ip[3] as u64) << 32) +
+                ((ip[4] as u64) << 24) + ((ip[5] as u64) << 16) +
+                ((ip[6] as u64) << 8) + (ip[7] as u64),
+            lo: ((ip[8] as u64) << 56) + ((ip[9] as u64) << 48) +
+                ((ip[10] as u64) << 40) + ((ip[11] as u64) << 32) +
+                ((ip[12] as u64) << 24) + ((ip[13] as u64) << 16) +
+                ((ip[14] as u64) << 8) + (ip[15] as u64),
+        }
+    }
+}
+
+/// Convert an `emu128` into an `Ipv6Addr`.
+///
+/// # Examples
+///
+/// ```
+/// use std::net::Ipv6Addr;
+/// use std::str::FromStr;
+/// use ipnet::Emu128;
+///
+/// let a = Ipv6Addr::from_str("fd00::1").unwrap();
+/// let u = Emu128 { hi: 0xfd00_0000_0000_0000, lo: 1 };
+/// let a2: Ipv6Addr = u.into();
+///
+/// assert_eq!(a, a2);
+/// assert_eq!(u, a.into());
+/// assert_eq!(u, Emu128::from(a));
+/// ```
+impl Into<Ipv6Addr> for emu128 {
+    fn into(self) -> Ipv6Addr {
+        Ipv6Addr::new(
+            (self.hi >> 48) as u16, (self.hi >> 32) as u16, (self.hi >> 16) as u16, self.hi as u16,
+            (self.lo >> 48) as u16, (self.lo >> 32) as u16, (self.lo >> 16) as u16, self.lo as u16,
+        )    
+    }
+}
+
+/*pub fn ipv6_addr_from_emu128(ip: emu128) -> Ipv6Addr {
     Ipv6Addr::new(
         (ip.hi >> 48) as u16, (ip.hi >> 32) as u16, (ip.hi >> 16) as u16, ip.hi as u16,
         (ip.lo >> 48) as u16, (ip.lo >> 32) as u16, (ip.lo >> 16) as u16, ip.lo as u16
     )
 }
 
-/// Convert an Ipv6Addr to an emulated u128.
-///
-/// TODO: It would be nice to implement From on Ipv6Addr for this.
-///
-/// # Examples
-///
-/// ```
-/// use std::net::Ipv6Addr;
-/// use std::str::FromStr;
-/// use ipnet::ipv6_addr_into_double_u64;
-/// assert_eq!(ipv6_addr_into_double_u64(Ipv6Addr::from_str("::1").unwrap()), [0u64, 1u64]);
-/// ```
 pub fn ipv6_addr_into_emu128(ip: Ipv6Addr) -> emu128 {
     let ip = ip.octets();
     emu128 {
@@ -52,7 +93,7 @@ pub fn ipv6_addr_into_emu128(ip: Ipv6Addr) -> emu128 {
             ((ip[12] as u64) << 24) + ((ip[13] as u64) << 16) +
             ((ip[14] as u64) << 8) + (ip[15] as u64),
     }
-}
+}*/
 
 pub trait IpAdd<RHS = Self> {
     type Output;
@@ -142,7 +183,7 @@ impl IpBitAnd<emu128> for Ipv6Addr {
     type Output = Ipv6Addr;
     #[inline]
     fn bitand(self, rhs: emu128) -> Ipv6Addr {
-        ipv6_addr_from_emu128(ipv6_addr_into_emu128(self) & rhs)
+        emu128::into(emu128::from(self) & rhs)
     }
 }
 
@@ -150,6 +191,6 @@ impl IpBitOr<emu128> for Ipv6Addr {
     type Output = Ipv6Addr;
     #[inline]
     fn bitor(self, rhs: emu128) -> Ipv6Addr {
-        ipv6_addr_from_emu128(ipv6_addr_into_emu128(self) | rhs)
+        emu128::into(emu128::from(self) | rhs)
     }
 }

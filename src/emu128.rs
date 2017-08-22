@@ -21,7 +21,7 @@ use std::ops::{BitAnd, BitOr, Shr, Shl};
 
 /// Emulate a 128 bit uint using two 64 bit uints. When the i128 feature
 /// is stable this can be removed.
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct emu128 {
     pub hi: u64,
     pub lo: u64,

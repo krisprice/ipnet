@@ -4,7 +4,7 @@ use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use emu128::emu128;
-use ipext::{ipv6_addr_from_emu128, ipv6_addr_into_emu128, IpAdd, IpSub, IpBitAnd, IpBitOr};
+use ipext::{IpAdd, IpSub, IpBitAnd, IpBitOr};
 use saturating_shifts::{SaturatingShl, SaturatingShr};
 
 /// An IP network address, either IPv4 or IPv6.
@@ -22,11 +22,11 @@ use saturating_shifts::{SaturatingShl, SaturatingShr};
 /// use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 /// use std::str::FromStr;
 ///
-/// let net_v4 = IpNet::from_str("10.1.1.0/24");
-/// let net_v6 = IpNet::from_str("::1/128");
+/// let net_v4 = IpNet::from_str("10.1.1.0/24").unwrap();
+/// let net_v6 = IpNet::from_str("fd00::/32").unwrap();
 /// 
 /// assert_eq!("10.1.1.0".parse(), Ok(net_v4.network()));
-/// assert_eq!("::1".parse(), Ok(net_v6.network()));
+/// assert_eq!("fd00::".parse(), Ok(net_v6.network()));
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
 pub enum IpNet {
@@ -244,11 +244,13 @@ impl Ipv6Net {
     }
 
     pub fn netmask(&self) -> Ipv6Addr {
-        ipv6_addr_from_emu128(emu128::max_value().saturating_shl(128 - self.prefix_len))
+        //ipv6_addr_from_emu128(emu128::max_value().saturating_shl(128 - self.prefix_len))
+        emu128::max_value().saturating_shl(128 - self.prefix_len).into()
     }
 
     pub fn hostmask(&self) -> Ipv6Addr {
-        ipv6_addr_from_emu128(emu128::max_value().saturating_shr(self.prefix_len))
+        //ipv6_addr_from_emu128(emu128::max_value().saturating_shr(self.prefix_len))
+        emu128::max_value().saturating_shr(self.prefix_len).into()
     }
 
     pub fn network(&self) -> Ipv6Addr {
@@ -274,8 +276,10 @@ impl Ipv6Net {
         if new_prefix_len <= self.prefix_len { return Vec::new(); }
         let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
 
-        let mut network = ipv6_addr_into_emu128(self.network());
-        let broadcast = ipv6_addr_into_emu128(self.broadcast());
+        //let mut network = ipv6_addr_into_emu128(self.network());
+        //let broadcast = ipv6_addr_into_emu128(self.broadcast());
+        let mut network = emu128::from(self.network());
+        let broadcast = emu128::from(self.broadcast());
 
         let step = if new_prefix_len <= 64 {
             emu128 { hi: 1 << (64 - new_prefix_len), lo: 0 }
@@ -287,7 +291,8 @@ impl Ipv6Net {
         let mut res: Vec<Ipv6Net> = Vec::new();
         
         while network <= broadcast {
-            res.push(Ipv6Net::new(ipv6_addr_from_emu128(network), new_prefix_len));
+            //res.push(Ipv6Net::new(ipv6_addr_from_emu128(network), new_prefix_len));
+            res.push(Ipv6Net::new(network.into(), new_prefix_len));
             network = network.saturating_add(step);
         }
         res
@@ -400,11 +405,10 @@ impl Ipv4Net {
 }
 
 impl Ipv6Net {
-    // TODO: Will be interesting to experiment with Range types.
     fn interval(&self) -> (emu128, emu128) {
         (
-            ipv6_addr_into_emu128(self.network()),
-            ipv6_addr_into_emu128(self.broadcast()).saturating_add(emu128 { hi: 0, lo: 1 }),
+            emu128::from(self.network()),
+            emu128::from(self.broadcast()).saturating_add(emu128 { hi: 0, lo: 1 }),
         )
     }
 
@@ -422,7 +426,8 @@ impl Ipv6Net {
                 let range = end.saturating_sub(start);
                 let num_bits = 128u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
                 let prefix_len = 128 - min(num_bits, start.trailing_zeros());
-                res.push(Ipv6Net::new(ipv6_addr_from_emu128(start), prefix_len as u8));
+                //res.push(Ipv6Net::new(ipv6_addr_from_emu128(start), prefix_len as u8));
+                res.push(Ipv6Net::new(start.into(), prefix_len as u8));
                 let step = if prefix_len <= 64 { emu128 { hi: 1 << (64 - prefix_len), lo: 0 } }
                 else { emu128 { hi: 0, lo: 1 << (128 - prefix_len) } };
                 start = start.saturating_add(step);

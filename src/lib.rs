@@ -3,9 +3,9 @@
 //! This module provides types and methods for working with IPv4 and
 //! IPv6 network addresses. It aims for alignment with the [`IpAddr`],
 //! [`Ipv4Addr`], and [`Ipv6Addr`] types in Rust's standard library.
-//! 
-//! The module includes some extensions to these IP address types for
-//! Add, Sub, BitAnd, and BitOr operations.
+//!
+//! The module includes extension traits to add Add, Sub, BitAnd, and
+//! BitOr operations to `Ipv4Addr` and `Ipv6Addr`.
 //!
 //! # Organization
 //!
@@ -23,6 +23,11 @@
 //!
 //! # TODO:
 //!
+//! * Implement tests and complete documentation of `IpNet`, etc.
+//! * Convert subnets() and aggregate() methods to iterators?
+//! * Can we implement the `std::ops::{Add, Sub, BitAnd, BitOr}` traits
+//!   for `Ipv4Addr` and `Ipv6Addr` in the standard library? These are
+//!   common operations on IP addresses.
 //! * Explore the possibility of representing IP network addresses as a
 //!   `Range` using Rust's `RangeArgument` trait. `RangeArgument` and
 //!   many of the associated `Range` methods are still nightly-only
@@ -38,8 +43,8 @@
 //! [`ipv6_addr_into_emu128`]: 
 //! [`emu128`]: struct.emu128.html
 
-pub use self::emu128::*;
-pub use self::ipext::{ipv6_addr_from_emu128, ipv6_addr_into_emu128, IpAdd, IpSub, IpBitAnd, IpBitOr};
+pub use self::emu128::{emu128 as Emu128}; // work around conflict with mod name
+pub use self::ipext::{IpAdd, IpSub, IpBitAnd, IpBitOr};
 pub use self::ipnet::{IpNet, Ipv4Net, Ipv6Net};
 pub use self::parser::AddrParseError;
 
