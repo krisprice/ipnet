@@ -10,9 +10,6 @@ use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 //! The std::net::parser module cannot be extended because it is private.
 //! This module duplicates it and adds methods for parsing the IP network
 //! addresses.
-//!
-//! This module is "publicly exported" through the `FromStr` implementations
-//! below.
 
 pub struct Parser<'a> {
     // parsing as ASCII, so can use byte array
@@ -338,7 +335,8 @@ impl FromStr for Ipv6Net {
 /// This error is used as the error type for the [`FromStr`] implementation for
 /// [`IpNet`], [`Ipv4Net`], and [`Ipv6Net`].
 ///
-/// This is copied from the implementation
+/// TODO: This is copied from the std::net::parser module. I'm not sure
+/// why I couldn't re-use it that implementation given it is public.
 ///
 /// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
 /// [`IpNet`]: enum.IpNet.html
