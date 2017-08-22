@@ -1,15 +1,15 @@
+//! A private parser implementation of IPv4 and IPv6 network addresses.
+//!
+//! The existing `std::net::parser module` cannot be extended because it
+//! is private. It is copied and extended here with methods for parsing
+//! IP network addresses.
+
 use std::error::Error;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
 
 use ipnet::{IpNet, Ipv4Net, Ipv6Net};
-
-//! A private parser implementation of IPv4 and IPv6 network addresses.
-//!
-//! The existing `std::net::parser module` cannot be extended because it
-//! is private. It is copied and extended here with methods for parsing
-//! IP network addresses.
 
 pub struct Parser<'a> {
     // parsing as ASCII, so can use byte array
@@ -251,11 +251,12 @@ impl<'a> Parser<'a> {
         self.read_atomically(|p| p.read_ipv6_addr_impl())
     }
 
-    fn read_ip_addr(&mut self) -> Option<IpAddr> {
-        let ipv4_addr = |p: &mut Parser| p.read_ipv4_addr().map(IpAddr::V4);
-        let ipv6_addr = |p: &mut Parser| p.read_ipv6_addr().map(IpAddr::V6);
-        self.read_or(&mut [Box::new(ipv4_addr), Box::new(ipv6_addr)])
-    }
+    // read_ip_addr is not used.
+    //fn read_ip_addr(&mut self) -> Option<IpAddr> {
+    //    let ipv4_addr = |p: &mut Parser| p.read_ipv4_addr().map(IpAddr::V4);
+    //    let ipv6_addr = |p: &mut Parser| p.read_ipv6_addr().map(IpAddr::V6);
+    //    self.read_or(&mut [Box::new(ipv4_addr), Box::new(ipv6_addr)])
+    //}
     
     /* Additions for IpNet below. */
 
