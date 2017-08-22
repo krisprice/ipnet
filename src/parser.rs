@@ -5,6 +5,15 @@ use std::str::FromStr;
 
 use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 
+//! A private parser implementation of IPv4 and IPv6 network addresses.
+//!
+//! The std::net::parser module cannot be extended because it is private.
+//! This module duplicates it and adds methods for parsing the IP network
+//! addresses.
+//!
+//! This module is "publicly exported" through the `FromStr` implementations
+//! below.
+
 pub struct Parser<'a> {
     // parsing as ASCII, so can use byte array
     s: &'a [u8],
@@ -324,31 +333,26 @@ impl FromStr for Ipv6Net {
 
 /* Additions for IpNet above. */
 
-/// An error which can be returned when parsing an IP address or a socket address.
+/// An error which can be returned when parsing an IP network address.
 ///
 /// This error is used as the error type for the [`FromStr`] implementation for
-/// [`IpAddr`], [`Ipv4Addr`], [`Ipv6Addr`], [`SocketAddr`], [`SocketAddrV4`], and
-/// [`SocketAddrV6`].
+/// [`IpNet`], [`Ipv4Net`], and [`Ipv6Net`].
 ///
-/// [`FromStr`]: ../../std/str/trait.FromStr.html
-/// [`IpAddr`]: ../../std/net/enum.IpAddr.html
-/// [`Ipv4Addr`]: ../../std/net/struct.Ipv4Addr.html
-/// [`Ipv6Addr`]: ../../std/net/struct.Ipv6Addr.html
-/// [`SocketAddr`]: ../../std/net/enum.SocketAddr.html
-/// [`SocketAddrV4`]: ../../std/net/struct.SocketAddrV4.html
-/// [`SocketAddrV6`]: ../../std/net/struct.SocketAddrV6.html
-//#[stable(feature = "rust1", since = "1.0.0")]
+/// This is copied from the implementation
+///
+/// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
+/// [`IpNet`]: enum.IpNet.html
+/// [`Ipv4Net`]: struct.Ipv4Net.html
+/// [`Ipv6Net`]: struct.Ipv6Net.html
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AddrParseError(());
 
-//#[stable(feature = "addr_parse_error_error", since = "1.4.0")]
 impl fmt::Display for AddrParseError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.write_str(self.description())
     }
 }
 
-//#[stable(feature = "addr_parse_error_error", since = "1.4.0")]
 impl Error for AddrParseError {
     fn description(&self) -> &str {
         "invalid IP address syntax"
