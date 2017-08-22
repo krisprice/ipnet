@@ -5,4 +5,4 @@ The module includes extension traits to add Add, Sub, BitAnd, and BitOr operatio
 See [Crates.io] and the [documentation] for more information.
 
 [Crates.io]: https://crates.io/crates/ipnet
-[documentation]: https://docs.rs/crate/ipnet/
+[documentation]: https://docs.rs/ipnet/
