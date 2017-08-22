@@ -7,9 +7,9 @@ use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 
 //! A private parser implementation of IPv4 and IPv6 network addresses.
 //!
-//! The std::net::parser module cannot be extended because it is private.
-//! This module duplicates it and adds methods for parsing the IP network
-//! addresses.
+//! The existing `std::net::parser module` cannot be extended because it
+//! is private. It is copied and extended here with methods for parsing
+//! IP network addresses.
 
 pub struct Parser<'a> {
     // parsing as ASCII, so can use byte array

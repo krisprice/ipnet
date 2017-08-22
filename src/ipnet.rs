@@ -7,18 +7,83 @@ use emu128::emu128;
 use ipext::{ipv6_addr_from_emu128, ipv6_addr_into_emu128, IpAdd, IpSub, IpBitAnd, IpBitOr};
 use saturating_shifts::{SaturatingShl, SaturatingShr};
 
+/// An IP network address, either IPv4 or IPv6.
+///
+/// This enum can contain either an [`Ipv4Net`] or an [`Ipv6Net`], see their
+/// respective documentation for more details.
+///
+/// [`Ipv4Net`]: struct.Ipv4Addr.html
+/// [`Ipv6Net`]: struct.Ipv6Addr.html
+///
+/// # Examples
+///
+/// ```
+/// use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+/// use ipnet::{IpNet, Ipv4Net, Ipv6Net};
+/// use std::str::FromStr;
+///
+/// let net_v4 = IpNet::from_str("10.1.1.0/24");
+/// let net_v6 = IpNet::from_str("::1/128");
+/// 
+/// assert_eq!("10.1.1.0".parse(), Ok(net_v4.network()));
+/// assert_eq!("::1".parse(), Ok(net_v6.network()));
+/// ```
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
 pub enum IpNet {
     V4(Ipv4Net),
     V6(Ipv6Net),
 }
 
+/// An IPv4 network address.
+///
+/// See [`IpNet`] for a type encompassing both IPv4 and IPv6 network
+/// addresses.
+///
+/// [`IpNet`]: enum.IpAddr.html
+///
+/// # Textual representation
+///
+/// `Ipv4Net` provides a [`FromStr`] implementation.  This is represented
+/// using the `FromStr` implementation for `Ipv4Addr` followed by a `/`
+/// character and the prefix length in decimal. See [RFC 3632] for the
+/// CIDR notation.
+///
+/// [RFC 4632]: https://tools.ietf.org/html/rfc4632
+/// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
+///
+/// # Examples
+///
+/// ```
+/// //TODO
+/// ```
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
 pub struct Ipv4Net {
     addr: Ipv4Addr,
     prefix_len: u8,
 }
 
+/// An IPv6 network address.
+///
+/// See [`IpNet`] for a type encompassing both IPv4 and IPv6 network
+/// addresses.
+///
+/// [`IpNet`]: enum.IpAddr.html
+///
+/// # Textual representation
+///
+/// `Ipv6Net` provides a [`FromStr`] implementation. This is represented
+/// using the `FromStr` implementation for `Ipv6Addr` followed by a `/`
+/// character and the prefix length in decimal. See [RFC 3632] for the
+/// CIDR notation.
+///
+/// [RFC 4632]: https://tools.ietf.org/html/rfc4632
+/// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
+///
+/// # Examples
+///
+/// ```
+/// //TODO
+/// ```
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
 pub struct Ipv6Net {
     addr: Ipv6Addr,

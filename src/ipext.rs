@@ -1,40 +1,10 @@
 //! Types for IPv4 and IPv6 network addresses.
-//!
-//! This module provides types and methods for working with IPv4 and
-//! IPv6 network addresses. It aims for alignment with the [`IpAddr`],
-//! [`Ipv4Addr`], and [`Ipv6Addr`] types in Rust's standard library.
-//! 
-//! The module includes some extensions to these IP address types for
-//! Add, Sub, BitAnd, and BitOr operations.
-//!
-//! # Organization
-//!
-//! * [`IpNet`] represents IP network addresses of either IPv4 or IPv6.
-//! * [`Ipv4Net`] and [`Ipv6Net`] are respectively IPv4 and IPv6 network
-//!   addresses.
-//! * The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
-//!   the `Ipv4Addr` and `Ipv6Addr` types to include these operations. 
-//! * [`ipv6_addr_from_emu128`] and [`ipv6_addr_into_emu128`] functions
-//!   convert the between the Ipv6Addr type and the [`emu128`] type.
-//! * [`emu128`] is an emulated 128 bit unsigned integer implemented in
-//!   this module using a struct of two `u64` types. This is necessary
-//!   because Rust's `u128` type is not yet marked stable. This can be
-//!   replaced when `u128` is stable.
+
+//! Extensions to IP address types for Add, Sub, BitAnd, and BitOr operations.
 //!
 //! # TODO:
 //!
-//! * Explore the possibility of representing IP network addresses as a
-//!   `Range` using Rust's `RangeArgument` trait. `RangeArgument` and
-//!   many of the associated `Range` methods are still nightly-only
-//!   experimental APIs.
-//!
-//! [`IpAddr`]: https://doc.rust-lang.org/std/net/enum.IpAddr.html
-//! [`Ipv4Addr`]: https://doc.rust-lang.org/std/net/struct.Ipv4Addr.html
-//! [`Ipv6Addr`]: https://doc.rust-lang.org/std/net/struct.Ipv6Addr.html
-//! [`IpNet`]: enum.IpNet.html
-//! [`Ipv4Net`]: struct.Ipv4Net.htm
-//! [`Ipv6Net`]: struct.Ipv6Net.html
-
+//! * Tests and documentation.
 
 use std::net::{Ipv4Addr, Ipv6Addr};
 use emu128::emu128;
