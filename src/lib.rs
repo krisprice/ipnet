@@ -4,8 +4,8 @@
 //! IPv6 network addresses. It aims for alignment with the [`IpAddr`],
 //! [`Ipv4Addr`], and [`Ipv6Addr`] types in Rust's standard library.
 //!
-//! The module includes extension traits to add Add, Sub, BitAnd, and
-//! BitOr operations to `Ipv4Addr` and `Ipv6Addr`.
+//! The module also provides traits that extend `Ipv4Addr` and
+//! `Ipv6Addr` to support Add, Sub, BitAnd, and BitOr operations.
 //!
 //! # Organization
 //!
@@ -41,7 +41,7 @@
 //! [`IpBitOr`]: trait.IpAdd.html
 //! [`Emu128`]: struct.Emu128.html
 
-pub use self::emu128::{emu128 as Emu128}; // work around conflict with mod name
+pub use self::emu128::Emu128;
 pub use self::ipext::{IpAdd, IpSub, IpBitAnd, IpBitOr};
 pub use self::ipnet::{IpNet, Ipv4Net, Ipv6Net};
 pub use self::parser::AddrParseError;

@@ -11,9 +11,9 @@
 //!   common operations on IP addresses.
 
 use std::net::{Ipv4Addr, Ipv6Addr};
-use emu128::emu128;
+use emu128::Emu128;
 
-/// Convert an `Ipv6Addr` into an `emu128`.
+/// Convert an `Ipv6Addr` into an `Emu128`.
 ///
 /// # Examples
 ///
@@ -30,10 +30,10 @@ use emu128::emu128;
 /// assert_eq!(u, a.into());
 /// assert_eq!(u, Emu128::from(a));
 /// ```
-impl From<Ipv6Addr> for emu128 {
+impl From<Ipv6Addr> for Emu128 {
     fn from(ip: Ipv6Addr) -> Self {
         let ip = ip.octets();
-        emu128 {
+        Emu128 {
             hi: ((ip[0] as u64) << 56) + ((ip[1] as u64) << 48) +
                 ((ip[2] as u64) << 40) + ((ip[3] as u64) << 32) +
                 ((ip[4] as u64) << 24) + ((ip[5] as u64) << 16) +
@@ -46,7 +46,7 @@ impl From<Ipv6Addr> for emu128 {
     }
 }
 
-/// Convert an `emu128` into an `Ipv6Addr`.
+/// Convert an `Emu128` into an `Ipv6Addr`.
 ///
 /// # Examples
 ///
@@ -63,7 +63,7 @@ impl From<Ipv6Addr> for emu128 {
 /// assert_eq!(u, a.into());
 /// assert_eq!(u, Emu128::from(a));
 /// ```
-impl Into<Ipv6Addr> for emu128 {
+impl Into<Ipv6Addr> for Emu128 {
     fn into(self) -> Ipv6Addr {
         Ipv6Addr::new(
             (self.hi >> 48) as u16, (self.hi >> 32) as u16, (self.hi >> 16) as u16, self.hi as u16,
@@ -255,8 +255,8 @@ macro_rules! ipv6_add_impl {
             type Output = $t;
             #[inline]
             fn saturating_add(self, rhs: $f) -> $t {
-                let lhs: emu128 = self.into();
-                let rhs: emu128 = rhs.into();
+                let lhs: Emu128 = self.into();
+                let rhs: Emu128 = rhs.into();
                 (lhs.saturating_add(rhs.into())).into()
             }
         }
@@ -271,8 +271,8 @@ macro_rules! ipv6_sub_impl {
             type Output = $t;
             #[inline]
             fn saturating_sub(self, rhs: $f) -> $t {
-                let lhs: emu128 = self.into();
-                let rhs: emu128 = rhs.into();
+                let lhs: Emu128 = self.into();
+                let rhs: Emu128 = rhs.into();
                 (lhs.saturating_sub(rhs.into())).into()
             }
         }
@@ -287,8 +287,8 @@ macro_rules! ipv6_bitand_impl {
             type Output = $t;
             #[inline]
             fn bitand(self, rhs: $f) -> $t {
-                let lhs: emu128 = self.into();
-                let rhs: emu128 = rhs.into();
+                let lhs: Emu128 = self.into();
+                let rhs: Emu128 = rhs.into();
                 (lhs & rhs).into()
             }
         }
@@ -303,8 +303,8 @@ macro_rules! ipv6_bitor_impl {
             type Output = $t;
             #[inline]
             fn bitor(self, rhs: $f) -> $t {
-                let lhs: emu128 = self.into();
-                let rhs: emu128 = rhs.into();
+                let lhs: Emu128 = self.into();
+                let rhs: Emu128 = rhs.into();
                 (lhs | rhs).into()
             }
         }
@@ -316,7 +316,7 @@ ip_add_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
 ip_sub_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
 ip_bitand_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
 ip_bitor_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
-ipv6_add_impl! { (Ipv6Addr, emu128), (Ipv6Addr, Ipv6Addr), }
-ipv6_sub_impl! { (Ipv6Addr, emu128), (Ipv6Addr, Ipv6Addr), }
-ipv6_bitand_impl! { (Ipv6Addr, emu128), (Ipv6Addr, Ipv6Addr), }
-ipv6_bitor_impl! { (Ipv6Addr, emu128), (Ipv6Addr, Ipv6Addr), }
+ipv6_add_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, Ipv6Addr), }
+ipv6_sub_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, Ipv6Addr), }
+ipv6_bitand_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, Ipv6Addr), }
+ipv6_bitor_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, Ipv6Addr), }

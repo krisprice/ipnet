@@ -3,7 +3,7 @@ use std::cmp::{min, max};
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
-use emu128::emu128;
+use emu128::Emu128;
 use ipext::{IpAdd, IpBitAnd, IpBitOr};
 use saturating_shifts::{SaturatingShl, SaturatingShr};
 
@@ -352,7 +352,7 @@ impl Ipv4Net {
 }
 
 // The u128 type would be nice here, but it's not marked stable yet. We
-// use an emulated u128 type defined in emu128.rs to make life simpler.
+// use an emulated u128 type defined in Emu128.rs to make life simpler.
 impl Ipv6Net {    
     /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
     /// length.
@@ -393,7 +393,7 @@ impl Ipv6Net {
     /// assert_eq!(net.netmask(), Ipv6Addr::from_str("ffff:ff00::").unwrap());
     /// ```
     pub fn netmask(&self) -> Ipv6Addr {
-        emu128::max_value().saturating_shl(128 - self.prefix_len).into()
+        Emu128::max_value().saturating_shl(128 - self.prefix_len).into()
     }
 
     /// Returns the host mask.
@@ -409,7 +409,7 @@ impl Ipv6Net {
     /// assert_eq!(net.hostmask(), Ipv6Addr::from_str("::ff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap());
     /// ```
     pub fn hostmask(&self) -> Ipv6Addr {
-        emu128::max_value().saturating_shr(self.prefix_len).into()
+        Emu128::max_value().saturating_shr(self.prefix_len).into()
     }
 
     /// Returns the network address. Truncates the provided Ipv6Addr to
@@ -426,7 +426,7 @@ impl Ipv6Net {
     /// assert_eq!(net.network(), Ipv6Addr::from_str("fd00:1200::").unwrap());
     /// ```
     pub fn network(&self) -> Ipv6Addr {
-        self.addr.bitand(emu128::max_value().saturating_shl(128 - self.prefix_len))
+        self.addr.bitand(Emu128::max_value().saturating_shl(128 - self.prefix_len))
     }
     
     /// Returns the broadcast address. Returns the provided Ipv6Addr
@@ -448,7 +448,7 @@ impl Ipv6Net {
     /// assert_eq!(net.broadcast(), Ipv6Addr::from_str("fd00:12ff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap());
     /// ```
     pub fn broadcast(&self) -> Ipv6Addr {
-        self.addr.bitor(emu128::max_value().saturating_shr(self.prefix_len))
+        self.addr.bitor(Emu128::max_value().saturating_shr(self.prefix_len))
     }
 
     /// Returns the `Ipv6Net` that contains this one.
@@ -494,14 +494,14 @@ impl Ipv6Net {
         if new_prefix_len <= self.prefix_len { return Vec::new(); }
         let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
 
-        let mut network = emu128::from(self.network());
-        let broadcast = emu128::from(self.broadcast());
+        let mut network = Emu128::from(self.network());
+        let broadcast = Emu128::from(self.broadcast());
 
         let step = if new_prefix_len <= 64 {
-            emu128 { hi: 1 << (64 - new_prefix_len), lo: 0 }
+            Emu128 { hi: 1 << (64 - new_prefix_len), lo: 0 }
         }
         else {
-            emu128 { hi: 0, lo: 1 << (128 - new_prefix_len) }
+            Emu128 { hi: 0, lo: 1 << (128 - new_prefix_len) }
         };
         
         let mut res: Vec<Ipv6Net> = Vec::new();
@@ -642,10 +642,10 @@ impl Ipv4Net {
 }
 
 impl Ipv6Net {
-    fn interval(&self) -> (emu128, emu128) {
+    fn interval(&self) -> (Emu128, Emu128) {
         (
-            emu128::from(self.network()),
-            emu128::from(self.broadcast()).saturating_add(emu128 { hi: 0, lo: 1 }),
+            Emu128::from(self.network()),
+            Emu128::from(self.broadcast()).saturating_add(Emu128 { hi: 0, lo: 1 }),
         )
     }
 
@@ -663,10 +663,10 @@ impl Ipv6Net {
                 let range = end.saturating_sub(start);
                 let num_bits = 128u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
                 let prefix_len = 128 - min(num_bits, start.trailing_zeros());
-                //res.push(Ipv6Net::new(ipv6_addr_from_emu128(start), prefix_len as u8));
+                //res.push(Ipv6Net::new(ipv6_addr_from_Emu128(start), prefix_len as u8));
                 res.push(Ipv6Net::new(start.into(), prefix_len as u8));
-                let step = if prefix_len <= 64 { emu128 { hi: 1 << (64 - prefix_len), lo: 0 } }
-                else { emu128 { hi: 0, lo: 1 << (128 - prefix_len) } };
+                let step = if prefix_len <= 64 { Emu128 { hi: 1 << (64 - prefix_len), lo: 0 } }
+                else { Emu128 { hi: 0, lo: 1 << (128 - prefix_len) } };
                 start = start.saturating_add(step);
             }
         }

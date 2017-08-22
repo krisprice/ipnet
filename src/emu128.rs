@@ -54,35 +54,35 @@ use std::ops::{BitAnd, BitOr, Shr, Shl};
 /// assert_eq!(i1 | i3, Emu128 { hi: 1, lo: std::u64::MAX });
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub struct emu128 {
+pub struct Emu128 {
     pub hi: u64,
     pub lo: u64,
 }
 
-impl emu128 {
-    pub fn min_value() -> emu128 {
-        emu128 { hi: 0, lo: 0 }
+impl Emu128 {
+    pub fn min_value() -> Emu128 {
+        Emu128 { hi: 0, lo: 0 }
     }
 
-    pub fn max_value() -> emu128 {
-        emu128 { hi: std::u64::MAX, lo: std::u64::MAX }
+    pub fn max_value() -> Emu128 {
+        Emu128 { hi: std::u64::MAX, lo: std::u64::MAX }
     }
 
-    pub fn saturating_add(self, other: emu128) -> emu128 {
+    pub fn saturating_add(self, other: Emu128) -> Emu128 {
         let (lo, ov) = self.lo.overflowing_add(other.lo);
         let res = self.hi.checked_add(other.hi).and_then(|x| x.checked_add(if ov { 1 } else { 0 }));
         match res {
-            Some(hi) => emu128 { hi: hi, lo: lo },
-            None => emu128::max_value(),
+            Some(hi) => Emu128 { hi: hi, lo: lo },
+            None => Emu128::max_value(),
         }
     }
 
-    pub fn saturating_sub(self, other: emu128) -> emu128 {
+    pub fn saturating_sub(self, other: Emu128) -> Emu128 {
         let (lo, ov) = self.lo.overflowing_sub(other.lo);
         let res = self.hi.checked_sub(other.hi).and_then(|x| x.checked_sub(if ov { 1 } else { 0 }));
         match res {
-            Some(hi) => emu128 { hi: hi, lo: lo },
-            None => emu128::min_value(),
+            Some(hi) => Emu128 { hi: hi, lo: lo },
+            None => Emu128::min_value(),
         }
     }
 
@@ -95,18 +95,18 @@ impl emu128 {
     }
 }
 
-impl Shl<u8> for emu128 {
+impl Shl<u8> for Emu128 {
     type Output = Self;
 
-    fn shl(self, rhs: u8) -> emu128 {
+    fn shl(self, rhs: u8) -> Emu128 {
         if rhs < 64 {
-            emu128 {
+            Emu128 {
                 hi: self.hi << rhs | self.lo >> (64-rhs),
                 lo: self.lo << rhs
             }
         }
         else {
-            emu128 {
+            Emu128 {
                 hi: self.lo << (rhs-64),
                 lo: 0
             }
@@ -114,18 +114,18 @@ impl Shl<u8> for emu128 {
     }
 }
 
-impl Shr<u8> for emu128 {
+impl Shr<u8> for Emu128 {
     type Output = Self;
 
-    fn shr(self, rhs: u8) -> emu128 {
+    fn shr(self, rhs: u8) -> Emu128 {
         if rhs < 64 {
-            emu128 {
+            Emu128 {
                 hi: self.hi >> rhs,
                 lo: self.lo >> rhs | self.hi << (64-rhs),
             }
         }
         else {
-            emu128 {
+            Emu128 {
                 hi: 0,
                 lo: self.hi >> (rhs-64),
             }
@@ -133,20 +133,20 @@ impl Shr<u8> for emu128 {
     }
 }
 
-impl BitAnd for emu128 {
+impl BitAnd for Emu128 {
     type Output = Self;
-    fn bitand(self, rhs: emu128) -> emu128 {
-        emu128 {
+    fn bitand(self, rhs: Emu128) -> Emu128 {
+        Emu128 {
             hi: self.hi & rhs.hi,
             lo: self.lo & rhs.lo,
         }
     }
 }
 
-impl BitOr for emu128 {
+impl BitOr for Emu128 {
     type Output = Self;
-    fn bitor(self, rhs: emu128) -> emu128 {
-        emu128 {
+    fn bitor(self, rhs: Emu128) -> Emu128 {
+        Emu128 {
             hi: self.hi | rhs.hi,
             lo: self.lo | rhs.lo,
         }

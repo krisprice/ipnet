@@ -5,7 +5,7 @@
 // an integer and a negative is supplied it will panic at runtime. Easy
 // change to fix below if needed.
 
-use emu128::emu128;
+use emu128::Emu128;
 
 pub trait SaturatingShl<RHS> {
     type Output;
@@ -47,8 +47,8 @@ saturating_shl_impl!(u32, u8, 32, 0);
 saturating_shr_impl!(u32, u8, 32, 0);
 saturating_shl_impl!(u64, u8, 64, 0);
 saturating_shr_impl!(u64, u8, 64, 0);
-saturating_shl_impl!(emu128, u8, 128, emu128 { hi: 0, lo: 0 });
-saturating_shr_impl!(emu128, u8, 128, emu128 { hi: 0, lo: 0 });
+saturating_shl_impl!(Emu128, u8, 128, Emu128 { hi: 0, lo: 0 });
+saturating_shr_impl!(Emu128, u8, 128, Emu128 { hi: 0, lo: 0 });
 
 #[cfg(test)]
 mod tests {
