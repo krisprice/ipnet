@@ -1,26 +1,58 @@
 //! An emulated 128 bit unsigned integer.
 //!
-//! This module provides [`emu128`], a 128 bit unsigned integer emulated
+//! This module provides [`Emu128`], a 128 bit unsigned integer emulated
 //! from two standard `u64` types. This is useful for operations on IPv6
 //! address, which are 128 bit unsigned integers at heart.
 //!
-//! `emu128` only implements operations that have been useful for
+//! `Emu128` only implements operations that have been useful for
 //! building the `Ipv6Net` type. It's not intended to be a full `u128`
 //! implementation.
 //!
-//! # TODO:
-//!
-//! * Implement proper tests to ensure these methods work correctly.
-//! * Convert implementations to macro's to reduce duplication and
-//!   implement across all other potential RHS types.
-//!
-//! [`emu128`]: struct.emu128.html
+//! [`Emu128`]: struct.Emu128.html
 
 use std;
 use std::ops::{BitAnd, BitOr, Shr, Shl};
 
-/// Emulate a 128 bit uint using two 64 bit uints. When the i128 feature
-/// is stable this can be removed.
+/// An emulated 128 bit unsigned integer.
+///
+/// This module provides `Emu128`, a 128 bit unsigned integer emulated
+/// from two standard `u64` types. This is useful for operations on IPv6
+/// address, which are 128 bit unsigned integers at heart.
+///
+/// `Emu128` only implements operations that have been useful for
+/// building the `Ipv6Net` type. It's not intended to be a full `u128`
+/// implementation.
+///
+/// # Examples
+///
+/// ```
+/// use ipnet::Emu128;
+///
+///
+/// let i0 = Emu128::min_value();
+/// let i1 = Emu128 { hi: 1, lo: 1 };
+/// let i2 = Emu128::max_value();
+/// let i3 = Emu128 { hi: 1, lo: std::u64::MAX };
+///
+/// assert_eq!(i0, Emu128 { hi: 0, lo: 0 });
+/// assert_eq!(i2, Emu128 { hi: std::u64::MAX, lo: std::u64::MAX });
+/// assert_eq!(i0.saturating_sub(i2), Emu128::min_value());
+/// assert_eq!(i2.saturating_add(i2), Emu128::max_value());
+/// assert_eq!(i1.saturating_add(i1), Emu128 { hi: 2, lo: 2 });
+/// assert_eq!(i2.saturating_sub(i1), Emu128 { hi: std::u64::MAX-1, lo: std::u64::MAX-1 });
+/// assert_eq!(i3.saturating_add(i1), Emu128 { hi: 3, lo: 0 });
+/// assert_eq!(i3.saturating_sub(i1), Emu128 { hi: 0, lo: std::u64::MAX-1 });
+/// assert_eq!(i1 << 1, Emu128 { hi: 2, lo: 2 });
+/// assert_eq!(i1 << 63, Emu128 { hi: 1 << 63, lo: 1 << 63 });
+/// assert_eq!(i1 << 127, Emu128 { hi: 1 << 63, lo: 0 });
+/// assert_eq!(i1 >> 1, Emu128 { hi: 0, lo: 1u64 << 63 });
+/// assert_eq!(i1 >> 63, Emu128 { hi: 0, lo: 2 });
+/// assert_eq!(i1 >> 127, Emu128 { hi: 0, lo: 0 });
+/// assert_eq!(i0 | i1, Emu128 { hi: 1, lo: 1 });
+/// assert_eq!(i1 & i1, Emu128 { hi: 1, lo: 1 });
+/// assert_eq!(i1 & i3, Emu128 { hi: 1, lo: 1 });
+/// assert_eq!(i1 | i3, Emu128 { hi: 1, lo: std::u64::MAX });
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct emu128 {
     pub hi: u64,
@@ -103,7 +135,6 @@ impl Shr<u8> for emu128 {
 
 impl BitAnd for emu128 {
     type Output = Self;
-
     fn bitand(self, rhs: emu128) -> emu128 {
         emu128 {
             hi: self.hi & rhs.hi,
@@ -114,7 +145,6 @@ impl BitAnd for emu128 {
 
 impl BitOr for emu128 {
     type Output = Self;
-
     fn bitor(self, rhs: emu128) -> emu128 {
         emu128 {
             hi: self.hi | rhs.hi,

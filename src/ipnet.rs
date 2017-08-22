@@ -4,7 +4,7 @@ use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use emu128::emu128;
-use ipext::{IpAdd, IpSub, IpBitAnd, IpBitOr};
+use ipext::{IpAdd, IpBitAnd, IpBitOr};
 use saturating_shifts::{SaturatingShl, SaturatingShr};
 
 /// An IP network address, either IPv4 or IPv6.
@@ -118,6 +118,8 @@ impl std::ops::Deref for Ipv6Net {
 }
 
 impl IpNet {
+    ///
+    ///
     pub fn netmask(&self) -> IpAddr {
         match *self {
             IpNet::V4(ref a) => IpAddr::V4(a.netmask()),
@@ -174,19 +176,61 @@ impl Ipv4Net {
     // TODO: Should new() precompute the netmask, hostmask, network, and
     // broadcast addresses and store these to save recomputing everytime
     // the methods are called?
-    // TODO: Should new() truncate the input IpAddr to the prefix_len and
-    // store that instead of the supplied address? Technically it doesn't
-    // matter, but users may expect that.
+
+    /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
+    /// length.
+    
+    /// # TODO
+    /// * Should new() truncate the input Ipv4Addr to the prefix_len and
+    ///   store that instead? Technically it doesn't matter, but users
+    ///   may expect one behavior over the other.
+    /// * Should new() precompute the netmask, hostmask, network, and
+    ///   broadcast addresses and store these to avoid recomputing
+    ///   everytime the methods are called?
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv4Addr;
+    /// use ipnet::Ipv4Net;
+    ///
+    /// let net = Ipv4Net::new(Ipv4Addr::new(10, 1, 1, 0), 24);
+    /// ```
     pub fn new(ip: Ipv4Addr, prefix_len: u8) -> Ipv4Net {
         // TODO: Need to implement a proper error handling scheme.
         let prefix_len = if prefix_len > 32 { 32 } else { prefix_len };
         Ipv4Net { addr: ip, prefix_len: prefix_len }
     }
 
+    /// Returns the network mask.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv4Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv4Net;
+    ///
+    /// let net = Ipv4Net::from_str("10.1.0.0/20").unwrap();
+    /// assert_eq!(net.netmask(), Ipv4Addr::from_str("255.255.240.0").unwrap());
+    /// ```
     pub fn netmask(&self) -> Ipv4Addr {
         Ipv4Addr::from(0xffffffffu32.saturating_shl(32 - self.prefix_len))
     }
 
+    /// Returns the network address. Truncates the provided Ipv6Addr to
+    /// the prefix length.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv4Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv4Net;
+    ///
+    /// let net = Ipv4Net::from_str("10.1.0.0/20").unwrap();
+    /// assert_eq!(net.hostmask(), Ipv4Addr::from_str("0.0.15.255").unwrap());
+    /// ```
     pub fn hostmask(&self) -> Ipv4Addr {
         Ipv4Addr::from(0xffffffffu32.saturating_shr(self.prefix_len))
     }
@@ -195,15 +239,59 @@ impl Ipv4Net {
         self.addr.bitand(0xffffffffu32.saturating_shl(32 - self.prefix_len))
     }
 
+    /// Returns the broadcast address. Returns the provided Ipv4Addr
+    /// with all bits after the prefix length set.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv4Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv4Net;
+    ///
+    /// let net = Ipv4Net::from_str("172.16.0.0/22").unwrap();
+    /// assert_eq!(net.broadcast(), Ipv4Addr::from_str("172.16.3.255").unwrap());
+    /// ```
     pub fn broadcast(&self) -> Ipv4Addr {
         self.addr.bitor(0xffffffffu32.saturating_shr(self.prefix_len))
     }
 
+    /// Returns the `Ipv4Net` that contains this one.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv4Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv4Net;
+    ///
+    /// let net = Ipv4Net::from_str("172.16.1.0/24").unwrap();
+    /// assert_eq!(net.supernet().network(), Ipv4Addr::from_str("172.16.0.0").unwrap());
+    /// ```
     pub fn supernet(&self) -> Ipv4Net {
         Ipv4Net::new(self.addr.clone(), self.prefix_len - 1)
     }
 
-    // TODO: Should this be an iterator?
+    /// Returns the subnets of this network at the given prefix length.
+    ///
+    /// TODO:
+    /// * Should this return an iterator instead of a vector?
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv4Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv4Net;
+    ///
+    /// let net = Ipv4Net::from_str("10.1.0.0/16").unwrap();
+    /// assert_eq!(net.subnets(18), vec![
+    ///     Ipv4Net::from_str("10.1.0.0/18").unwrap(),
+    ///     Ipv4Net::from_str("10.1.64.0/18").unwrap(),
+    ///     Ipv4Net::from_str("10.1.128.0/18").unwrap(),
+    ///     Ipv4Net::from_str("10.1.192.0/18").unwrap(),
+    /// ]);
+    /// ```
     pub fn subnets(&self, new_prefix_len: u8) -> Vec<Ipv4Net> {
         // TODO: Need to implement a proper error handling scheme.
         if new_prefix_len <= self.prefix_len { return Vec::new(); }
@@ -221,11 +309,43 @@ impl Ipv4Net {
         res
     }
 
+    /// Returns `true` if this network contains the given network.
+    ///
+    /// TODO:
+    /// * Contains should also work for IP addresses.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv4Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv4Net;
+    ///
+    /// let net1 = Ipv4Net::from_str("10.1.0.0/16").unwrap();
+    /// let net2 = Ipv4Net::from_str("10.1.1.0/24").unwrap();
+    /// assert!(net1.contains(&net2));
+    /// ```
     // TODO: Contains should also work for IP addresses.
     pub fn contains(&self, other: &Ipv4Net) -> bool {
         self.network() <= other.network() && self.broadcast() >= other.broadcast()
     }
-
+    
+    /// Returns `true` if this network and the given network are both in
+    /// the same supernet.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv4Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv4Net;
+    ///
+    /// let net1 = Ipv4Net::from_str("10.1.0.0/24").unwrap();
+    /// let net2 = Ipv4Net::from_str("10.1.1.0/24").unwrap();
+    /// let net3 = Ipv4Net::from_str("10.1.2.0/24").unwrap();
+    /// assert!(net1.sibling_of(&net2));
+    /// assert!(!net2.sibling_of(&net3));
+    /// ```
     pub fn sibling_of(&self, other: &Ipv4Net) -> bool {
         self.prefix_len == other.prefix_len && self.supernet().contains(other)
     }
@@ -233,51 +353,147 @@ impl Ipv4Net {
 
 // The u128 type would be nice here, but it's not marked stable yet. We
 // use an emulated u128 type defined in emu128.rs to make life simpler.
-impl Ipv6Net {
-    // TODO: Should new() precompute the netmask, hostmask, network, and
-    // broadcast addresses and store these to save recomputing everytime
-    // the methods are called?
+impl Ipv6Net {    
+    /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
+    /// length.
+    ///
+    /// # TODO
+    /// * Should new() truncate the input Ipv6Addr to the prefix_len and
+    ///   store that instead? Technically it doesn't matter, but users
+    ///   may expect one behavior over the other.
+    /// * Should new() precompute the netmask, hostmask, network, and
+    ///   broadcast addresses and store these to avoid recomputing
+    ///   everytime the methods are called?
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv6Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv6Net;
+    ///
+    /// let net = Ipv6Net::new(Ipv6Addr::from_str("fd00::").unwrap(), 24);
+    /// ```
     pub fn new(ip: Ipv6Addr, prefix_len: u8) -> Ipv6Net {
         // TODO: Need to implement a proper error handling scheme.
         let prefix_len = if prefix_len > 128 { 128 } else { prefix_len };
         Ipv6Net { addr: ip, prefix_len: prefix_len }
     }
 
+    /// Returns the network mask.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv6Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv6Net;
+    ///
+    /// let net = Ipv6Net::from_str("fd00::/24").unwrap();
+    /// assert_eq!(net.netmask(), Ipv6Addr::from_str("ffff:ff00::").unwrap());
+    /// ```
     pub fn netmask(&self) -> Ipv6Addr {
-        //ipv6_addr_from_emu128(emu128::max_value().saturating_shl(128 - self.prefix_len))
         emu128::max_value().saturating_shl(128 - self.prefix_len).into()
     }
 
+    /// Returns the host mask.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv6Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv6Net;
+    ///
+    /// let net = Ipv6Net::from_str("fd00::/24").unwrap();
+    /// assert_eq!(net.hostmask(), Ipv6Addr::from_str("::ff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap());
+    /// ```
     pub fn hostmask(&self) -> Ipv6Addr {
-        //ipv6_addr_from_emu128(emu128::max_value().saturating_shr(self.prefix_len))
         emu128::max_value().saturating_shr(self.prefix_len).into()
     }
 
+    /// Returns the network address. Truncates the provided Ipv6Addr to
+    /// the prefix length.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv6Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv6Net;
+    ///
+    /// let net = Ipv6Net::new(Ipv6Addr::from_str("fd00:1234:5678::").unwrap(), 24);
+    /// assert_eq!(net.network(), Ipv6Addr::from_str("fd00:1200::").unwrap());
+    /// ```
     pub fn network(&self) -> Ipv6Addr {
         self.addr.bitand(emu128::max_value().saturating_shl(128 - self.prefix_len))
     }
-
-    // TODO: Technically there is no such thing as a broadcast address
-    // in IPv6. Perhaps we should change these method names to first()
-    // and last() or start() and end().
+    
+    /// Returns the broadcast address. Returns the provided Ipv6Addr
+    /// with all bits after the prefix length set.
+    ///
+    /// # TODO
+    /// * Technically there is no such thing as a broadcast address in
+    ///   in IPv6. Perhaps we should change the methods to first() and
+    ///   last() or start() and end().
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv6Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv6Net;
+    ///
+    /// let net = Ipv6Net::from_str("fd00:1234:5678::/24").unwrap();
+    /// assert_eq!(net.broadcast(), Ipv6Addr::from_str("fd00:12ff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap());
+    /// ```
     pub fn broadcast(&self) -> Ipv6Addr {
         self.addr.bitor(emu128::max_value().saturating_shr(self.prefix_len))
     }
 
+    /// Returns the `Ipv6Net` that contains this one.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv6Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv6Net;
+    ///
+    /// let net = Ipv6Net::from_str("fd00:ff00::/24").unwrap();
+    /// assert_eq!(net.supernet().network(), Ipv6Addr::from_str("fd00:fe00::").unwrap());
+    /// ```
     pub fn supernet(&self) -> Ipv6Net {
         Ipv6Net::new(self.addr.clone(), self.prefix_len - 1)
     }
 
-    // TODO: Is there a nicer way to do this? Using u128 types would be
-    // nice but they're not marked as stable yet. Should this return an
-    // iterator instead of a vector?
+    /// Returns the subnets of this network at the given prefix length.
+    ///
+    /// TODO:
+    /// * Is there a nicer way to do this? Using u128 types would be
+    ///   nice but they're not marked as stable yet.
+    /// * Should this return an iterator instead of a vector?
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv6Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv6Net;
+    ///
+    /// let net = Ipv6Net::from_str("fd00::/16").unwrap();
+    /// assert_eq!(net.subnets(18), vec![
+    ///     Ipv6Net::from_str("fd00::/18").unwrap(),
+    ///     Ipv6Net::from_str("fd00:4000::/18").unwrap(),
+    ///     Ipv6Net::from_str("fd00:8000::/18").unwrap(),
+    ///     Ipv6Net::from_str("fd00:c000::/18").unwrap(),
+    /// ]);
+    /// ```
     pub fn subnets(&self, new_prefix_len: u8) -> Vec<Ipv6Net> {
         // TODO: Need to implement a proper error handling scheme.
         if new_prefix_len <= self.prefix_len { return Vec::new(); }
         let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
 
-        //let mut network = ipv6_addr_into_emu128(self.network());
-        //let broadcast = ipv6_addr_into_emu128(self.broadcast());
         let mut network = emu128::from(self.network());
         let broadcast = emu128::from(self.broadcast());
 
@@ -291,18 +507,48 @@ impl Ipv6Net {
         let mut res: Vec<Ipv6Net> = Vec::new();
         
         while network <= broadcast {
-            //res.push(Ipv6Net::new(ipv6_addr_from_emu128(network), new_prefix_len));
             res.push(Ipv6Net::new(network.into(), new_prefix_len));
             network = network.saturating_add(step);
         }
         res
     }
 
-    // TODO: Contains should also work for IP addresses.
+    /// Returns `true` if this network contains the given network.
+    ///
+    /// TODO:
+    /// * Contains should also work for IP addresses.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv6Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv6Net;
+    ///
+    /// let net1 = Ipv6Net::from_str("fd00::/16").unwrap();
+    /// let net2 = Ipv6Net::from_str("fd00::/17").unwrap();
+    /// assert!(net1.contains(&net2));
+    /// ```
     pub fn contains(&self, other: &Ipv6Net) -> bool {
         self.network() <= other.network() && self.broadcast() >= other.broadcast()
     }
 
+    /// Returns `true` if this network and the given network are both in
+    /// the same supernet.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv6Addr;
+    /// use std::str::FromStr;
+    /// use ipnet::Ipv6Net;
+    ///
+    /// let net1 = Ipv6Net::from_str("fd00::/18").unwrap();
+    /// let net2 = Ipv6Net::from_str("fd00:4000::/18").unwrap();
+    /// let net3 = Ipv6Net::from_str("fd00:8000::/18").unwrap();
+    /// assert!(net1.sibling_of(&net2));
+    /// assert!(!net2.sibling_of(&net3));
+    /// ```
     pub fn sibling_of(&self, other: &Ipv6Net) -> bool {
         self.prefix_len == other.prefix_len && self.supernet().contains(other)
     }
@@ -371,15 +617,6 @@ impl Ipv4Net {
             u32::from(self.network()),
             u32::from(self.broadcast()).saturating_add(1),
         )
-    }
-
-    // EXPERIMENT
-    fn next(&self) -> Ipv4Net {
-        Ipv4Net::new(Ipv4Addr::from(u32::from(self.network()) + 1u32 << self.prefix_len), self.prefix_len)
-    }
-    // EXPERIMENT
-    fn interval2(&self) -> (Ipv4Addr, Ipv4Addr) {
-        (self.network(), self.next().network())
     }
 
     // TODO: Should this return an iterator instead?
