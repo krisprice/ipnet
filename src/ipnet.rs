@@ -2,6 +2,7 @@ use std;
 use std::cmp::{min, max};
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::ops::Deref;
 
 use emu128::Emu128;
 use ipext::{IpAdd, IpBitAnd, IpBitOr};
@@ -100,25 +101,28 @@ pub struct Ipv6Net {
 
 // For the time being deref method calls to the IpAddr implemenations.
 
-// TODO: Not sure if there is a way to do this?
-/*impl std::ops::Deref for IpNet {
+// TODO: Not sure if there is a way to do this? We need to wrap the
+// contained Ipv4Addr or Ipv6Addr back into an IpAddr and return a
+// reference to that to access the methods on it. But we run into the
+// lifetime issue.
+/*impl Deref for IpNet {
     type Target = IpAddr;
     fn deref(&self) -> &Self::Target {
         match *self {
-            IpNet::V4(ref a) => a.addr,
-            IpNet::V6(ref a) => a.addr,
+            IpNet::V4(ref n) => &IpAddr::from(n.addr.clone()),
+            IpNet::V6(ref n) => &IpAddr::from(n.addr.clone()),
         }
     }
 }*/
 
-impl std::ops::Deref for Ipv4Net {
+impl Deref for Ipv4Net {
     type Target = Ipv4Addr;
     fn deref(&self) -> &Self::Target {
         &self.addr
     }
 }
 
-impl std::ops::Deref for Ipv6Net {
+impl Deref for Ipv6Net {
     type Target = Ipv6Addr;
     fn deref(&self) -> &Self::Target {
         &self.addr
