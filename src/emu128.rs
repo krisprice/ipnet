@@ -13,7 +13,6 @@
 //!
 //! [`Emu128`]: struct.Emu128.html
 
-use std;
 use std::ops::{BitAnd, BitOr, Shr, Shl};
 
 /// An emulated 128 bit unsigned integer.
@@ -71,7 +70,7 @@ impl Emu128 {
     }
 
     pub fn max_value() -> Emu128 {
-        Emu128 { hi: std::u64::MAX, lo: std::u64::MAX }
+        Emu128 { hi: u64::max_value(), lo: u64::max_value() }
     }
 
     pub fn saturating_add(self, other: Emu128) -> Emu128 {
