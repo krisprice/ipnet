@@ -1,4 +1,3 @@
-use std;
 use std::cmp::{min, max};
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
@@ -413,7 +412,7 @@ impl Ipv4Net {
     /// assert_eq!(net.netmask(), Ipv4Addr::from_str("255.255.240.0").unwrap());
     /// ```
     pub fn netmask(&self) -> Ipv4Addr {
-        Ipv4Addr::from(0xffffffffu32.saturating_shl(32 - self.prefix_len))
+        Ipv4Addr::from(u32::max_value().saturating_shl(32 - self.prefix_len))
     }
 
     /// Returns the host mask.
@@ -429,7 +428,7 @@ impl Ipv4Net {
     /// assert_eq!(net.hostmask(), Ipv4Addr::from_str("0.0.15.255").unwrap());
     /// ```
     pub fn hostmask(&self) -> Ipv4Addr {
-        Ipv4Addr::from(0xffffffffu32.saturating_shr(self.prefix_len))
+        Ipv4Addr::from(u32::max_value().saturating_shr(self.prefix_len))
     }
 
     /// Returns the network address.
@@ -445,7 +444,7 @@ impl Ipv4Net {
     /// assert_eq!(net.network(), Ipv4Addr::from_str("172.16.0.0").unwrap());
     /// ```
     pub fn network(&self) -> Ipv4Addr {
-        self.addr.bitand(0xffffffffu32.saturating_shl(32 - self.prefix_len))
+        self.addr.bitand(u32::max_value().saturating_shl(32 - self.prefix_len))
     }
 
     /// Returns the broadcast address. Returns the provided Ipv4Addr
@@ -462,7 +461,7 @@ impl Ipv4Net {
     /// assert_eq!(net.broadcast(), Ipv4Addr::from_str("172.16.3.255").unwrap());
     /// ```
     pub fn broadcast(&self) -> Ipv4Addr {
-        self.addr.bitor(0xffffffffu32.saturating_shr(self.prefix_len))
+        self.addr.bitor(u32::max_value().saturating_shr(self.prefix_len))
     }
 
     /// Returns the `Ipv4Net` that contains this one.
