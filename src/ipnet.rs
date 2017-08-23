@@ -2,6 +2,7 @@ use std::cmp::{min, max};
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ops::Deref;
+use std::option::Option::{Some, None};
 
 use emu128::Emu128;
 use ipext::{IpAdd, IpBitAnd, IpBitOr};
@@ -64,6 +65,28 @@ pub enum IpNet {
 pub struct Ipv4Net {
     addr: Ipv4Addr,
     prefix_len: u8,
+}
+
+pub struct Ipv4NetIterator {
+    start: Ipv4Addr,
+    end: Ipv4Addr,
+    step: u32,
+    prefix_len: u8,
+}
+
+impl Iterator for Ipv4NetIterator {
+    type Item = Ipv4Net;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let res = if self.start <= self.end {
+            Some(Ipv4Net::new(self.start, self.prefix_len))
+        }
+        else {
+            None
+        };
+        self.start = self.start.saturating_add(self.step);
+        res
+    }
 }
 
 /// An IPv6 network address.
@@ -520,6 +543,18 @@ impl Ipv4Net {
         res
     }
 
+    pub fn new_subnets(&self, new_prefix_len: u8) -> Ipv4NetIterator {
+        // TODO: Need to implement a proper error handling scheme.
+        let new_prefix_len = if new_prefix_len > 32 { 32 } else { new_prefix_len };
+        
+        Ipv4NetIterator {
+            start: self.network(),
+            end: self.broadcast(),
+            step: 2u32.pow(32 - new_prefix_len as u32),
+            prefix_len: new_prefix_len,
+        }
+    }
+
     /// Returns `true` if this network contains the given network.
     ///
     /// # Examples
@@ -597,6 +632,28 @@ impl fmt::Debug for Ipv4Net {
 impl fmt::Display for Ipv4Net {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{}/{}", self.addr, self.prefix_len)
+    }
+}
+
+pub struct Ipv6NetIterator {
+    start: Emu128,
+    end: Emu128,
+    step: Emu128,
+    prefix_len: u8,
+}
+
+impl Iterator for Ipv6NetIterator {
+    type Item = Ipv6Net;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let res = if self.start <= self.end {
+            Some(Ipv6Net::new(self.start.into(), self.prefix_len))
+        }
+        else {
+            None
+        };
+        self.start = self.start.saturating_add(self.step);
+        res
     }
 }
 
@@ -747,6 +804,19 @@ impl Ipv6Net {
             network = network.saturating_add(step);
         }
         res
+    }
+
+    pub fn new_subnets(&self, new_prefix_len: u8) -> Ipv6NetIterator {
+        // TODO: Need to implement a proper error handling scheme.
+        let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
+        
+        Ipv6NetIterator {
+            start: Emu128::from(self.network()),
+            end: Emu128::from(self.broadcast()),
+            step: if new_prefix_len <= 64 { Emu128 { hi: 1 << (64 - new_prefix_len), lo: 0 } }
+                else { Emu128 { hi: 0, lo: 1 << (128 - new_prefix_len) } },
+            prefix_len: new_prefix_len,
+        }
     }
 
     /// Returns `true` if this network contains the given network.
