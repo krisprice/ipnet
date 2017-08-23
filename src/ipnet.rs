@@ -39,15 +39,14 @@ pub enum IpNet {
 /// See [`IpNet`] for a type encompassing both IPv4 and IPv6 network
 /// addresses.
 ///
-/// [`IpNet`]: enum.IpAddr.html
-///
 /// # Textual representation
 ///
-/// `Ipv4Net` provides a [`FromStr`] implementation.  This is represented
+/// `Ipv4Net` provides a [`FromStr`] implementation. This is represented
 /// using the `FromStr` implementation for `Ipv4Addr` followed by a `/`
-/// character and the prefix length in decimal. See [RFC 3632] for the
-/// CIDR notation.
+/// character and the prefix length in decimal. See [IETF RFC 4632] for
+/// the CIDR notation.
 ///
+/// [`IpNet`]: enum.IpAddr.html
 /// [RFC 4632]: https://tools.ietf.org/html/rfc4632
 /// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
 ///
@@ -67,16 +66,15 @@ pub struct Ipv4Net {
 /// See [`IpNet`] for a type encompassing both IPv4 and IPv6 network
 /// addresses.
 ///
-/// [`IpNet`]: enum.IpAddr.html
-///
 /// # Textual representation
 ///
 /// `Ipv6Net` provides a [`FromStr`] implementation. This is represented
 /// using the `FromStr` implementation for `Ipv6Addr` followed by a `/`
-/// character and the prefix length in decimal. See [RFC 3632] for the
-/// CIDR notation.
+/// character and the prefix length in decimal. See [IETF RFC 4632] for
+/// the CIDR notation.
 ///
-/// [RFC 4632]: https://tools.ietf.org/html/rfc4632
+/// [`IpNet`]: enum.IpAddr.html
+/// [IETF RFC 4632]: https://tools.ietf.org/html/rfc4632
 /// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
 ///
 /// # Examples
