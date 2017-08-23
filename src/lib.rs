@@ -21,6 +21,12 @@
 //!
 //! # TODO:
 //! * Convert subnets() and aggregate() methods to iterators?
+//! * Should new() truncate the input Ipv4Addr to the prefix_len and
+//!   store that instead? Technically it doesn't matter, but users
+//!   may expect one behavior over the other.
+//! * Should new() precompute the netmask, hostmask, network, and
+//!   broadcast addresses and store these to avoid recomputing
+//!   everytime the methods are called?
 //! * Can we implement the `std::ops::{Add, Sub, BitAnd, BitOr}` traits
 //!   for `Ipv4Addr` and `Ipv6Addr` in the standard library? These are
 //!   common operations on IP addresses.
