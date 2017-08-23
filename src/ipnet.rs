@@ -543,6 +543,7 @@ impl Ipv4Net {
         res
     }
 
+    /// Experimental -- returns an iterator over the subnets
     pub fn new_subnets(&self, new_prefix_len: u8) -> Ipv4NetIterator {
         // TODO: Need to implement a proper error handling scheme.
         let new_prefix_len = if new_prefix_len > 32 { 32 } else { new_prefix_len };
@@ -555,6 +556,7 @@ impl Ipv4Net {
         }
     }
     
+    /// Experimental -- returns an iterator over the host addresses in the subnet
     pub fn hosts(&self) -> Ipv4AddrIterator {
         Ipv4AddrIterator::new(
             self.network().saturating_add(1u32),
@@ -813,6 +815,7 @@ impl Ipv6Net {
         res
     }
 
+    /// Experimental -- returns an iterator over the subnets
     pub fn new_subnets(&self, new_prefix_len: u8) -> Ipv6NetIterator {
         // TODO: Need to implement a proper error handling scheme.
         let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
@@ -826,6 +829,7 @@ impl Ipv6Net {
         }
     }
 
+    /// Experimental -- returns an iterator over all the host addresses in the subnet
     pub fn hosts(&self) -> Ipv6AddrIterator {
         Ipv6AddrIterator::new(
             Emu128::from(self.network()),
