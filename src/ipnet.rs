@@ -28,7 +28,7 @@ use saturating_shifts::{SaturatingShl, SaturatingShr};
 /// assert_eq!("10.1.1.0".parse(), Ok(net_v4.network()));
 /// assert_eq!("fd00::".parse(), Ok(net_v6.network()));
 /// ```
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub enum IpNet {
     V4(Ipv4Net),
     V6(Ipv6Net),
@@ -60,7 +60,7 @@ pub enum IpNet {
 /// let net_v4 = Ipv4Net::from_str("10.1.1.0/24").unwrap();
 /// assert_eq!("10.1.1.0".parse(), Ok(net_v4.network()));
 /// ```
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub struct Ipv4Net {
     addr: Ipv4Addr,
     prefix_len: u8,
@@ -92,7 +92,7 @@ pub struct Ipv4Net {
 /// let net_v6 = Ipv6Net::from_str("fd00::/32").unwrap();
 /// assert_eq!("fd00::".parse(), Ok(net_v6.network()));
 /// ```
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub struct Ipv6Net {
     addr: Ipv6Addr,
     prefix_len: u8,
@@ -339,6 +339,12 @@ impl IpNet {
     }
 }
 
+impl fmt::Debug for IpNet {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, fmt)
+    }
+}
+
 impl fmt::Display for IpNet {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -582,6 +588,18 @@ impl Ipv4Net {
     }
 }
 
+impl fmt::Debug for Ipv4Net {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, fmt)
+    }
+}
+
+impl fmt::Display for Ipv4Net {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "{}/{}", self.addr, self.prefix_len)
+    }
+}
+
 impl Ipv6Net {    
     /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
     /// length.
@@ -801,9 +819,9 @@ impl Ipv6Net {
     }
 }
 
-impl fmt::Display for Ipv4Net {
+impl fmt::Debug for Ipv6Net {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "{}/{}", self.addr, self.prefix_len)
+        fmt::Display::fmt(self, fmt)
     }
 }
 
