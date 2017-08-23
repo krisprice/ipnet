@@ -1,12 +1,15 @@
 //! An emulated 128 bit unsigned integer.
 //!
-//! This module provides [`Emu128`], a 128 bit unsigned integer that is
+//! This module provides `Emu128`, a 128 bit unsigned integer that is
 //! emulated using two `u64` types. This is useful for operations on
 //! IPv6 address, which are 128 bit unsigned integers.
 //!
 //! Currently `Emu128` only implements those operations that are useful
 //! for the `Ipv6Net` type. It is not intended to become a full `u128`
 //! implementation.
+//!
+//! Conversion between `Ipv6Addr` and `Emu128` is provided by a `From`
+//! and `Into` implementation on `Emu128`.
 //!
 //! [`Emu128`]: struct.Emu128.html
 
@@ -15,13 +18,16 @@ use std::ops::{BitAnd, BitOr, Shr, Shl};
 
 /// An emulated 128 bit unsigned integer.
 ///
-/// This module provides [`Emu128`], a 128 bit unsigned integer that is
+/// This module provides `Emu128`, a 128 bit unsigned integer that is
 /// emulated using two `u64` types. This is useful for operations on
 /// IPv6 address, which are 128 bit unsigned integers.
 ///
 /// Currently `Emu128` only implements those operations that are useful
 /// for the `Ipv6Net` type. It is not intended to become a full `u128`
 /// implementation.
+///
+/// Conversion between `Ipv6Addr` and `Emu128` is provided by a `From`
+/// and `Into` implementation on `Emu128`.
 ///
 /// # Examples
 ///

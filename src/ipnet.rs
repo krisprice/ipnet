@@ -19,8 +19,8 @@ use saturating_shifts::{SaturatingShl, SaturatingShr};
 ///
 /// ```
 /// use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-/// use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 /// use std::str::FromStr;
+/// use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 ///
 /// let net_v4 = IpNet::from_str("10.1.1.0/24").unwrap();
 /// let net_v6 = IpNet::from_str("fd00::/32").unwrap();
@@ -53,7 +53,12 @@ pub enum IpNet {
 /// # Examples
 ///
 /// ```
-/// //TODO
+/// use std::net::Ipv4Addr;
+/// use std::str::FromStr;
+/// use ipnet::Ipv4Net;
+///
+/// let net_v4 = Ipv4Net::from_str("10.1.1.0/24").unwrap();
+/// assert_eq!("10.1.1.0".parse(), Ok(net_v4.network()));
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
 pub struct Ipv4Net {
@@ -80,7 +85,12 @@ pub struct Ipv4Net {
 /// # Examples
 ///
 /// ```
-/// //TODO
+/// use std::net::Ipv6Addr;
+/// use std::str::FromStr;
+/// use ipnet::Ipv6Net;
+///
+/// let net_v6 = Ipv6Net::from_str("fd00::/32").unwrap();
+/// assert_eq!("fd00::".parse(), Ok(net_v6.network()));
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
 pub struct Ipv6Net {

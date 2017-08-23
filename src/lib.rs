@@ -14,13 +14,13 @@
 //!   addresses.
 //! * The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
 //!   the `Ipv4Addr` and `Ipv6Addr` types to include these operations.
-//! * [`emu128`] is an emulated 128 bit unsigned integer implemented in
+//! * [`Emu128`] is an emulated 128 bit unsigned integer implemented in
 //!   this module using a struct of two `u64` types. This is necessary
 //!   because Rust's `u128` type is not yet marked stable. This can be
 //!   replaced when `u128` is stable.
 //!
 //! # TODO:
-//! * Convert subnets() and aggregate() methods to iterators?
+//! * Should we convert subnets() and aggregate() methods to iterators?
 //! * Should new() truncate the input Ipv4Addr to the prefix_len and
 //!   store that instead? Technically it doesn't matter, but users
 //!   may expect one behavior over the other.
