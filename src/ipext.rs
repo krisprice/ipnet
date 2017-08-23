@@ -72,6 +72,64 @@ impl Into<Ipv6Addr> for Emu128 {
     }
 }
 
+// TODO: Is there a generic iterator implemenation where I can just
+// give it these start and end types? Isn't this just a Range?
+pub struct Ipv4AddrIterator {
+    start: Ipv4Addr,
+    end: Ipv4Addr,
+}
+
+impl Ipv4AddrIterator {
+    pub fn new(start: Ipv4Addr, end: Ipv4Addr) -> Ipv4AddrIterator {
+        Ipv4AddrIterator {
+            start: start,
+            end: end,
+        }
+    }
+}
+
+impl Iterator for Ipv4AddrIterator {
+    type Item = Ipv4Addr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.start > self.end {
+            return None;
+        }
+
+        let res = Some(self.start);
+        self.start = self.start.saturating_add(1);
+        res
+    }
+}
+
+pub struct Ipv6AddrIterator {
+    start: Emu128,
+    end: Emu128,
+}
+
+impl Ipv6AddrIterator {
+    pub fn new(start: Emu128, end: Emu128) -> Ipv6AddrIterator {
+        Ipv6AddrIterator {
+            start: start,
+            end: end,
+        }
+    }
+}
+
+impl Iterator for Ipv6AddrIterator {
+    type Item = Ipv6Addr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.start > self.end {
+            return None;
+        }
+        
+        let res = Some(self.start.into());
+        self.start = self.start.saturating_add(Emu128::from([0, 1]));
+        res
+    }
+}
+
 /// Provides a `saturating_add()` method for `Ipv4Addr` and `Ipv6Addr`.
 ///
 /// # Examples

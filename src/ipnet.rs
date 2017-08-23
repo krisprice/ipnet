@@ -5,7 +5,7 @@ use std::ops::Deref;
 use std::option::Option::{Some, None};
 
 use emu128::Emu128;
-use ipext::{IpAdd, IpBitAnd, IpBitOr};
+use ipext::{Ipv4AddrIterator, Ipv6AddrIterator, IpAdd, IpSub, IpBitAnd, IpBitOr};
 use saturating_shifts::{SaturatingShl, SaturatingShr};
 
 /// An IP network address, either IPv4 or IPv6.
@@ -554,6 +554,13 @@ impl Ipv4Net {
             prefix_len: new_prefix_len,
         }
     }
+    
+    pub fn hosts(&self) -> Ipv4AddrIterator {
+        Ipv4AddrIterator::new(
+            self.network().saturating_add(1u32),
+            self.broadcast().saturating_sub(1u32),
+        )
+    }
 
     /// Returns `true` if this network contains the given network.
     ///
@@ -817,6 +824,13 @@ impl Ipv6Net {
                 else { Emu128 { hi: 0, lo: 1 << (128 - new_prefix_len) } },
             prefix_len: new_prefix_len,
         }
+    }
+
+    pub fn hosts(&self) -> Ipv6AddrIterator {
+        Ipv6AddrIterator::new(
+            Emu128::from(self.network()),
+            Emu128::from(self.broadcast()),
+        )
     }
 
     /// Returns `true` if this network contains the given network.
