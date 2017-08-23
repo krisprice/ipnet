@@ -5,7 +5,7 @@ authors = ["Kris Price <kris@krisprice.nz>"]
 description = "Provides types and methods for working with IPv4 and IPv6 network addresses."
 license = "MIT"
 repository = "https://github.com/krisprice/ipnet"
-keywords = ["IP address", "CIDR", "network", "prefix", "subnet"]
+keywords = ["IP", "CIDR", "network", "prefix", "subnet"]
 categories = ["network-programming"]
 
 [dependencies]
