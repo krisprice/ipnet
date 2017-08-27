@@ -158,6 +158,24 @@ impl BitOr for Emu128 {
     }
 }
 
+/// Convert a `u32` into an `EMU128`.
+///
+/// # Examples
+///
+/// ```
+/// use ipnet::Emu128;
+///
+/// assert_eq!(Emu128::from([0u64, 1u64]), Emu128::from(1u32));
+/// ```
+impl From<u32> for Emu128 {
+    fn from(u: u32) -> Self {
+        Emu128 {
+            hi: 0,
+            lo: u as u64,
+        }
+    }
+}
+
 /// Convert an a `[u64; 2]` slice into an `Emu128`.
 ///
 /// # Examples
