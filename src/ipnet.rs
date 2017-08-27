@@ -557,6 +557,8 @@ impl Ipv4Net {
     }
     
     /// Experimental -- returns an iterator over the host addresses in the subnet
+    /// Can't use Range<Ipv4Addr> because Ipv4Addr doesn't have Add trait see todo
+    /// about getting these added.
     pub fn hosts(&self) -> Ipv4AddrIterator {
         Ipv4AddrIterator::new(
             self.network().saturating_add(1u32),
