@@ -1,8 +1,8 @@
 [package]
 name = "ipnet"
-version = "0.20.0"
+version = "0.20.1"
 authors = ["Kris Price <kris@krisprice.nz>"]
-description = "Provides types and methods for working with IPv4 and IPv6 network addresses."
+description = "Provides types and methods for working with IPv4 and IPv6 network addresses, commonly called IP prefixes. Uses only stable Rust features and aligns to the standard library IpAddr, Ipv4Addr, and Ipv6Addr types."
 license = "MIT"
 repository = "https://github.com/krisprice/ipnet"
 keywords = ["IP", "CIDR", "network", "prefix", "subnet"]
