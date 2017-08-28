@@ -100,11 +100,7 @@ pub struct Ipv6Net {
     prefix_len: u8,
 }
 
-
 /// An `Iterator` over a range of IPv4 or IPv6 network addresses.
-///
-/// Currently step us a u32 so obviously limited to subnet sizes of
-/// 4 billion in the case of IPv6.
 ///
 /// This might be deprecated and replaced with an implementation of
 /// `Range` for IP addresses when `Range` and it's required traits are

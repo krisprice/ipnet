@@ -12,6 +12,9 @@
 //! * [`IpNet`] represents IP network addresses of either IPv4 or IPv6.
 //! * [`Ipv4Net`] and [`Ipv6Net`] are respectively IPv4 and IPv6 network
 //!   addresses.
+//! * [`IpAddrIter`] provides iteration over a range of IP addresses and
+//!   [`IpNetIter`] does the same for IP network addresses. These are
+//!   returned by methods on `IpNet`, `Ipv4Net`, and `Ipv6Net`.
 //! * The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
 //!   the `Ipv4Addr` and `Ipv6Addr` types to include these operations.
 //! * [`Emu128`] is an emulated 128 bit unsigned integer implemented in
@@ -20,6 +23,7 @@
 //!   replaced when `u128` is stable.
 //!
 //! # TODO:
+//! * What's going on with AddrParseError(()) in parser.rs?
 //! * Should we convert subnets() and aggregate() methods to iterators?
 //! * Should new() truncate the input Ipv4Addr to the prefix_len and
 //!   store that instead? Technically it doesn't matter, but users
@@ -30,10 +34,10 @@
 //! * Can we implement the `std::ops::{Add, Sub, BitAnd, BitOr}` traits
 //!   for `Ipv4Addr` and `Ipv6Addr` in the standard library? These are
 //!   common operations on IP addresses.
-//! * Explore the possibility of representing IP network addresses as a
-//!   `Range` using Rust's `RangeArgument` trait. `RangeArgument` and
-//!   many of the associated `Range` methods are still nightly-only
-//!   experimental APIs.
+//! * Explore the possibility of representing IP network addresses or
+//!   the results of some methods such as `subnets()` as a `Range`.
+//!   However, at this time many of the associated `Range` traits are
+//!   still nightly-only experimental APIs.
 //!
 //! [`IpAddr`]: https://doc.rust-lang.org/std/net/enum.IpAddr.html
 //! [`Ipv4Addr`]: https://doc.rust-lang.org/std/net/struct.Ipv4Addr.html
@@ -41,6 +45,8 @@
 //! [`IpNet`]: enum.IpNet.html
 //! [`Ipv4Net`]: struct.Ipv4Net.html
 //! [`Ipv6Net`]: struct.Ipv6Net.html
+//! [`IpAddrIter`]: struct.IpAddrIter.html
+//! [`IpNetIter`]: struct.IpNetIter.html
 //! [`IpAdd`]: trait.IpAdd.html
 //! [`IpSub`]: trait.IpAdd.html
 //! [`IpBitAnd`]: trait.IpAdd.html
