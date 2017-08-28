@@ -49,7 +49,7 @@
 
 pub use self::emu128::Emu128;
 pub use self::ipext::{IpAddrIter, IpAdd, IpSub, IpBitAnd, IpBitOr};
-pub use self::ipnet::{IpNet, Ipv4Net, Ipv6Net, Ipv4NetIterator, Ipv6NetIterator};
+pub use self::ipnet::{IpNet, Ipv4Net, Ipv6Net, IpNetIter};
 pub use self::parser::AddrParseError;
 
 mod emu128;

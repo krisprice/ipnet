@@ -1,4 +1,5 @@
 use std::cmp::{min, max};
+use std::convert::From;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ops::Deref;
@@ -67,28 +68,6 @@ pub struct Ipv4Net {
     prefix_len: u8,
 }
 
-pub struct Ipv4NetIterator {
-    start: Ipv4Addr,
-    end: Ipv4Addr,
-    step: u32,
-    prefix_len: u8,
-}
-
-impl Iterator for Ipv4NetIterator {
-    type Item = Ipv4Net;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let res = if self.start <= self.end {
-            Some(Ipv4Net::new(self.start, self.prefix_len))
-        }
-        else {
-            None
-        };
-        self.start = self.start.saturating_add(self.step);
-        res
-    }
-}
-
 /// An IPv6 network address.
 ///
 /// See [`IpNet`] for a type encompassing both IPv4 and IPv6 network
@@ -119,6 +98,58 @@ impl Iterator for Ipv4NetIterator {
 pub struct Ipv6Net {
     addr: Ipv6Addr,
     prefix_len: u8,
+}
+
+
+/// An `Iterator` over a range of IPv4 or IPv6 network addresses.
+///
+/// Currently step us a u32 so obviously limited to subnet sizes of
+/// 4 billion in the case of IPv6.
+///
+/// This might be deprecated and replaced with an implementation of
+/// `Range` for IP addresses when `Range` and it's required traits are
+/// stablized.
+///
+/// # Examples
+///
+/// ```
+/// ```
+pub struct IpNetIter<T, U> {
+    pub start: T,
+    pub end: T,
+    pub step: T,
+    pub prefix_len: u8,
+    _marker: ::std::marker::PhantomData<U>,
+}
+
+impl<T, U> IpNetIter<T, U> {
+    pub fn new(start: T, end: T, step: T, prefix_len: u8) -> Self {
+        IpNetIter {
+            start: start,
+            end: end,
+            step: step,
+            prefix_len: prefix_len,
+            _marker: ::std::marker::PhantomData,
+        }
+    }
+}
+
+impl<T, U> Iterator for IpNetIter<T, U>
+    where
+        T: Copy + PartialOrd + IpAdd<T, Output=T>,
+        U: Copy + From<(T, u8)> {
+    type Item = U;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.start > self.end {
+            return None;
+        }
+        let res =  Some(
+            (self.start, self.prefix_len).into()
+        );
+        self.start = self.start.saturating_add(self.step);
+        res
+    }
 }
 
 // For the time being deref method calls to the IpAddr implemenations.
@@ -389,6 +420,16 @@ impl From<Ipv6Net> for IpNet {
     }
 }
 
+// This is a convenience used by the IpNetIter.
+impl From<(IpAddr, u8)> for IpNet {
+    fn from(t: (IpAddr, u8)) -> Self {
+        match t.0 {
+            IpAddr::V4(a) => IpNet::V4(Ipv4Net::new(a, t.1)),
+            IpAddr::V6(a) => IpNet::V6(Ipv6Net::new(a, t.1)),
+        }
+    }
+}
+
 // Generic function for merging any intervals.
 fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
     // Sort by (end, start) because we work backwards below.
@@ -543,17 +584,17 @@ impl Ipv4Net {
         res
     }
 
-    /// Experimental -- returns an iterator over the subnets
-    pub fn new_subnets(&self, new_prefix_len: u8) -> Ipv4NetIterator {
+    /// Experimental! Returns an `Iterator` over the subnets.
+    pub fn new_subnets(&self, new_prefix_len: u8) -> IpNetIter<Ipv4Addr, Ipv4Net> {
         // TODO: Need to implement a proper error handling scheme.
         let new_prefix_len = if new_prefix_len > 32 { 32 } else { new_prefix_len };
-        
-        Ipv4NetIterator {
-            start: self.network(),
-            end: self.broadcast(),
-            step: 2u32.pow(32 - new_prefix_len as u32),
-            prefix_len: new_prefix_len,
-        }
+        let step = 2u32.pow(32 - new_prefix_len as u32);
+        IpNetIter::new(
+            self.network(),
+            self.broadcast(),
+            step.into(),
+            new_prefix_len,
+        )
     }
     
     /// Return an `Iterator` over the host addresses in this network.
@@ -644,25 +685,10 @@ impl fmt::Display for Ipv4Net {
     }
 }
 
-pub struct Ipv6NetIterator {
-    start: Emu128,
-    end: Emu128,
-    step: Emu128,
-    prefix_len: u8,
-}
-
-impl Iterator for Ipv6NetIterator {
-    type Item = Ipv6Net;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let res = if self.start <= self.end {
-            Some(Ipv6Net::new(self.start.into(), self.prefix_len))
-        }
-        else {
-            None
-        };
-        self.start = self.start.saturating_add(self.step);
-        res
+// This is a convenience used by the IpNetIter.
+impl From<(Ipv4Addr, u8)> for Ipv4Net {
+    fn from(t: (Ipv4Addr, u8)) -> Self {
+        Ipv4Net::new(t.0, t.1)
     }
 }
 
@@ -814,19 +840,23 @@ impl Ipv6Net {
         }
         res
     }
-    
-    /// Experimental -- returns an iterator over the subnets
-    pub fn new_subnets(&self, new_prefix_len: u8) -> Ipv6NetIterator {
+
+    /// Experimental! Returns an `Iterator` over the subnets.
+    pub fn new_subnets(&self, new_prefix_len: u8) -> IpNetIter<Ipv6Addr, Ipv6Net> {
         // TODO: Need to implement a proper error handling scheme.
         let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
-        
-        Ipv6NetIterator {
-            start: Emu128::from(self.network()),
-            end: Emu128::from(self.broadcast()),
-            step: if new_prefix_len <= 64 { Emu128 { hi: 1 << (64 - new_prefix_len), lo: 0 } }
-                else { Emu128 { hi: 0, lo: 1 << (128 - new_prefix_len) } },
-            prefix_len: new_prefix_len,
+        let step = if new_prefix_len <= 64 {
+            Emu128 { hi: 1 << (64 - new_prefix_len), lo: 0 }
         }
+        else {
+            Emu128 { hi: 0, lo: 1 << (128 - new_prefix_len) }
+        };
+        IpNetIter::new(
+            self.network(),
+            self.broadcast(),
+            step.into(),
+            new_prefix_len,
+        )
     }
 
     /// Return an `Iterator` over the host addresses in this network.
@@ -916,5 +946,12 @@ impl fmt::Debug for Ipv6Net {
 impl fmt::Display for Ipv6Net {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{}/{}", self.addr, self.prefix_len)
+    }
+}
+
+// This is a convenience used by the IpNetIter.
+impl From<(Ipv6Addr, u8)> for Ipv6Net {
+    fn from(t: (Ipv6Addr, u8)) -> Self {
+        Ipv6Net::new(t.0, t.1)
     }
 }
