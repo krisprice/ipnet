@@ -109,6 +109,34 @@ pub struct Ipv6Net {
 /// # Examples
 ///
 /// ```
+/// use std::net::{Ipv4Addr, Ipv6Addr};
+/// use std::str::FromStr;
+/// use ipnet::{Ipv4Net, Ipv6Net, IpNetIter, IpAdd, IpSub};
+///
+/// let i4: IpNetIter<Ipv4Addr, Ipv4Net> = IpNetIter::new(
+///     Ipv4Addr::from_str("10.0.0.0").unwrap(), Ipv4Addr::from_str("10.0.0.255").unwrap(),
+///     Ipv4Addr::from_str("0.0.0.64").unwrap(), 26,
+/// );
+/// let i6: IpNetIter<Ipv6Addr, Ipv6Net> = IpNetIter::new(
+///     Ipv6Addr::from_str("fd00::").unwrap(), Ipv6Addr::from_str("fd01::").unwrap().saturating_sub(1u32),
+///     Ipv6Net::from_str("fd00::/18").unwrap().hostmask().saturating_add(1u32), 18,
+/// );
+///
+/// let v4 = vec![
+///     Ipv4Net::from_str("10.0.0.0/26").unwrap(),
+///     Ipv4Net::from_str("10.0.0.64/26").unwrap(),
+///     Ipv4Net::from_str("10.0.0.128/26").unwrap(),
+///     Ipv4Net::from_str("10.0.0.192/26").unwrap(),
+/// ];
+/// let v6 = vec![
+///     Ipv6Net::from_str("fd00::/18").unwrap(),
+///     Ipv6Net::from_str("fd00:4000::/18").unwrap(),
+///     Ipv6Net::from_str("fd00:8000::/18").unwrap(),
+///     Ipv6Net::from_str("fd00:c000::/18").unwrap(),
+/// ];
+///
+/// assert_eq!(i4.collect::<Vec<Ipv4Net>>(), v4);
+/// assert_eq!(i6.collect::<Vec<Ipv6Net>>(), v6);
 /// ```
 pub struct IpNetIter<T, U> {
     pub start: T,
