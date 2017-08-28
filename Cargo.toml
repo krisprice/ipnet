@@ -1,6 +1,6 @@
 [package]
 name = "ipnet"
-version = "0.19.0"
+version = "0.20.0"
 authors = ["Kris Price <kris@krisprice.nz>"]
 description = "Provides types and methods for working with IPv4 and IPv6 network addresses."
 license = "MIT"

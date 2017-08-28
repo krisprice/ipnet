@@ -814,7 +814,7 @@ impl Ipv6Net {
         }
         res
     }
-
+    
     /// Experimental -- returns an iterator over the subnets
     pub fn new_subnets(&self, new_prefix_len: u8) -> Ipv6NetIterator {
         // TODO: Need to implement a proper error handling scheme.
@@ -829,7 +829,7 @@ impl Ipv6Net {
         }
     }
 
-    /// Experimental -- returns an iterator over all the host addresses in the subnet
+    /// Return an `Iterator` over the host addresses in this network.
     pub fn hosts(&self) -> IpAddrIter<Ipv6Addr> {
         IpAddrIter::new(
             self.network(),
