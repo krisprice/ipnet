@@ -609,7 +609,7 @@ impl Ipv4Net {
     }
 
     /// Experimental! Returns an `Iterator` over the subnets.
-    pub fn new_subnets(&self, new_prefix_len: u8) -> IpNetIter<Ipv4Addr, Ipv4Net> {
+    pub fn iter_subnets(&self, new_prefix_len: u8) -> IpNetIter<Ipv4Addr, Ipv4Net> {
         // TODO: Need to implement a proper error handling scheme.
         let new_prefix_len = if new_prefix_len > 32 { 32 } else { new_prefix_len };
         let step = 2u32.pow(32 - new_prefix_len as u32);
@@ -866,7 +866,7 @@ impl Ipv6Net {
     }
 
     /// Experimental! Returns an `Iterator` over the subnets.
-    pub fn new_subnets(&self, new_prefix_len: u8) -> IpNetIter<Ipv6Addr, Ipv6Net> {
+    pub fn iter_subnets(&self, new_prefix_len: u8) -> IpNetIter<Ipv6Addr, Ipv6Net> {
         // TODO: Need to implement a proper error handling scheme.
         let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
         let step = if new_prefix_len <= 64 {
