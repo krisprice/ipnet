@@ -5,7 +5,7 @@ use std::ops::Deref;
 use std::option::Option::{Some, None};
 
 use emu128::Emu128;
-use ipext::{Ipv4AddrIterator, Ipv6AddrIterator, IpAdd, IpSub, IpBitAnd, IpBitOr};
+use ipext::{IpAddrIter, IpAdd, IpSub, IpBitAnd, IpBitOr};
 use saturating_shifts::{SaturatingShl, SaturatingShr};
 
 /// An IP network address, either IPv4 or IPv6.
@@ -556,11 +556,9 @@ impl Ipv4Net {
         }
     }
     
-    /// Experimental -- returns an iterator over the host addresses in the subnet
-    /// Can't use Range<Ipv4Addr> because Ipv4Addr doesn't have Add trait see todo
-    /// about getting these added.
-    pub fn hosts(&self) -> Ipv4AddrIterator {
-        Ipv4AddrIterator::new(
+    /// Return an `Iterator` over the host addresses in this network.
+    pub fn hosts(&self) -> IpAddrIter<Ipv4Addr> {
+        IpAddrIter::new(
             self.network().saturating_add(1u32),
             self.broadcast().saturating_sub(1u32),
         )
@@ -832,10 +830,10 @@ impl Ipv6Net {
     }
 
     /// Experimental -- returns an iterator over all the host addresses in the subnet
-    pub fn hosts(&self) -> Ipv6AddrIterator {
-        Ipv6AddrIterator::new(
-            Emu128::from(self.network()),
-            Emu128::from(self.broadcast()),
+    pub fn hosts(&self) -> IpAddrIter<Ipv6Addr> {
+        IpAddrIter::new(
+            self.network(),
+            self.broadcast(),
         )
     }
 

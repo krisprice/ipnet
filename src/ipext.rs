@@ -10,7 +10,7 @@
 //!   for `Ipv4Addr` and `Ipv6Addr` in the standard library? These are
 //!   common operations on IP addresses.
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use emu128::Emu128;
 
 /// Convert an `Ipv6Addr` into an `Emu128`.
@@ -72,60 +72,70 @@ impl Into<Ipv6Addr> for Emu128 {
     }
 }
 
-// TODO: Is there a generic iterator implemenation where I can just
-// give it these start and end types? Isn't this just a Range?
-pub struct Ipv4AddrIterator {
-    start: Ipv4Addr,
-    end: Ipv4Addr,
+/// An `Iterator` over a range of IPv4 or IPv6 addresses.
+///
+/// This might be deprecated and replaced with an implementation of
+/// `Range` for IP addresses when `Range` and it's required traits are
+/// stablized.
+///
+/// # Examples
+///
+/// ```
+/// use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+/// use std::str::FromStr;
+/// use ipnet::{IpAddrIter, IpAdd};
+///
+/// let i = IpAddrIter::new(IpAddr::from_str("10.0.0.0").unwrap(), IpAddr::from_str("10.0.0.3").unwrap());
+/// let i4 = IpAddrIter::new(Ipv4Addr::from_str("10.0.0.0").unwrap(), Ipv4Addr::from_str("10.0.0.3").unwrap());
+/// let i6 = IpAddrIter::new(Ipv6Addr::from_str("fd00::").unwrap(), Ipv6Addr::from_str("fd00::3").unwrap());
+///
+/// let v = vec![
+///     IpAddr::from_str("10.0.0.0").unwrap(),
+///     IpAddr::from_str("10.0.0.1").unwrap(),
+///     IpAddr::from_str("10.0.0.2").unwrap(),
+///     IpAddr::from_str("10.0.0.3").unwrap(),
+/// ];
+/// let v4 = vec![
+///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
+///     Ipv4Addr::from_str("10.0.0.1").unwrap(),
+///     Ipv4Addr::from_str("10.0.0.2").unwrap(),
+///     Ipv4Addr::from_str("10.0.0.3").unwrap(),
+/// ];
+/// let v6 = vec![
+///     Ipv6Addr::from_str("fd00::").unwrap(),
+///     Ipv6Addr::from_str("fd00::1").unwrap(),
+///     Ipv6Addr::from_str("fd00::2").unwrap(),
+///     Ipv6Addr::from_str("fd00::3").unwrap(),
+/// ];
+///
+/// assert_eq!(i.collect::<Vec<IpAddr>>(), v);
+/// assert_eq!(i4.collect::<Vec<Ipv4Addr>>(), v4);
+/// assert_eq!(i6.collect::<Vec<Ipv6Addr>>(), v6);
+/// ```
+pub struct IpAddrIter<T> {
+    pub start: T,
+    pub end: T,
 }
 
-impl Ipv4AddrIterator {
-    pub fn new(start: Ipv4Addr, end: Ipv4Addr) -> Ipv4AddrIterator {
-        Ipv4AddrIterator {
+impl<T> IpAddrIter<T> {
+    pub fn new(start: T, end: T) -> Self {
+        IpAddrIter {
             start: start,
             end: end,
         }
     }
 }
 
-impl Iterator for Ipv4AddrIterator {
-    type Item = Ipv4Addr;
+impl<T> Iterator for IpAddrIter<T>
+    where T: Copy + PartialOrd + IpAdd<u32, Output=T> {
+    type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.start > self.end {
             return None;
         }
-
         let res = Some(self.start);
         self.start = self.start.saturating_add(1);
-        res
-    }
-}
-
-pub struct Ipv6AddrIterator {
-    start: Emu128,
-    end: Emu128,
-}
-
-impl Ipv6AddrIterator {
-    pub fn new(start: Emu128, end: Emu128) -> Ipv6AddrIterator {
-        Ipv6AddrIterator {
-            start: start,
-            end: end,
-        }
-    }
-}
-
-impl Iterator for Ipv6AddrIterator {
-    type Item = Ipv6Addr;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.start > self.end {
-            return None;
-        }
-        
-        let res = Some(self.start.into());
-        self.start = self.start.saturating_add(Emu128::from([0, 1]));
         res
     }
 }
@@ -248,6 +258,17 @@ pub trait IpBitAnd<RHS = Self> {
 pub trait IpBitOr<RHS = Self> {
     type Output;
     fn bitor(self, rhs: RHS) -> Self::Output;
+}
+
+impl IpAdd<u32> for IpAddr {
+    type Output = IpAddr;
+    #[inline]
+    fn saturating_add(self, rhs: u32) -> IpAddr {
+        match self {
+            IpAddr::V4(a) => IpAddr::V4(a.saturating_add(rhs)),
+            IpAddr::V6(a) => IpAddr::V6(a.saturating_add(rhs)),
+        }
+    }    
 }
 
 macro_rules! ip_add_impl {
