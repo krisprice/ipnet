@@ -395,8 +395,7 @@ ip_add_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
 ip_sub_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
 ip_bitand_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
 ip_bitor_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
-//ipv6_add_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, Ipv6Addr), }
 ipv6_add_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, u32), (Ipv6Addr, Ipv6Addr), }
-ipv6_sub_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, Ipv6Addr), }
+ipv6_sub_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, u32), (Ipv6Addr, Ipv6Addr), }
 ipv6_bitand_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, Ipv6Addr), }
 ipv6_bitor_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, Ipv6Addr), }
