@@ -100,27 +100,18 @@ pub struct Ipv6Net {
     prefix_len: u8,
 }
 
-/// An `Iterator` over a range of IPv4 or IPv6 network addresses.
+/// An `Iterator` over a range of IPv4 network addresses.
 ///
-/// This might be deprecated and replaced with an implementation of
-/// `Range` for IP addresses when `Range` and it's required traits are
-/// stablized.
+/// This might be deprecated and replaced with a generic implementation
+/// of `Range` when `Range` and it's required traits are stablized.
 ///
 /// # Examples
 ///
 /// ```
-/// use std::net::{Ipv4Addr, Ipv6Addr};
 /// use std::str::FromStr;
-/// use ipnet::{Ipv4Net, Ipv6Net, IpNetIter, IpAdd, IpSub};
+/// use ipnet::{Ipv4Net};
 ///
-/// let i4: IpNetIter<Ipv4Addr, Ipv4Net> = IpNetIter::new(
-///     Ipv4Addr::from_str("10.0.0.0").unwrap(), Ipv4Addr::from_str("10.0.0.255").unwrap(),
-///     Ipv4Addr::from_str("0.0.0.64").unwrap(), 26,
-/// );
-/// let i6: IpNetIter<Ipv6Addr, Ipv6Net> = IpNetIter::new(
-///     Ipv6Addr::from_str("fd00::").unwrap(), Ipv6Addr::from_str("fd01::").unwrap().saturating_sub(1u32),
-///     Ipv6Net::from_str("fd00::/18").unwrap().hostmask().saturating_add(1u32), 18,
-/// );
+/// let i4 = Ipv4Net::from_str("10.0.0.0/24").unwrap().iter_subnets(26);
 ///
 /// let v4 = vec![
 ///     Ipv4Net::from_str("10.0.0.0/26").unwrap(),
@@ -128,6 +119,43 @@ pub struct Ipv6Net {
 ///     Ipv4Net::from_str("10.0.0.128/26").unwrap(),
 ///     Ipv4Net::from_str("10.0.0.192/26").unwrap(),
 /// ];
+///
+/// assert_eq!(i4.collect::<Vec<Ipv4Net>>(), v4);
+/// ```
+#[derive(Debug)]
+pub struct Ipv4NetIter {
+    start: Ipv4Addr,
+    end: Ipv4Addr,
+    step: u32,
+    prefix_len: u8,
+}
+
+impl Iterator for Ipv4NetIter {
+    type Item = Ipv4Net;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.start < self.end {
+            let res =  Some(Ipv4Net::new(self.start, self.prefix_len));
+            self.start = self.start.saturating_add(self.step);
+            return res;
+        }
+        None
+    }
+}
+
+/// An `Iterator` over a range of IPv4 network addresses.
+///
+/// This might be deprecated and replaced with a generic implementation
+/// of `Range` when `Range` and it's required traits are stablized.
+///
+/// # Examples
+///
+/// ```
+/// use std::str::FromStr;
+/// use ipnet::{Ipv6Net};
+///
+/// let i6 = Ipv6Net::from_str("fd00::/16").unwrap().iter_subnets(18);
+///
 /// let v6 = vec![
 ///     Ipv6Net::from_str("fd00::/18").unwrap(),
 ///     Ipv6Net::from_str("fd00:4000::/18").unwrap(),
@@ -135,44 +163,26 @@ pub struct Ipv6Net {
 ///     Ipv6Net::from_str("fd00:c000::/18").unwrap(),
 /// ];
 ///
-/// assert_eq!(i4.collect::<Vec<Ipv4Net>>(), v4);
 /// assert_eq!(i6.collect::<Vec<Ipv6Net>>(), v6);
 /// ```
-pub struct IpNetIter<T, U> {
-    pub start: T,
-    pub end: T,
-    pub step: T,
-    pub prefix_len: u8,
-    _marker: ::std::marker::PhantomData<U>,
+#[derive(Debug)]
+pub struct Ipv6NetIter {
+    start: Ipv6Addr,
+    end: Ipv6Addr,
+    step: Emu128,
+    prefix_len: u8,
 }
 
-impl<T, U> IpNetIter<T, U> {
-    pub fn new(start: T, end: T, step: T, prefix_len: u8) -> Self {
-        IpNetIter {
-            start: start,
-            end: end,
-            step: step,
-            prefix_len: prefix_len,
-            _marker: ::std::marker::PhantomData,
-        }
-    }
-}
-
-impl<T, U> Iterator for IpNetIter<T, U>
-    where
-        T: Copy + PartialOrd + IpAdd<T, Output=T>,
-        U: Copy + From<(T, u8)> {
-    type Item = U;
+impl Iterator for Ipv6NetIter {
+    type Item = Ipv6Net;
     
     fn next(&mut self) -> Option<Self::Item> {
-        if self.start > self.end {
-            return None;
+        if self.start < self.end {
+            let res =  Some(Ipv6Net::new(self.start, self.prefix_len));
+            self.start = self.start.saturating_add(self.step);
+            return res;
         }
-        let res =  Some(
-            (self.start, self.prefix_len).into()
-        );
-        self.start = self.start.saturating_add(self.step);
-        res
+        None
     }
 }
 
@@ -444,16 +454,6 @@ impl From<Ipv6Net> for IpNet {
     }
 }
 
-// This is a convenience used by the IpNetIter.
-impl From<(IpAddr, u8)> for IpNet {
-    fn from(t: (IpAddr, u8)) -> Self {
-        match t.0 {
-            IpAddr::V4(a) => IpNet::V4(Ipv4Net::new(a, t.1)),
-            IpAddr::V6(a) => IpNet::V6(Ipv6Net::new(a, t.1)),
-        }
-    }
-}
-
 // Generic function for merging any intervals.
 fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
     // Sort by (end, start) because we work backwards below.
@@ -479,6 +479,8 @@ impl Ipv4Net {
     /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
     /// length.
     ///
+    /// If `prefix_len` is greater than 32 it will be clamped to 32.
+    ///
     /// # Examples
     ///
     /// ```
@@ -488,9 +490,13 @@ impl Ipv4Net {
     /// let net = Ipv4Net::new(Ipv4Addr::new(10, 1, 1, 0), 24);
     /// ```
     pub fn new(ip: Ipv4Addr, prefix_len: u8) -> Ipv4Net {
-        // TODO: Need to implement a proper error handling scheme.
         let prefix_len = if prefix_len > 32 { 32 } else { prefix_len };
         Ipv4Net { addr: ip, prefix_len: prefix_len }
+    }
+
+    /// Returns the prefix length.
+    pub fn prefix_len(&self) -> u8 {
+        self.prefix_len
     }
 
     /// Returns the network mask.
@@ -608,17 +614,36 @@ impl Ipv4Net {
         res
     }
 
-    /// Experimental! Returns an `Iterator` over the subnets.
-    pub fn iter_subnets(&self, new_prefix_len: u8) -> IpNetIter<Ipv4Addr, Ipv4Net> {
-        // TODO: Need to implement a proper error handling scheme.
+    /// Returns an `Iterator` over the subnets.
+    ///
+    /// This might be deprecated and replaced with a generic implementation
+    /// of `Range` when `Range` and it's required traits are stablized.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::str::FromStr;
+    /// # use ipnet::Ipv4Net;
+    /// #
+    /// let i4 = Ipv4Net::from_str("10.0.0.0/24").unwrap().iter_subnets(26);
+    /// let v4 = vec![
+    ///     Ipv4Net::from_str("10.0.0.0/26").unwrap(),
+    ///     Ipv4Net::from_str("10.0.0.64/26").unwrap(),
+    ///     Ipv4Net::from_str("10.0.0.128/26").unwrap(),
+    ///     Ipv4Net::from_str("10.0.0.192/26").unwrap(),
+    /// ];
+    ///
+    /// assert_eq!(i4.collect::<Vec<Ipv4Net>>(), v4);
+    /// ```
+    pub fn iter_subnets(&self, new_prefix_len: u8) -> Ipv4NetIter {
         let new_prefix_len = if new_prefix_len > 32 { 32 } else { new_prefix_len };
         let step = 2u32.pow(32 - new_prefix_len as u32);
-        IpNetIter::new(
-            self.network(),
-            self.broadcast(),
-            step.into(),
-            new_prefix_len,
-        )
+        Ipv4NetIter {
+            start: self.network(),
+            end: self.broadcast().saturating_add(1),
+            step: step,
+            prefix_len: new_prefix_len,
+        }
     }
     
     /// Return an `Iterator` over the host addresses in this network.
@@ -709,16 +734,11 @@ impl fmt::Display for Ipv4Net {
     }
 }
 
-// This is a convenience used by the IpNetIter.
-impl From<(Ipv4Addr, u8)> for Ipv4Net {
-    fn from(t: (Ipv4Addr, u8)) -> Self {
-        Ipv4Net::new(t.0, t.1)
-    }
-}
-
 impl Ipv6Net {    
     /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
     /// length.
+    ///
+    /// If `prefix_len` is greater than 128 it will be clamped to 128.
     ///
     /// # Examples
     ///
@@ -730,9 +750,13 @@ impl Ipv6Net {
     /// let net = Ipv6Net::new(Ipv6Addr::from_str("fd00::").unwrap(), 24);
     /// ```
     pub fn new(ip: Ipv6Addr, prefix_len: u8) -> Ipv6Net {
-        // TODO: Need to implement a proper error handling scheme.
         let prefix_len = if prefix_len > 128 { 128 } else { prefix_len };
         Ipv6Net { addr: ip, prefix_len: prefix_len }
+    }
+
+    /// Returns the prefix length.
+    pub fn prefix_len(&self) -> u8 {
+        self.prefix_len
     }
 
     /// Returns the network mask.
@@ -823,6 +847,9 @@ impl Ipv6Net {
 
     /// Returns the subnets of this network at the given prefix length.
     ///
+    /// If `new_prefix_len` is greater than 128 it will be clamped to
+    /// 128.
+    ///
     /// # Examples
     ///
     /// ```
@@ -864,23 +891,38 @@ impl Ipv6Net {
         }
         res
     }
-
-    /// Experimental! Returns an `Iterator` over the subnets.
-    pub fn iter_subnets(&self, new_prefix_len: u8) -> IpNetIter<Ipv6Addr, Ipv6Net> {
-        // TODO: Need to implement a proper error handling scheme.
+    
+    /// Returns an `Iterator` over the subnets.
+    ///
+    /// This might be deprecated and replaced with a generic implementation
+    /// of `Range` when `Range` and it's required traits are stablized.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::str::FromStr;
+    /// # use ipnet::Ipv6Net;
+    /// #
+    /// let i6 = Ipv6Net::from_str("fd00::/16").unwrap().iter_subnets(18);
+    /// let v6 = vec![
+    ///     Ipv6Net::from_str("fd00::/18").unwrap(),
+    ///     Ipv6Net::from_str("fd00:4000::/18").unwrap(),
+    ///     Ipv6Net::from_str("fd00:8000::/18").unwrap(),
+    ///     Ipv6Net::from_str("fd00:c000::/18").unwrap(),
+    /// ];
+    ///
+    /// assert_eq!(i6.collect::<Vec<Ipv6Net>>(), v6);
+    /// ```
+    pub fn iter_subnets(&self, new_prefix_len: u8) -> Ipv6NetIter {
         let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
-        let step = if new_prefix_len <= 64 {
-            Emu128 { hi: 1 << (64 - new_prefix_len), lo: 0 }
+        let step = Emu128::from([0u64, 1u64]).saturating_shl(128 - new_prefix_len);
+        
+        Ipv6NetIter {
+            start: self.network(),
+            end: self.broadcast(),
+            step: step,
+            prefix_len: new_prefix_len,
         }
-        else {
-            Emu128 { hi: 0, lo: 1 << (128 - new_prefix_len) }
-        };
-        IpNetIter::new(
-            self.network(),
-            self.broadcast(),
-            step.into(),
-            new_prefix_len,
-        )
     }
 
     /// Return an `Iterator` over the host addresses in this network.
@@ -970,12 +1012,5 @@ impl fmt::Debug for Ipv6Net {
 impl fmt::Display for Ipv6Net {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{}/{}", self.addr, self.prefix_len)
-    }
-}
-
-// This is a convenience used by the IpNetIter.
-impl From<(Ipv6Addr, u8)> for Ipv6Net {
-    fn from(t: (Ipv6Addr, u8)) -> Self {
-        Ipv6Net::new(t.0, t.1)
     }
 }

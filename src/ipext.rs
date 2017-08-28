@@ -270,6 +270,18 @@ impl IpAdd<u32> for IpAddr {
         }
     }    
 }
+/*
+impl IpAdd<IpAddr> for IpAddr {
+    type Output = IpAddr;
+    #[inline]
+    fn saturating_add(self, rhs: IpAddr) -> Result<IpAddr, Err> {
+        match (self, rhs) {
+            (IpAddr::V4(a), IpAddr::V4(b)) => a.saturating_add(b),
+            (IpAddr::V6(a), IpAddr::V6(b)) => a.saturating_add(b),
+            _ => 
+        }
+    }
+}*/
 
 macro_rules! ip_add_impl {
     ($(($t:ty, $f:ty),)*) => {
