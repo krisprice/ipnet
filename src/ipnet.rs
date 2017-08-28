@@ -109,10 +109,9 @@ pub struct Ipv6Net {
 ///
 /// ```
 /// use std::str::FromStr;
-/// use ipnet::{Ipv4Net};
-///
+/// use ipnet::Ipv4Net;
+/// 
 /// let i4 = Ipv4Net::from_str("10.0.0.0/24").unwrap().iter_subnets(26);
-///
 /// let v4 = vec![
 ///     Ipv4Net::from_str("10.0.0.0/26").unwrap(),
 ///     Ipv4Net::from_str("10.0.0.64/26").unwrap(),
@@ -152,10 +151,9 @@ impl Iterator for Ipv4NetIter {
 ///
 /// ```
 /// use std::str::FromStr;
-/// use ipnet::{Ipv6Net};
+/// use ipnet::Ipv6Net;
 ///
 /// let i6 = Ipv6Net::from_str("fd00::/16").unwrap().iter_subnets(18);
-///
 /// let v6 = vec![
 ///     Ipv6Net::from_str("fd00::/18").unwrap(),
 ///     Ipv6Net::from_str("fd00:4000::/18").unwrap(),
