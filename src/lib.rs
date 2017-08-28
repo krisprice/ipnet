@@ -12,9 +12,10 @@
 //! * [`IpNet`] represents IP network addresses of either IPv4 or IPv6.
 //! * [`Ipv4Net`] and [`Ipv6Net`] are respectively IPv4 and IPv6 network
 //!   addresses.
-//! * [`IpAddrIter`] provides iteration over a range of IP addresses and
-//!   [`IpNetIter`] does the same for IP network addresses. These are
-//!   returned by methods on `IpNet`, `Ipv4Net`, and `Ipv6Net`.
+//! * [`IpAddrIter`] provides iteration over a range of IP addresses.
+//!   [`Ipv4NetIter`] and [`Ipv6NetIter`] does the same for IP network
+//!   addresses. These are returned by methods on `IpNet`, `Ipv4Net`,
+//!   and `Ipv6Net`.
 //! * The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
 //!   the `Ipv4Addr` and `Ipv6Addr` types to include these operations.
 //! * [`Emu128`] is an emulated 128 bit unsigned integer implemented in
@@ -46,7 +47,8 @@
 //! [`Ipv4Net`]: struct.Ipv4Net.html
 //! [`Ipv6Net`]: struct.Ipv6Net.html
 //! [`IpAddrIter`]: struct.IpAddrIter.html
-//! [`IpNetIter`]: struct.IpNetIter.html
+//! [`Ipv4NetIter`]: struct.Ipv4NetIter.html
+//! [`Ipv6NetIter`]: struct.Ipv6NetIter.html
 //! [`IpAdd`]: trait.IpAdd.html
 //! [`IpSub`]: trait.IpAdd.html
 //! [`IpBitAnd`]: trait.IpAdd.html

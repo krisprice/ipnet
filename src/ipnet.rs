@@ -499,6 +499,11 @@ impl Ipv4Net {
         self.prefix_len
     }
 
+    /// Experimental.
+    pub fn truncated(&self) -> Ipv4Net {
+        Ipv4Net::new(self.network(), self.prefix_len)
+    }
+
     /// Returns the network mask.
     ///
     /// # Examples
@@ -757,6 +762,11 @@ impl Ipv6Net {
     /// Returns the prefix length.
     pub fn prefix_len(&self) -> u8 {
         self.prefix_len
+    }
+
+    /// Experimental.
+    pub fn truncated(&self) -> Ipv6Net {
+        Ipv6Net::new(self.network(), self.prefix_len)
     }
 
     /// Returns the network mask.
