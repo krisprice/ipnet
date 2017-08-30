@@ -185,20 +185,7 @@ impl Iterator for Ipv6NetIter {
 }
 
 // For the time being deref method calls to the IpAddr implemenations.
-
-// TODO: Not sure if there is a way to do this? We need to wrap the
-// contained Ipv4Addr or Ipv6Addr back into an IpAddr and return a
-// reference to that to access the methods on it. But we run into the
-// lifetime issue.
-/*impl Deref for IpNet {
-    type Target = IpAddr;
-    fn deref(&self) -> &Self::Target {
-        match *self {
-            IpNet::V4(ref n) => &IpAddr::from(n.addr.clone()),
-            IpNet::V6(ref n) => &IpAddr::from(n.addr.clone()),
-        }
-    }
-}*/
+// We can't do this for the IpNet enum unfortunately.
 
 impl Deref for Ipv4Net {
     type Target = Ipv4Addr;
