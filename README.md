@@ -6,3 +6,7 @@ See [Crates.io] and the [documentation] for more information.
 
 [Crates.io]: https://crates.io/crates/ipnet
 [documentation]: https://docs.rs/ipnet/
+
+Copyright (c) 2017, Juniper Networks, Inc. All rights reserved.
+
+This code is licensed to you under the Apache License, Version 2.0 (the "License"). You may not use this code except in compliance with the License. This code is not an official Juniper product. You can obtain a copy of the License at: http://www.apache.org/licenses/LICENSE-2.0

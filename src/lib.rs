@@ -35,10 +35,13 @@
 //! * Can we implement the `std::ops::{Add, Sub, BitAnd, BitOr}` traits
 //!   for `Ipv4Addr` and `Ipv6Addr` in the standard library? These are
 //!   common operations on IP addresses.
-//! * Explore the possibility of representing IP network addresses or
-//!   the results of some methods such as `subnets()` as a `Range`.
-//!   However, at this time many of the associated `Range` traits are
-//!   still nightly-only experimental APIs.
+//! * Explore representing the results of methods such as `hosts()` and
+//!   `subnets()` as a `Range`. This requires both the `Add` and `Step`
+//!   traits be implemented on the target type. For the three `IpAddr`
+//!   types implementing `Add` must be done through an enhancement to
+//!   the standard library. For all types, using `Step` means we must
+//!   use nightly because it is not yet stable. This crate only uses
+//!   stable Rust features.
 //!
 //! [`IpAddr`]: https://doc.rust-lang.org/std/net/enum.IpAddr.html
 //! [`Ipv4Addr`]: https://doc.rust-lang.org/std/net/struct.Ipv4Addr.html
