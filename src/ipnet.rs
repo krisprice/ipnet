@@ -343,31 +343,6 @@ impl IpNet {
         }
     }
 
-    /// Returns `true` if this network contains the given network.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::str::FromStr;
-    /// # use ipnet::IpNet;
-    /// #
-    /// let net1 = IpNet::from_str("10.1.0.0/16").unwrap();
-    /// let net2 = IpNet::from_str("10.1.1.0/24").unwrap();
-    /// assert!(net1.contains(&net2));
-    ///
-    /// let net61 = IpNet::from_str("fd00::/16").unwrap();
-    /// let net62 = IpNet::from_str("fd00::/17").unwrap();
-    /// assert!(net61.contains(&net62));
-    /// assert!(!net1.contains(&net62))
-    /// ```
-    pub fn contains(&self, other: &IpNet) -> bool {
-        match (*self, *other) {
-            (IpNet::V4(ref a), IpNet::V4(ref b)) => a.contains(b),
-            (IpNet::V6(ref a), IpNet::V6(ref b)) => a.contains(b),
-            (_, _) => false,
-        }
-    }
-
     /// Returns `true` if this network and the given network are both in
     /// the same supernet.
     ///
@@ -458,6 +433,93 @@ fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
         i -= 1;
     }
     intervals
+}
+
+/// TODO: Document me.
+pub trait Contains<T> {
+    /// Returns `true` if this network contains the given network or
+    /// address.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::IpAddr;
+    /// use std::str::FromStr;
+    /// use ipnet::{IpNet, Contains};
+    /// 
+    /// // Ipv4Net can contain other Ipv4Net and Ipv4Addr.
+    ///
+    /// let n1 = IpNet::from_str("10.1.1.0/24").unwrap();
+    /// let n2 = IpNet::from_str("10.1.1.0/26").unwrap();
+    /// let n3 = IpNet::from_str("10.1.2.0/26").unwrap();
+    /// let ip1 = IpAddr::from_str("10.1.1.1").unwrap();
+    /// let ip2 = IpAddr::from_str("10.1.2.1").unwrap();
+    /// assert!(n1.contains(&n2));
+    /// assert!(n1.contains(&ip1));
+    /// assert!(!n1.contains(&n3));
+    /// assert!(!n1.contains(&ip2));
+    ///
+    /// // Ipv6Net can contain other Ipv6Net and Ipv6Addr.
+    ///
+    /// let n6_1 = IpNet::from_str("fd00::/16").unwrap();
+    /// let n6_2 = IpNet::from_str("fd00::/17").unwrap();
+    /// let n6_3 = IpNet::from_str("fd01::/17").unwrap();
+    /// let ip6_1 = IpAddr::from_str("fd00::1").unwrap();
+    /// let ip6_2 = IpAddr::from_str("fd01::1").unwrap();
+    /// assert!(n6_1.contains(&n6_2));
+    /// assert!(n6_1.contains(&ip6_1));
+    /// assert!(!n6_1.contains(&n6_3));
+    /// assert!(!n6_1.contains(&ip6_2));
+    ///
+    /// // Ipv4Net and Ipv6Net types cannot contain each other.
+    ///
+    /// assert!(!n1.contains(&n6_1) || !n6_1.contains(&n1));
+    /// assert!(!n1.contains(&ip6_1) || !n6_1.contains(&ip1));
+    fn contains(&self, T) -> bool;
+}
+
+impl<'a> Contains<&'a IpNet> for IpNet {
+    fn contains(&self, other: &IpNet) -> bool {
+        match (*self, *other) {
+            (IpNet::V4(ref a), IpNet::V4(ref b)) => a.contains(b),
+            (IpNet::V6(ref a), IpNet::V6(ref b)) => a.contains(b),
+            (_, _) => false,
+        }
+    }
+}
+
+impl<'a> Contains<&'a IpAddr> for IpNet {
+    fn contains(&self, other: &IpAddr) -> bool {
+        match (*self, *other) {
+            (IpNet::V4(ref a), IpAddr::V4(ref b)) => a.contains(b),
+            (IpNet::V6(ref a), IpAddr::V6(ref b)) => a.contains(b),
+            (_, _) => false,
+        }
+    }
+}
+
+impl<'a> Contains<&'a Ipv4Net> for Ipv4Net {
+    fn contains(&self, other: &'a Ipv4Net) -> bool {
+        self.network() <= other.network() && other.broadcast() <= self.broadcast()
+    }
+}
+
+impl<'a> Contains<&'a Ipv4Addr> for Ipv4Net {
+    fn contains(&self, other: &'a Ipv4Addr) -> bool {
+        self.network() <= *other && *other <= self.broadcast()
+    }
+}
+
+impl<'a> Contains<&'a Ipv6Net> for Ipv6Net {
+    fn contains(&self, other: &'a Ipv6Net) -> bool {
+        self.network() <= other.network() && other.broadcast() <= self.broadcast()
+    }
+}
+
+impl<'a> Contains<&'a Ipv6Addr> for Ipv6Net {
+    fn contains(&self, other: &'a Ipv6Addr) -> bool {
+        self.network() <= *other && *other <= self.broadcast()
+    }
 }
 
 impl Ipv4Net {
@@ -642,23 +704,6 @@ impl Ipv4Net {
             self.network().saturating_add(1u32),
             self.broadcast().saturating_sub(1u32),
         )
-    }
-
-    /// Returns `true` if this network contains the given network.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::str::FromStr;
-    /// # use ipnet::Ipv4Net;
-    /// #
-    /// let net1 = Ipv4Net::from_str("10.1.0.0/16").unwrap();
-    /// let net2 = Ipv4Net::from_str("10.1.1.0/24").unwrap();
-    /// assert!(net1.contains(&net2));
-    /// ```
-    pub fn contains(&self, other: &Ipv4Net) -> bool {
-        // TODO: Contains should also work for IP addresses.
-        self.network() <= other.network() && self.broadcast() >= other.broadcast()
     }
     
     /// Returns `true` if this network and the given network are both in
@@ -926,23 +971,6 @@ impl Ipv6Net {
             self.network(),
             self.broadcast(),
         )
-    }
-
-    /// Returns `true` if this network contains the given network.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::str::FromStr;
-    /// # use ipnet::Ipv6Net;
-    /// #
-    /// let net1 = Ipv6Net::from_str("fd00::/16").unwrap();
-    /// let net2 = Ipv6Net::from_str("fd00::/17").unwrap();
-    /// assert!(net1.contains(&net2));
-    /// ```
-    pub fn contains(&self, other: &Ipv6Net) -> bool {
-        // TODO: Contains should also work for IP addresses.
-        self.network() <= other.network() && self.broadcast() >= other.broadcast()
     }
 
     /// Returns `true` if this network and the given network are both in
