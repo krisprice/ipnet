@@ -708,14 +708,10 @@ impl Ipv4Net {
     
     /// Return an `Iterator` over the host addresses in this network.
     pub fn hosts(&self) -> IpAddrIter<Ipv4Addr> {
-        if self.prefix_len < 32 {
-
-        }
-        else {
-            
-        }
-
-        IpAddrIter::new(start, end)
+        IpAddrIter::new(
+            self.network(),
+            self.broadcast(),
+        )
     }
     
     /// Returns `true` if this network and the given network are both in
