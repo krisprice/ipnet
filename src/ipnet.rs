@@ -448,7 +448,9 @@ pub trait Contains<T> {
     /// use std::str::FromStr;
     /// use ipnet::{IpNet, Contains};
     /// ```
+    ///
     /// Ipv4Net can contain other Ipv4Net and Ipv4Addr.
+    ///
     /// ```
     /// let n1 = IpNet::from_str("10.1.1.0/24").unwrap();
     /// let n2 = IpNet::from_str("10.1.1.0/26").unwrap();
@@ -460,7 +462,9 @@ pub trait Contains<T> {
     /// assert!(!n1.contains(&n3));
     /// assert!(!n1.contains(&ip2));
     /// ```
+    ///
     /// Ipv6Net can contain other Ipv6Net and Ipv6Addr.
+    ///
     /// ```
     /// let n6_1 = IpNet::from_str("fd00::/16").unwrap();
     /// let n6_2 = IpNet::from_str("fd00::/17").unwrap();
@@ -472,12 +476,14 @@ pub trait Contains<T> {
     /// assert!(!n6_1.contains(&n6_3));
     /// assert!(!n6_1.contains(&ip6_2));
     /// ```
+    ///
     /// Ipv4Net and Ipv6Net types cannot contain each other.
+    ///
     /// ```
     /// assert!(!n1.contains(&n6_1) || !n6_1.contains(&n1));
     /// assert!(!n1.contains(&ip6_1) || !n6_1.contains(&ip1));
     /// ```
-    fn contains(&self, T) -> bool;
+    fn contains(&self, other: T) -> bool;
 }
 
 impl<'a> Contains<&'a IpNet> for IpNet {
@@ -702,10 +708,14 @@ impl Ipv4Net {
     
     /// Return an `Iterator` over the host addresses in this network.
     pub fn hosts(&self) -> IpAddrIter<Ipv4Addr> {
-        IpAddrIter::new(
-            self.network().saturating_add(1u32),
-            self.broadcast().saturating_sub(1u32),
-        )
+        if self.prefix_len < 32 {
+
+        }
+        else {
+            
+        }
+
+        IpAddrIter::new(start, end)
     }
     
     /// Returns `true` if this network and the given network are both in
