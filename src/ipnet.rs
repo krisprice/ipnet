@@ -914,7 +914,7 @@ impl<'a> Contains<&'a IpNet> for IpNet {
         match (*self, *other) {
             (IpNet::V4(ref a), IpNet::V4(ref b)) => a.contains(b),
             (IpNet::V6(ref a), IpNet::V6(ref b)) => a.contains(b),
-            (_, _) => false,
+            _ => false,
         }
     }
 }
@@ -924,7 +924,7 @@ impl<'a> Contains<&'a IpAddr> for IpNet {
         match (*self, *other) {
             (IpNet::V4(ref a), IpAddr::V4(ref b)) => a.contains(b),
             (IpNet::V6(ref a), IpAddr::V6(ref b)) => a.contains(b),
-            (_, _) => false,
+            _ => false,
         }
     }
 }
