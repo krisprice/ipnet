@@ -4,6 +4,8 @@
 //! the `Ipv4Addr` and `Ipv6Addr` types to provide their respective
 //! operations.
 
+use std::cmp::Ordering::{Less, Equal};
+use std::mem;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use emu128::Emu128;
 
@@ -120,17 +122,58 @@ impl<T> IpAddrIter<T> {
     }
 }
 
+// A barebones copy of the current unstable Step trait.
+pub trait IpStep {
+    fn replace_zero(&mut self) -> Self;
+    fn add_one(&self) -> Self;
+}
+
+impl IpStep for IpAddr {
+    fn replace_zero(&mut self) -> Self {
+        match *self {
+            IpAddr::V4(ref mut a) => IpAddr::V4(a.replace_zero()),
+            IpAddr::V6(ref mut a) => IpAddr::V6(a.replace_zero()),
+        }
+    }
+    fn add_one(&self) -> Self {
+        self.saturating_add(1)   
+    }
+}
+
+impl IpStep for Ipv4Addr {
+    fn replace_zero(&mut self) -> Self {
+        mem::replace(self, Ipv4Addr::new(0, 0, 0, 0))
+    }
+    fn add_one(&self) -> Self {
+        self.saturating_add(1)
+    }
+}
+
+impl IpStep for Ipv6Addr {
+    fn replace_zero(&mut self) -> Self {
+        mem::replace(self, Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0))
+    }
+    fn add_one(&self) -> Self {
+        self.saturating_add(1)
+    }
+}
+
 impl<T> Iterator for IpAddrIter<T>
-    where T: Copy + PartialOrd + IpAdd<u32, Output=T> {
+    where T: Copy + PartialOrd + IpStep {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.start > self.end {
-            return None;
+        match self.start.partial_cmp(&self.end) {
+            Some(Less) => {
+                let next = self.start.add_one();
+                Some(mem::replace(&mut self.start, next))
+            },
+            Some(Equal) => {
+                self.end.replace_zero();
+                Some(self.start)
+            },
+            _ => None,
         }
-        let res = Some(self.start);
-        self.start = self.start.saturating_add(1);
-        res
     }
 }
 
@@ -360,4 +403,50 @@ ip_bitops_impl! {
     (Ipv4Addr, u32, u32),
     (Ipv6Addr, Ipv6Addr, Emu128),
     (Ipv6Addr, Emu128, Emu128),
+}
+
+#[cfg(test)]
+mod tests {
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+    use std::str::FromStr;
+    use super::*;
+
+    #[test]
+    fn test_ipaddriter() {
+        let i = IpAddrIter::new(IpAddr::from_str("10.0.0.0").unwrap(), IpAddr::from_str("10.0.0.3").unwrap());
+        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
+            IpAddr::from_str("10.0.0.0").unwrap(),
+            IpAddr::from_str("10.0.0.1").unwrap(),
+            IpAddr::from_str("10.0.0.2").unwrap(),
+            IpAddr::from_str("10.0.0.3").unwrap(),
+        ]);
+
+        let i = IpAddrIter::new(IpAddr::from_str("255.255.255.254").unwrap(), IpAddr::from_str("255.255.255.255").unwrap());
+        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
+            IpAddr::from_str("255.255.255.254").unwrap(),
+            IpAddr::from_str("255.255.255.255").unwrap(),
+        ]);
+
+        let i = IpAddrIter::new(Ipv4Addr::from_str("10.0.0.0").unwrap(), Ipv4Addr::from_str("10.0.0.3").unwrap());
+        assert_eq!(i.collect::<Vec<Ipv4Addr>>(), vec![
+            Ipv4Addr::from_str("10.0.0.0").unwrap(),
+            Ipv4Addr::from_str("10.0.0.1").unwrap(),
+            Ipv4Addr::from_str("10.0.0.2").unwrap(),
+            Ipv4Addr::from_str("10.0.0.3").unwrap(),
+        ]);
+
+        let i = IpAddrIter::new(Ipv4Addr::from_str("255.255.255.254").unwrap(), Ipv4Addr::from_str("255.255.255.255").unwrap());
+        assert_eq!(i.collect::<Vec<Ipv4Addr>>(), vec![
+            Ipv4Addr::from_str("255.255.255.254").unwrap(),
+            Ipv4Addr::from_str("255.255.255.255").unwrap(),
+        ]);
+
+        let i = IpAddrIter::new(Ipv6Addr::from_str("fd00::").unwrap(), Ipv6Addr::from_str("fd00::3").unwrap());
+        assert_eq!(i.collect::<Vec<Ipv6Addr>>(), vec![
+            Ipv6Addr::from_str("fd00::").unwrap(),
+            Ipv6Addr::from_str("fd00::1").unwrap(),
+            Ipv6Addr::from_str("fd00::2").unwrap(),
+            Ipv6Addr::from_str("fd00::3").unwrap(),
+        ]);
+    }
 }
