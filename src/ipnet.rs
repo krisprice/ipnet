@@ -6,7 +6,7 @@ use std::ops::Deref;
 use std::option::Option::{Some, None};
 
 use emu128::Emu128;
-use ipext::{IpAddrIter, IpAdd, IpSub, IpBitAnd, IpBitOr};
+use ipext::{IpAddrIter, IpAdd, IpBitAnd, IpBitOr};
 use saturating_shifts::{SaturatingShl, SaturatingShr};
 
 /// An IP network address, either IPv4 or IPv6.
@@ -111,7 +111,7 @@ pub struct Ipv6Net {
 /// use std::str::FromStr;
 /// use ipnet::Ipv4Net;
 /// 
-/// let i4 = Ipv4Net::from_str("10.0.0.0/24").unwrap().iter_subnets(26);
+/// let i4 = Ipv4Net::from_str("10.0.0.0/24").unwrap().subnets(26);
 /// let v4 = vec![
 ///     Ipv4Net::from_str("10.0.0.0/26").unwrap(),
 ///     Ipv4Net::from_str("10.0.0.64/26").unwrap(),
@@ -133,7 +133,7 @@ impl Iterator for Ipv4NetIter {
     type Item = Ipv4Net;
     
     fn next(&mut self) -> Option<Self::Item> {
-        if self.start < self.end {
+        if self.start <= self.end {
             let res =  Some(Ipv4Net::new(self.start, self.prefix_len));
             self.start = self.start.saturating_add(self.step);
             return res;
@@ -153,7 +153,7 @@ impl Iterator for Ipv4NetIter {
 /// use std::str::FromStr;
 /// use ipnet::Ipv6Net;
 ///
-/// let i6 = Ipv6Net::from_str("fd00::/16").unwrap().iter_subnets(18);
+/// let i6 = Ipv6Net::from_str("fd00::/16").unwrap().subnets(18);
 /// let v6 = vec![
 ///     Ipv6Net::from_str("fd00::/18").unwrap(),
 ///     Ipv6Net::from_str("fd00:4000::/18").unwrap(),
@@ -175,7 +175,7 @@ impl Iterator for Ipv6NetIter {
     type Item = Ipv6Net;
     
     fn next(&mut self) -> Option<Self::Item> {
-        if self.start < self.end {
+        if self.start <= self.end {
             let res =  Some(Ipv6Net::new(self.start, self.prefix_len));
             self.start = self.start.saturating_add(self.step);
             return res;
@@ -435,101 +435,6 @@ fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
     intervals
 }
 
-/// Provides a method to test if a network contains another network or
-/// address.
-pub trait Contains<T> {
-    /// Returns `true` if this network contains the given network or
-    /// address.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::net::IpAddr;
-    /// use std::str::FromStr;
-    /// use ipnet::{IpNet, Contains};
-    /// ```
-    ///
-    /// Ipv4Net can contain other Ipv4Net and Ipv4Addr.
-    ///
-    /// ```
-    /// let n1 = IpNet::from_str("10.1.1.0/24").unwrap();
-    /// let n2 = IpNet::from_str("10.1.1.0/26").unwrap();
-    /// let n3 = IpNet::from_str("10.1.2.0/26").unwrap();
-    /// let ip1 = IpAddr::from_str("10.1.1.1").unwrap();
-    /// let ip2 = IpAddr::from_str("10.1.2.1").unwrap();
-    /// assert!(n1.contains(&n2));
-    /// assert!(n1.contains(&ip1));
-    /// assert!(!n1.contains(&n3));
-    /// assert!(!n1.contains(&ip2));
-    /// ```
-    ///
-    /// Ipv6Net can contain other Ipv6Net and Ipv6Addr.
-    ///
-    /// ```
-    /// let n6_1 = IpNet::from_str("fd00::/16").unwrap();
-    /// let n6_2 = IpNet::from_str("fd00::/17").unwrap();
-    /// let n6_3 = IpNet::from_str("fd01::/17").unwrap();
-    /// let ip6_1 = IpAddr::from_str("fd00::1").unwrap();
-    /// let ip6_2 = IpAddr::from_str("fd01::1").unwrap();
-    /// assert!(n6_1.contains(&n6_2));
-    /// assert!(n6_1.contains(&ip6_1));
-    /// assert!(!n6_1.contains(&n6_3));
-    /// assert!(!n6_1.contains(&ip6_2));
-    /// ```
-    ///
-    /// Ipv4Net and Ipv6Net types cannot contain each other.
-    ///
-    /// ```
-    /// assert!(!n1.contains(&n6_1) || !n6_1.contains(&n1));
-    /// assert!(!n1.contains(&ip6_1) || !n6_1.contains(&ip1));
-    /// ```
-    fn contains(&self, other: T) -> bool;
-}
-
-impl<'a> Contains<&'a IpNet> for IpNet {
-    fn contains(&self, other: &IpNet) -> bool {
-        match (*self, *other) {
-            (IpNet::V4(ref a), IpNet::V4(ref b)) => a.contains(b),
-            (IpNet::V6(ref a), IpNet::V6(ref b)) => a.contains(b),
-            (_, _) => false,
-        }
-    }
-}
-
-impl<'a> Contains<&'a IpAddr> for IpNet {
-    fn contains(&self, other: &IpAddr) -> bool {
-        match (*self, *other) {
-            (IpNet::V4(ref a), IpAddr::V4(ref b)) => a.contains(b),
-            (IpNet::V6(ref a), IpAddr::V6(ref b)) => a.contains(b),
-            (_, _) => false,
-        }
-    }
-}
-
-impl<'a> Contains<&'a Ipv4Net> for Ipv4Net {
-    fn contains(&self, other: &'a Ipv4Net) -> bool {
-        self.network() <= other.network() && other.broadcast() <= self.broadcast()
-    }
-}
-
-impl<'a> Contains<&'a Ipv4Addr> for Ipv4Net {
-    fn contains(&self, other: &'a Ipv4Addr) -> bool {
-        self.network() <= *other && *other <= self.broadcast()
-    }
-}
-
-impl<'a> Contains<&'a Ipv6Net> for Ipv6Net {
-    fn contains(&self, other: &'a Ipv6Net) -> bool {
-        self.network() <= other.network() && other.broadcast() <= self.broadcast()
-    }
-}
-
-impl<'a> Contains<&'a Ipv6Addr> for Ipv6Net {
-    fn contains(&self, other: &'a Ipv6Addr) -> bool {
-        self.network() <= *other && *other <= self.broadcast()
-    }
-}
-
 impl Ipv4Net {
     /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
     /// length.
@@ -640,67 +545,56 @@ impl Ipv4Net {
         Ipv4Net::new(self.addr.clone(), self.prefix_len - 1)
     }
 
-    /// Returns the subnets of this network at the given prefix length.
+    /// Returns an `Iterator` over the subnets of this network with the
+    /// given prefix length.
+    ///
+    /// If `new_prefix_len` is less than the current prefix length or
+    /// greater than 32 it will be clamped to both respectively.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use std::net::Ipv4Addr;
     /// # use std::str::FromStr;
     /// # use ipnet::Ipv4Net;
     /// #
-    /// let net = Ipv4Net::from_str("10.1.0.0/16").unwrap();
-    /// assert_eq!(net.subnets(18), vec![
-    ///     Ipv4Net::from_str("10.1.0.0/18").unwrap(),
-    ///     Ipv4Net::from_str("10.1.64.0/18").unwrap(),
-    ///     Ipv4Net::from_str("10.1.128.0/18").unwrap(),
-    ///     Ipv4Net::from_str("10.1.192.0/18").unwrap(),
-    /// ]);
+    /// let net = Ipv4Net::from_str("10.0.0.0/24").unwrap();
+    /// assert_eq!(
+    ///     net.subnets(26).collect::<Vec<Ipv4Net>>(),
+    ///     vec![
+    ///         Ipv4Net::from_str("10.0.0.0/26").unwrap(),
+    ///         Ipv4Net::from_str("10.0.0.64/26").unwrap(),
+    ///         Ipv4Net::from_str("10.0.0.128/26").unwrap(),
+    ///         Ipv4Net::from_str("10.0.0.192/26").unwrap(),
+    ///     ]
+    /// );
+    ///
+    /// let net = Ipv4Net::from_str("10.0.0.0/30").unwrap();
+    /// assert_eq!(
+    ///     net.subnets(32).collect::<Vec<Ipv4Net>>(),
+    ///     vec![
+    ///         Ipv4Net::from_str("10.0.0.0/32").unwrap(),
+    ///         Ipv4Net::from_str("10.0.0.1/32").unwrap(),
+    ///         Ipv4Net::from_str("10.0.0.2/32").unwrap(),
+    ///         Ipv4Net::from_str("10.0.0.3/32").unwrap(),
+    ///     ]
+    /// );
     /// ```
-    pub fn subnets(&self, new_prefix_len: u8) -> Vec<Ipv4Net> {
-        // TODO: Need to implement a proper error handling scheme.
-        if new_prefix_len <= self.prefix_len { return Vec::new(); }
-        let new_prefix_len = if new_prefix_len > 32 { 32 } else { new_prefix_len };
-
-        let mut network = self.network();
-        let broadcast = self.broadcast();
-        let step = 2u32.pow(32 - new_prefix_len as u32);
-        let mut res: Vec<Ipv4Net> = Vec::new();
-
-        while network <= broadcast {
-            res.push(Ipv4Net::new(network, new_prefix_len));
-            network = network.saturating_add(step);
+    pub fn subnets(&self, new_prefix_len: u8) -> Ipv4NetIter {
+        let new_prefix_len = if new_prefix_len > 32 {
+            32
         }
-        res
-    }
+        else if new_prefix_len < self.prefix_len {
+            self.prefix_len
+        }
+        else {
+            new_prefix_len
+        };
 
-    /// Returns an `Iterator` over the subnets.
-    ///
-    /// This might be deprecated and replaced with a generic implementation
-    /// of `Range` when `Range` and it's required traits are stablized.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::str::FromStr;
-    /// # use ipnet::Ipv4Net;
-    /// #
-    /// let i4 = Ipv4Net::from_str("10.0.0.0/24").unwrap().iter_subnets(26);
-    /// let v4 = vec![
-    ///     Ipv4Net::from_str("10.0.0.0/26").unwrap(),
-    ///     Ipv4Net::from_str("10.0.0.64/26").unwrap(),
-    ///     Ipv4Net::from_str("10.0.0.128/26").unwrap(),
-    ///     Ipv4Net::from_str("10.0.0.192/26").unwrap(),
-    /// ];
-    ///
-    /// assert_eq!(i4.collect::<Vec<Ipv4Net>>(), v4);
-    /// ```
-    pub fn iter_subnets(&self, new_prefix_len: u8) -> Ipv4NetIter {
-        let new_prefix_len = if new_prefix_len > 32 { 32 } else { new_prefix_len };
         let step = 2u32.pow(32 - new_prefix_len as u32);
+
         Ipv4NetIter {
             start: self.network(),
-            end: self.broadcast().saturating_add(1),
+            end: self.broadcast(),
             step: step,
             prefix_len: new_prefix_len,
         }
@@ -892,77 +786,51 @@ impl Ipv6Net {
     pub fn supernet(&self) -> Ipv6Net {
         Ipv6Net::new(self.addr.clone(), self.prefix_len - 1)
     }
-
-    /// Returns the subnets of this network at the given prefix length.
+    
+    /// Returns an `Iterator` over the subnets of this network with the
+    /// given prefix length.
     ///
-    /// If `new_prefix_len` is greater than 128 it will be clamped to
-    /// 128.
+    /// If `new_prefix_len` is less than the current prefix length or
+    /// greater than 128 it will be clamped to both respectively.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use std::net::Ipv6Addr;
     /// # use std::str::FromStr;
     /// # use ipnet::Ipv6Net;
-    /// #
     /// let net = Ipv6Net::from_str("fd00::/16").unwrap();
-    /// assert_eq!(net.subnets(18), vec![
-    ///     Ipv6Net::from_str("fd00::/18").unwrap(),
-    ///     Ipv6Net::from_str("fd00:4000::/18").unwrap(),
-    ///     Ipv6Net::from_str("fd00:8000::/18").unwrap(),
-    ///     Ipv6Net::from_str("fd00:c000::/18").unwrap(),
-    /// ]);
+    /// assert_eq!(
+    ///     net.subnets(18).collect::<Vec<Ipv6Net>>(),
+    ///     vec![
+    ///         Ipv6Net::from_str("fd00::/18").unwrap(),
+    ///         Ipv6Net::from_str("fd00:4000::/18").unwrap(),
+    ///         Ipv6Net::from_str("fd00:8000::/18").unwrap(),
+    ///         Ipv6Net::from_str("fd00:c000::/18").unwrap(),
+    ///     ]
+    /// );
+    ///
+    /// let net = Ipv6Net::from_str("fd00::/126").unwrap();
+    /// assert_eq!(
+    ///     net.subnets(128).collect::<Vec<Ipv6Net>>(),
+    ///     vec![
+    ///         Ipv6Net::from_str("fd00::/128").unwrap(),
+    ///         Ipv6Net::from_str("fd00::1/128").unwrap(),
+    ///         Ipv6Net::from_str("fd00::2/128").unwrap(),
+    ///         Ipv6Net::from_str("fd00::3/128").unwrap(),
+    ///     ]
+    /// );
     /// ```
-    pub fn subnets(&self, new_prefix_len: u8) -> Vec<Ipv6Net> {
-        // TODO: Is there a nicer way to do this? Using u128 types would
-        // be nice but they're not marked as stable yet.
-        // TODO: Should this return an iterator instead of a vector?
-        // TODO: Need to implement a proper error handling scheme.
-        if new_prefix_len <= self.prefix_len { return Vec::new(); }
-        let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
-
-        let mut network = Emu128::from(self.network());
-        let broadcast = Emu128::from(self.broadcast());
-
-        let step = if new_prefix_len <= 64 {
-            Emu128 { hi: 1 << (64 - new_prefix_len), lo: 0 }
+    pub fn subnets(&self, new_prefix_len: u8) -> Ipv6NetIter {
+        let new_prefix_len = if new_prefix_len > 128 {
+            128
+        }
+        else if new_prefix_len < self.prefix_len {
+            self.prefix_len
         }
         else {
-            Emu128 { hi: 0, lo: 1 << (128 - new_prefix_len) }
+            new_prefix_len
         };
-        
-        let mut res: Vec<Ipv6Net> = Vec::new();
-        
-        while network <= broadcast {
-            res.push(Ipv6Net::new(network.into(), new_prefix_len));
-            network = network.saturating_add(step);
-        }
-        res
-    }
-    
-    /// Returns an `Iterator` over the subnets.
-    ///
-    /// This might be deprecated and replaced with a generic implementation
-    /// of `Range` when `Range` and it's required traits are stablized.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::str::FromStr;
-    /// # use ipnet::Ipv6Net;
-    /// #
-    /// let i6 = Ipv6Net::from_str("fd00::/16").unwrap().iter_subnets(18);
-    /// let v6 = vec![
-    ///     Ipv6Net::from_str("fd00::/18").unwrap(),
-    ///     Ipv6Net::from_str("fd00:4000::/18").unwrap(),
-    ///     Ipv6Net::from_str("fd00:8000::/18").unwrap(),
-    ///     Ipv6Net::from_str("fd00:c000::/18").unwrap(),
-    /// ];
-    ///
-    /// assert_eq!(i6.collect::<Vec<Ipv6Net>>(), v6);
-    /// ```
-    pub fn iter_subnets(&self, new_prefix_len: u8) -> Ipv6NetIter {
-        let new_prefix_len = if new_prefix_len > 128 { 128 } else { new_prefix_len };
+
         let step = Emu128::from([0u64, 1u64]).saturating_shl(128 - new_prefix_len);
         
         Ipv6NetIter {
@@ -1043,5 +911,113 @@ impl fmt::Debug for Ipv6Net {
 impl fmt::Display for Ipv6Net {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{}/{}", self.addr, self.prefix_len)
+    }
+}
+
+/// Provides a `contains()` method to test if a network contains another network or
+/// address.
+pub trait Contains<T> {
+    /// Returns `true` if this network contains the given network or
+    /// address.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::IpAddr;
+    /// use std::str::FromStr;
+    /// use ipnet::{IpNet, Contains};
+    /// ```
+    ///
+    /// `Ipv4Net` can contain `Ipv4Net` and `Ipv4Addr`.
+    ///
+    /// ```
+    /// # use std::net::IpAddr;
+    /// # use std::str::FromStr;
+    /// # use ipnet::{IpNet, Contains};
+    /// let n1 = IpNet::from_str("10.1.1.0/24").unwrap();
+    /// let n2 = IpNet::from_str("10.1.1.0/26").unwrap();
+    /// let n3 = IpNet::from_str("10.1.2.0/26").unwrap();
+    /// let ip1 = IpAddr::from_str("10.1.1.1").unwrap();
+    /// let ip2 = IpAddr::from_str("10.1.2.1").unwrap();
+    /// assert!(n1.contains(&n2));
+    /// assert!(n1.contains(&ip1));
+    /// assert!(!n1.contains(&n3));
+    /// assert!(!n1.contains(&ip2));
+    /// ```
+    ///
+    /// `Ipv6Net` can contain `Ipv6Net` and `Ipv6Addr`.
+    ///
+    /// ```
+    /// # use std::net::IpAddr;
+    /// # use std::str::FromStr;
+    /// # use ipnet::{IpNet, Contains};
+    /// let n6_1 = IpNet::from_str("fd00::/16").unwrap();
+    /// let n6_2 = IpNet::from_str("fd00::/17").unwrap();
+    /// let n6_3 = IpNet::from_str("fd01::/17").unwrap();
+    /// let ip6_1 = IpAddr::from_str("fd00::1").unwrap();
+    /// let ip6_2 = IpAddr::from_str("fd01::1").unwrap();
+    /// assert!(n6_1.contains(&n6_2));
+    /// assert!(n6_1.contains(&ip6_1));
+    /// assert!(!n6_1.contains(&n6_3));
+    /// assert!(!n6_1.contains(&ip6_2));
+    /// ```
+    ///
+    /// `Ipv4Net` and `Ipv6Net` types cannot contain each other.
+    ///
+    /// ```
+    /// # use std::net::IpAddr;
+    /// # use std::str::FromStr;
+    /// # use ipnet::{IpNet, Contains};
+    /// # let n1 = IpNet::from_str("10.1.1.0/24").unwrap();
+    /// # let ip1 = IpAddr::from_str("10.1.1.1").unwrap();
+    /// # let n6_1 = IpNet::from_str("fd00::/16").unwrap();
+    /// # let ip6_1 = IpAddr::from_str("fd00::1").unwrap();
+    /// assert!(!n1.contains(&n6_1) || !n6_1.contains(&n1));
+    /// assert!(!n1.contains(&ip6_1) || !n6_1.contains(&ip1));
+    /// ```
+    fn contains(&self, other: T) -> bool;
+}
+
+impl<'a> Contains<&'a IpNet> for IpNet {
+    fn contains(&self, other: &IpNet) -> bool {
+        match (*self, *other) {
+            (IpNet::V4(ref a), IpNet::V4(ref b)) => a.contains(b),
+            (IpNet::V6(ref a), IpNet::V6(ref b)) => a.contains(b),
+            (_, _) => false,
+        }
+    }
+}
+
+impl<'a> Contains<&'a IpAddr> for IpNet {
+    fn contains(&self, other: &IpAddr) -> bool {
+        match (*self, *other) {
+            (IpNet::V4(ref a), IpAddr::V4(ref b)) => a.contains(b),
+            (IpNet::V6(ref a), IpAddr::V6(ref b)) => a.contains(b),
+            (_, _) => false,
+        }
+    }
+}
+
+impl<'a> Contains<&'a Ipv4Net> for Ipv4Net {
+    fn contains(&self, other: &'a Ipv4Net) -> bool {
+        self.network() <= other.network() && other.broadcast() <= self.broadcast()
+    }
+}
+
+impl<'a> Contains<&'a Ipv4Addr> for Ipv4Net {
+    fn contains(&self, other: &'a Ipv4Addr) -> bool {
+        self.network() <= *other && *other <= self.broadcast()
+    }
+}
+
+impl<'a> Contains<&'a Ipv6Net> for Ipv6Net {
+    fn contains(&self, other: &'a Ipv6Net) -> bool {
+        self.network() <= other.network() && other.broadcast() <= self.broadcast()
+    }
+}
+
+impl<'a> Contains<&'a Ipv6Addr> for Ipv6Net {
+    fn contains(&self, other: &'a Ipv6Addr) -> bool {
+        self.network() <= *other && *other <= self.broadcast()
     }
 }

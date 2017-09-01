@@ -31,32 +31,11 @@ use std::ops::{BitAnd, BitOr, Shr, Shl};
 /// # Examples
 ///
 /// ```
-/// use std::u64;
 /// use ipnet::Emu128;
 ///
-/// let i0 = Emu128::min_value();
-/// let i1 = Emu128::from([1, 1]);
-/// let i2 = Emu128::max_value();
-/// let i3 = Emu128::from([1, u64::MAX]);
-///
-/// assert_eq!(i0, Emu128 { hi: 0, lo: 0 });
-/// assert_eq!(i2, Emu128 { hi: std::u64::MAX, lo: std::u64::MAX });
-/// assert_eq!(i0.saturating_sub(i2), Emu128::min_value());
-/// assert_eq!(i2.saturating_add(i2), Emu128::max_value());
-/// assert_eq!(i1.saturating_add(i1), Emu128 { hi: 2, lo: 2 });
-/// assert_eq!(i2.saturating_sub(i1), Emu128 { hi: std::u64::MAX-1, lo: std::u64::MAX-1 });
-/// assert_eq!(i3.saturating_add(i1), Emu128 { hi: 3, lo: 0 });
-/// assert_eq!(i3.saturating_sub(i1), Emu128 { hi: 0, lo: std::u64::MAX-1 });
-/// assert_eq!(i1 << 1, Emu128 { hi: 2, lo: 2 });
-/// assert_eq!(i1 << 63, Emu128 { hi: 1 << 63, lo: 1 << 63 });
-/// assert_eq!(i1 << 127, Emu128 { hi: 1 << 63, lo: 0 });
-/// assert_eq!(i1 >> 1, Emu128 { hi: 0, lo: 1u64 << 63 });
-/// assert_eq!(i1 >> 63, Emu128 { hi: 0, lo: 2 });
-/// assert_eq!(i1 >> 127, Emu128 { hi: 0, lo: 0 });
-/// assert_eq!(i0 | i1, Emu128 { hi: 1, lo: 1 });
-/// assert_eq!(i1 & i1, Emu128 { hi: 1, lo: 1 });
-/// assert_eq!(i1 & i3, Emu128 { hi: 1, lo: 1 });
-/// assert_eq!(i1 | i3, Emu128 { hi: 1, lo: std::u64::MAX });
+/// let i1 = Emu128::from(1); // convert from u32
+/// let i2 = Emu128::from([1, 1]); // convert from [u64; 2]
+/// let slice: [u64; 2] = i2.into(); // convert into [u64; 2]
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Emu128 {
@@ -104,6 +83,10 @@ impl Shl<u8> for Emu128 {
     type Output = Self;
 
     fn shl(self, rhs: u8) -> Emu128 {
+        if rhs == 0 {
+            return self;
+        }
+
         if rhs < 64 {
             Emu128 {
                 hi: self.hi << rhs | self.lo >> (64-rhs),
@@ -123,6 +106,10 @@ impl Shr<u8> for Emu128 {
     type Output = Self;
 
     fn shr(self, rhs: u8) -> Emu128 {
+        if rhs == 0 {
+            return self;
+        }
+        
         if rhs < 64 {
             Emu128 {
                 hi: self.hi >> rhs,
@@ -158,15 +145,6 @@ impl BitOr for Emu128 {
     }
 }
 
-/// Convert a `u32` into an `EMU128`.
-///
-/// # Examples
-///
-/// ```
-/// use ipnet::Emu128;
-///
-/// assert_eq!(Emu128::from([0u64, 1u64]), Emu128::from(1u32));
-/// ```
 impl From<u32> for Emu128 {
     fn from(u: u32) -> Self {
         Emu128 {
@@ -176,17 +154,6 @@ impl From<u32> for Emu128 {
     }
 }
 
-/// Convert an a `[u64; 2]` slice into an `Emu128`.
-///
-/// # Examples
-///
-/// ```
-/// use ipnet::Emu128;
-///
-/// let u = Emu128::from([123u64, 123u64]);
-/// let v: [u64; 2] = u.into();
-/// assert_eq!(v, [123u64, 123u64]);
-/// ```
 impl From<[u64; 2]> for Emu128 {
     fn from(slice: [u64; 2]) -> Self {
         Emu128 {
@@ -196,19 +163,93 @@ impl From<[u64; 2]> for Emu128 {
     }
 }
 
-/// Convert an Emu128 into a `[u64; 2]` slice.
-///
-/// # Examples
-///
-/// ```
-/// use ipnet::Emu128;
-///
-/// let u = Emu128::from([123u64, 123u64]);
-/// let v: [u64; 2] = u.into();
-/// assert_eq!(v, [123u64, 123u64]);
-/// ```
 impl From<Emu128> for [u64; 2] {
     fn from(u: Emu128) -> Self {
         [u.hi, u.lo]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::u64;
+    use super::*;
+
+    #[test]
+    fn test_emu128_from() {
+        assert_eq!(Emu128::from(123), Emu128 { hi: 0, lo: 123 });
+        assert_eq!(Emu128::from([123, 123]), Emu128 { hi: 123, lo: 123 });
+        let slice: [u64; 2] = (Emu128 { hi: 123, lo: 123 }).into();
+        assert_eq!(slice, [123u64, 123u64]);
+    }
+
+    #[test]
+    fn test_emu128_min_max_value() {
+        assert_eq!(Emu128::min_value(), Emu128 { hi: 0, lo: 0 });
+        assert_eq!(Emu128::max_value(), Emu128 { hi: u64::MAX, lo: u64::MAX });
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_emu128_shl_overflow() {
+        Emu128::max_value() << 128;
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_emu128_shr_overflow() {
+        Emu128::max_value() >> 128;
+    }
+
+    #[test]
+    fn test_emu128_shl_shr() {
+        let i = Emu128::from([1, 1]);
+        let j = Emu128::from([1 << 63, 1 << 63]);
+        
+        assert_eq!(i << 0, i);
+        assert_eq!(i << 1, Emu128 { hi: 2, lo: 2 });
+        assert_eq!(i << 63, Emu128 { hi: 1 << 63, lo: 1 << 63 });
+        assert_eq!(i << 64, Emu128 { hi: 1, lo: 0 });
+        assert_eq!(i << 127, Emu128 { hi: 1 << 63, lo: 0 });
+        assert_eq!(j >> 0, j);
+        assert_eq!(j >> 1, Emu128 { hi: 1 << 62, lo: 1 << 62 });
+        assert_eq!(j >> 63, Emu128 { hi: 1, lo: 1 });
+        assert_eq!(j >> 64, Emu128 { hi: 0, lo: 1 << 63 });
+        assert_eq!(j >> 127, Emu128 { hi: 0, lo: 1 });
+    }
+
+    #[test]
+    fn test_emu128_and_or() {
+        let i0 = Emu128::min_value();
+        let i1 = Emu128::from([1, 1]);
+        let i3 = Emu128::from([3, 3]);
+        let im = Emu128::max_value();
+        
+        assert_eq!(i0 & i3, i0);
+        assert_eq!(i1 & i3, i1);
+        assert_eq!(i1 & im, i1);
+        assert_eq!(i0 | i1, i1);
+        assert_eq!(i0 | i3, i3);
+        assert_eq!(i1 | i3, Emu128 { hi: 3, lo: 3 });
+        assert_eq!(i0 | im, Emu128::max_value());
+    }
+
+    #[test]
+    fn test_emu128_add_sub() {
+        let i1 = Emu128::from([1, 1]);
+        let i3 = Emu128::from([3, 3]);
+        let im = Emu128::from([0, u64::MAX]);
+        let mm = Emu128::max_value();
+        
+        assert_eq!(i1.saturating_add(i1), Emu128 { hi: 2, lo: 2 });
+        assert_eq!(i1.saturating_add(i3), Emu128 { hi: 4, lo: 4 });
+        assert_eq!(im.saturating_add(i1), Emu128 { hi: 2, lo: 0 });
+        assert_eq!(im.saturating_add(i3), Emu128 { hi: 4, lo: 2 });
+        assert_eq!(im.saturating_add(i1), Emu128 { hi: 2, lo: 0 });
+        assert_eq!(mm.saturating_add(i1), Emu128::max_value());
+
+        assert_eq!(i1.saturating_sub(mm), Emu128::min_value());
+        assert_eq!(i1.saturating_sub(im), Emu128 { hi: 0, lo: 2 });
+        assert_eq!(mm.saturating_sub(i1), Emu128 { hi: u64::MAX-1, lo: u64::MAX-1 });
+        assert_eq!(mm.saturating_sub(im), Emu128 { hi: u64::MAX, lo: 0 });
     }
 }
