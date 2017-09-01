@@ -3,12 +3,6 @@
 //! The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
 //! the `Ipv4Addr` and `Ipv6Addr` types to provide their respective
 //! operations.
-//!
-//! # TODO:
-//!
-//! * Can we implement the `std::ops::{Add, Sub, BitAnd, BitOr}` traits
-//!   for `Ipv4Addr` and `Ipv6Addr` in the standard library? These are
-//!   common operations on IP addresses.
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use emu128::Emu128;
@@ -262,108 +256,62 @@ pub trait IpBitOr<RHS = Self> {
 
 impl IpAdd<u32> for IpAddr {
     type Output = IpAddr;
+
     #[inline]
     fn saturating_add(self, rhs: u32) -> IpAddr {
         match self {
             IpAddr::V4(a) => IpAddr::V4(a.saturating_add(rhs)),
             IpAddr::V6(a) => IpAddr::V6(a.saturating_add(rhs)),
         }
-    }    
+    }
 }
-/*
+
 impl IpAdd<IpAddr> for IpAddr {
     type Output = IpAddr;
+
     #[inline]
-    fn saturating_add(self, rhs: IpAddr) -> Result<IpAddr, Err> {
+    fn saturating_add(self, rhs: IpAddr) -> IpAddr {
         match (self, rhs) {
-            (IpAddr::V4(a), IpAddr::V4(b)) => a.saturating_add(b),
-            (IpAddr::V6(a), IpAddr::V6(b)) => a.saturating_add(b),
-            _ => 
+            (IpAddr::V4(a), IpAddr::V4(b)) => IpAddr::V4(a.saturating_add(b)),
+            (IpAddr::V6(a), IpAddr::V6(b)) => IpAddr::V6(a.saturating_add(b)),
+            _ => panic!("can't add Ipv4Addr and Ipv6Addr"),
         }
-    }
-}*/
-
-macro_rules! ip_add_impl {
-    ($(($t:ty, $f:ty),)*) => {
-    $(
-        impl IpAdd<$f> for $t {
-            type Output = $t;
-            #[inline]
-            fn saturating_add(self, rhs: $f) -> $t {
-                Self::from(u32::from(self).saturating_add(u32::from(rhs)))
-            }
-        }
-    )*
     }
 }
 
-macro_rules! ip_sub_impl {
-    ($(($t:ty, $f:ty),)*) => {
-    $(
-        impl IpSub<$f> for $t {
-            type Output = $t;
-            #[inline]
-            fn saturating_sub(self, rhs: $f) -> $t {
-                Self::from(u32::from(self).saturating_sub(u32::from(rhs)))
-            }
+impl IpSub<u32> for IpAddr {
+    type Output = IpAddr;
+
+    #[inline]
+    fn saturating_sub(self, rhs: u32) -> IpAddr {
+        match self {
+            IpAddr::V4(a) => IpAddr::V4(a.saturating_sub(rhs)),
+            IpAddr::V6(a) => IpAddr::V6(a.saturating_sub(rhs)),
         }
-    )*
     }
 }
 
-macro_rules! ip_bitand_impl {
-    ($(($t:ty, $f:ty),)*) => {
+macro_rules! ip_addsub_impl {
+    ($(($lhs:ty, $rhs:ty, $t:ty),)*) => {
     $(
-        impl IpBitAnd<$f> for $t {
-            type Output = $t;
-            #[inline]
-            fn bitand(self, rhs: $f) -> $t {
-                Self::from(u32::from(self) & u32::from(rhs))
-            }
-        }
-    )*
-    }
-}
+        impl IpAdd<$rhs> for $lhs {
+            type Output = $lhs;
 
-macro_rules! ip_bitor_impl {
-    ($(($t:ty, $f:ty),)*) => {
-    $(
-        impl IpBitOr<$f> for $t {
-            type Output = $t;
             #[inline]
-            fn bitor(self, rhs: $f) -> $t {
-                Self::from(u32::from(self) | u32::from(rhs))
-            }
-        }
-    )*
-    }
-}
-
-macro_rules! ipv6_add_impl {
-    ($(($t:ty, $f:ty),)*) => {
-    $(
-        impl IpAdd<$f> for $t {
-            type Output = $t;
-            #[inline]
-            fn saturating_add(self, rhs: $f) -> $t {
-                let lhs: Emu128 = self.into();
-                let rhs: Emu128 = rhs.into();
+            fn saturating_add(self, rhs: $rhs) -> $lhs {
+                let lhs: $t = self.into();
+                let rhs: $t = rhs.into();
                 (lhs.saturating_add(rhs.into())).into()
             }
         }
-    )*
-    }
-}
 
-macro_rules! ipv6_sub_impl {
-    ($(($t:ty, $f:ty),)*) => {
-    $(
-        impl IpSub<$f> for $t {
-            type Output = $t;
+        impl IpSub<$rhs> for $lhs {
+            type Output = $lhs;
+
             #[inline]
-            fn saturating_sub(self, rhs: $f) -> $t {
-                let lhs: Emu128 = self.into();
-                let rhs: Emu128 = rhs.into();
+            fn saturating_sub(self, rhs: $rhs) -> $lhs {
+                let lhs: $t = self.into();
+                let rhs: $t = rhs.into();
                 (lhs.saturating_sub(rhs.into())).into()
             }
         }
@@ -371,31 +319,27 @@ macro_rules! ipv6_sub_impl {
     }
 }
 
-macro_rules! ipv6_bitand_impl {
-    ($(($t:ty, $f:ty),)*) => {
+macro_rules! ip_bitops_impl {
+    ($(($lhs:ty, $rhs:ty, $t:ty),)*) => {
     $(
-        impl IpBitAnd<$f> for $t {
-            type Output = $t;
+        impl IpBitAnd<$rhs> for $lhs {
+            type Output = $lhs;
+
             #[inline]
-            fn bitand(self, rhs: $f) -> $t {
-                let lhs: Emu128 = self.into();
-                let rhs: Emu128 = rhs.into();
+            fn bitand(self, rhs: $rhs) -> $lhs {
+                let lhs: $t = self.into();
+                let rhs: $t = rhs.into();
                 (lhs & rhs).into()
             }
         }
-    )*
-    }
-}
 
-macro_rules! ipv6_bitor_impl {
-    ($(($t:ty, $f:ty),)*) => {
-    $(
-        impl IpBitOr<$f> for $t {
-            type Output = $t;
+        impl IpBitOr<$rhs> for $lhs {
+            type Output = $lhs;
+
             #[inline]
-            fn bitor(self, rhs: $f) -> $t {
-                let lhs: Emu128 = self.into();
-                let rhs: Emu128 = rhs.into();
+            fn bitor(self, rhs: $rhs) -> $lhs {
+                let lhs: $t = self.into();
+                let rhs: $t = rhs.into();
                 (lhs | rhs).into()
             }
         }
@@ -403,11 +347,17 @@ macro_rules! ipv6_bitor_impl {
     }
 }
 
-ip_add_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
-ip_sub_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
-ip_bitand_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
-ip_bitor_impl! { (Ipv4Addr, Ipv4Addr), (Ipv4Addr, u32), }
-ipv6_add_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, u32), (Ipv6Addr, Ipv6Addr), }
-ipv6_sub_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, u32), (Ipv6Addr, Ipv6Addr), }
-ipv6_bitand_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, Ipv6Addr), }
-ipv6_bitor_impl! { (Ipv6Addr, Emu128), (Ipv6Addr, Ipv6Addr), }
+ip_addsub_impl! {
+    (Ipv4Addr, Ipv4Addr, u32),
+    (Ipv4Addr, u32, u32),
+    (Ipv6Addr, Ipv6Addr, Emu128),
+    (Ipv6Addr, Emu128, Emu128),
+    (Ipv6Addr, u32, Emu128),
+}
+
+ip_bitops_impl! {
+    (Ipv4Addr, Ipv4Addr, u32),
+    (Ipv4Addr, u32, u32),
+    (Ipv6Addr, Ipv6Addr, Emu128),
+    (Ipv6Addr, Emu128, Emu128),
+}

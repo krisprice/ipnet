@@ -100,86 +100,6 @@ pub struct Ipv6Net {
     prefix_len: u8,
 }
 
-/// An `Iterator` over a range of IPv4 network addresses.
-///
-/// This might be deprecated and replaced with a generic implementation
-/// of `Range` when `Range` and it's required traits are stablized.
-///
-/// # Examples
-///
-/// ```
-/// use std::str::FromStr;
-/// use ipnet::Ipv4Net;
-/// 
-/// let net = IpNet::from_str("10.1.0.0/16").unwrap();
-/// assert_eq!(net.subnets(18), vec![
-///     IpNet::from_str("10.1.0.0/18").unwrap(),
-///     IpNet::from_str("10.1.64.0/18").unwrap(),
-///     IpNet::from_str("10.1.128.0/18").unwrap(),
-///     IpNet::from_str("10.1.192.0/18").unwrap(),
-/// ]);
-/// ```
-#[derive(Debug)]
-pub struct Ipv4NetIter {
-    start: Ipv4Addr,
-    end: Ipv4Addr,
-    step: u32,
-    prefix_len: u8,
-}
-
-impl Iterator for Ipv4NetIter {
-    type Item = Ipv4Net;
-    
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.start <= self.end {
-            let res =  Some(Ipv4Net::new(self.start, self.prefix_len));
-            self.start = self.start.saturating_add(self.step);
-            return res;
-        }
-        None
-    }
-}
-
-/// An `Iterator` over a range of IPv4 network addresses.
-///
-/// This might be deprecated and replaced with a generic implementation
-/// of `Range` when `Range` and it's required traits are stablized.
-///
-/// # Examples
-///
-/// ```
-/// use std::str::FromStr;
-/// use ipnet::Ipv6Net;
-///
-/// let net = IpNet::from_str("fd00::/16").unwrap();
-/// assert_eq!(net.subnets(18), vec![
-///     IpNet::from_str("fd00::/18").unwrap(),
-///     IpNet::from_str("fd00:4000::/18").unwrap(),
-///     IpNet::from_str("fd00:8000::/18").unwrap(),
-///     IpNet::from_str("fd00:c000::/18").unwrap(),
-/// ]);
-/// ```
-#[derive(Debug)]
-pub struct Ipv6NetIter {
-    start: Ipv6Addr,
-    end: Ipv6Addr,
-    step: Emu128,
-    prefix_len: u8,
-}
-
-impl Iterator for Ipv6NetIter {
-    type Item = Ipv6Net;
-    
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.start <= self.end {
-            let res =  Some(Ipv6Net::new(self.start, self.prefix_len));
-            self.start = self.start.saturating_add(self.step);
-            return res;
-        }
-        None
-    }
-}
-
 // For the time being deref method calls to the IpAddr implemenations.
 // We can't do this for the IpNet enum unfortunately.
 
@@ -307,8 +227,13 @@ impl IpNet {
             IpNet::V6(ref a) => IpNet::V6(a.supernet()),
         }
     }
-
-    /// Returns the subnets of this network at the given prefix length.
+    
+    /// Returns an `Iterator` over the subnets of this network with the
+    /// given prefix length.
+    ///
+    /// If `new_prefix_len` is less than the current prefix length or
+    /// greater than the bit width of the underlying IP address type it
+    /// will be clamped to both respectively.
     ///
     /// # Examples
     ///
@@ -316,26 +241,56 @@ impl IpNet {
     /// # use std::str::FromStr;
     /// # use ipnet::IpNet;
     /// #
-    /// let net = IpNet::from_str("10.1.0.0/16").unwrap();
-    /// assert_eq!(net.subnets(18), vec![
-    ///     IpNet::from_str("10.1.0.0/18").unwrap(),
-    ///     IpNet::from_str("10.1.64.0/18").unwrap(),
-    ///     IpNet::from_str("10.1.128.0/18").unwrap(),
-    ///     IpNet::from_str("10.1.192.0/18").unwrap(),
+    /// let net = IpNet::from_str("10.0.0.0/24").unwrap();
+    /// assert_eq!(net.subnets(26).collect::<Vec<IpNet>>(), vec![
+    ///     IpNet::from_str("10.0.0.0/26").unwrap(),
+    ///     IpNet::from_str("10.0.0.64/26").unwrap(),
+    ///     IpNet::from_str("10.0.0.128/26").unwrap(),
+    ///     IpNet::from_str("10.0.0.192/26").unwrap(),
     /// ]);
     ///
     /// let net = IpNet::from_str("fd00::/16").unwrap();
-    /// assert_eq!(net.subnets(18), vec![
+    /// assert_eq!(net.subnets(18).collect::<Vec<IpNet>>(), vec![
     ///     IpNet::from_str("fd00::/18").unwrap(),
     ///     IpNet::from_str("fd00:4000::/18").unwrap(),
     ///     IpNet::from_str("fd00:8000::/18").unwrap(),
     ///     IpNet::from_str("fd00:c000::/18").unwrap(),
     /// ]);
     /// ```
-    pub fn subnets(&self, new_prefix_len: u8) -> Vec<IpNet> {
+    pub fn subnets(&self, new_prefix_len: u8) -> IpNetIter<IpNet> {
         match *self {
-            IpNet::V4(ref a) => a.subnets(new_prefix_len).into_iter().map(|n| IpNet::V4(n)).collect(),
-            IpNet::V6(ref a) => a.subnets(new_prefix_len).into_iter().map(|n| IpNet::V6(n)).collect(),
+            IpNet::V4(ref a) => {
+                let new_prefix_len = if new_prefix_len > 32 {
+                    32
+                }
+                else if new_prefix_len < a.prefix_len {
+                    a.prefix_len
+                }
+                else {
+                    new_prefix_len
+                };
+                
+                IpNetIter::new(
+                    IpNet::V4(Ipv4Net::new(a.network(), new_prefix_len)),
+                    IpNet::V4(Ipv4Net::new(a.broadcast(), new_prefix_len)),
+                )
+            },
+            IpNet::V6(ref a) => {
+                let new_prefix_len = if new_prefix_len > 128 {
+                    128
+                }
+                else if new_prefix_len < a.prefix_len {
+                    a.prefix_len
+                }
+                else {
+                    new_prefix_len
+                };
+                
+                IpNetIter::new(
+                    IpNet::V6(Ipv6Net::new(a.network(), new_prefix_len)),
+                    IpNet::V6(Ipv6Net::new(a.broadcast(), new_prefix_len)),
+                )
+            },
         }
     }
 
@@ -554,28 +509,22 @@ impl Ipv4Net {
     /// # use ipnet::Ipv4Net;
     /// #
     /// let net = Ipv4Net::from_str("10.0.0.0/24").unwrap();
-    /// assert_eq!(
-    ///     net.subnets(26).collect::<Vec<Ipv4Net>>(),
-    ///     vec![
-    ///         Ipv4Net::from_str("10.0.0.0/26").unwrap(),
-    ///         Ipv4Net::from_str("10.0.0.64/26").unwrap(),
-    ///         Ipv4Net::from_str("10.0.0.128/26").unwrap(),
-    ///         Ipv4Net::from_str("10.0.0.192/26").unwrap(),
-    ///     ]
-    /// );
+    /// assert_eq!(net.subnets(26).collect::<Vec<Ipv4Net>>(), vec![
+    ///     Ipv4Net::from_str("10.0.0.0/26").unwrap(),
+    ///     Ipv4Net::from_str("10.0.0.64/26").unwrap(),
+    ///     Ipv4Net::from_str("10.0.0.128/26").unwrap(),
+    ///     Ipv4Net::from_str("10.0.0.192/26").unwrap(),
+    /// ]);
     ///
     /// let net = Ipv4Net::from_str("10.0.0.0/30").unwrap();
-    /// assert_eq!(
-    ///     net.subnets(32).collect::<Vec<Ipv4Net>>(),
-    ///     vec![
-    ///         Ipv4Net::from_str("10.0.0.0/32").unwrap(),
-    ///         Ipv4Net::from_str("10.0.0.1/32").unwrap(),
-    ///         Ipv4Net::from_str("10.0.0.2/32").unwrap(),
-    ///         Ipv4Net::from_str("10.0.0.3/32").unwrap(),
-    ///     ]
-    /// );
+    /// assert_eq!(net.subnets(32).collect::<Vec<Ipv4Net>>(), vec![
+    ///     Ipv4Net::from_str("10.0.0.0/32").unwrap(),
+    ///     Ipv4Net::from_str("10.0.0.1/32").unwrap(),
+    ///     Ipv4Net::from_str("10.0.0.2/32").unwrap(),
+    ///     Ipv4Net::from_str("10.0.0.3/32").unwrap(),
+    /// ]);
     /// ```
-    pub fn subnets(&self, new_prefix_len: u8) -> Ipv4NetIter {
+    pub fn subnets(&self, new_prefix_len: u8) -> IpNetIter<Ipv4Net> {
         let new_prefix_len = if new_prefix_len > 32 {
             32
         }
@@ -586,14 +535,10 @@ impl Ipv4Net {
             new_prefix_len
         };
 
-        let step = 2u32.pow(32 - new_prefix_len as u32);
-
-        Ipv4NetIter {
-            start: self.network(),
-            end: self.broadcast(),
-            step: step,
-            prefix_len: new_prefix_len,
-        }
+        IpNetIter::new(
+            Ipv4Net::new(self.network(), new_prefix_len),
+            Ipv4Net::new(self.broadcast(), new_prefix_len),
+        )
     }
     
     /// Return an `Iterator` over the host addresses in this network.
@@ -782,7 +727,7 @@ impl Ipv6Net {
     pub fn supernet(&self) -> Ipv6Net {
         Ipv6Net::new(self.addr.clone(), self.prefix_len - 1)
     }
-    
+
     /// Returns an `Iterator` over the subnets of this network with the
     /// given prefix length.
     ///
@@ -795,28 +740,22 @@ impl Ipv6Net {
     /// # use std::str::FromStr;
     /// # use ipnet::Ipv6Net;
     /// let net = Ipv6Net::from_str("fd00::/16").unwrap();
-    /// assert_eq!(
-    ///     net.subnets(18).collect::<Vec<Ipv6Net>>(),
-    ///     vec![
-    ///         Ipv6Net::from_str("fd00::/18").unwrap(),
-    ///         Ipv6Net::from_str("fd00:4000::/18").unwrap(),
-    ///         Ipv6Net::from_str("fd00:8000::/18").unwrap(),
-    ///         Ipv6Net::from_str("fd00:c000::/18").unwrap(),
-    ///     ]
-    /// );
+    /// assert_eq!(net.subnets(18).collect::<Vec<Ipv6Net>>(), vec![
+    ///     Ipv6Net::from_str("fd00::/18").unwrap(),
+    ///     Ipv6Net::from_str("fd00:4000::/18").unwrap(),
+    ///     Ipv6Net::from_str("fd00:8000::/18").unwrap(),
+    ///     Ipv6Net::from_str("fd00:c000::/18").unwrap(),
+    /// ]);
     ///
     /// let net = Ipv6Net::from_str("fd00::/126").unwrap();
-    /// assert_eq!(
-    ///     net.subnets(128).collect::<Vec<Ipv6Net>>(),
-    ///     vec![
-    ///         Ipv6Net::from_str("fd00::/128").unwrap(),
-    ///         Ipv6Net::from_str("fd00::1/128").unwrap(),
-    ///         Ipv6Net::from_str("fd00::2/128").unwrap(),
-    ///         Ipv6Net::from_str("fd00::3/128").unwrap(),
-    ///     ]
-    /// );
+    /// assert_eq!(net.subnets(128).collect::<Vec<Ipv6Net>>(), vec![
+    ///     Ipv6Net::from_str("fd00::/128").unwrap(),
+    ///     Ipv6Net::from_str("fd00::1/128").unwrap(),
+    ///     Ipv6Net::from_str("fd00::2/128").unwrap(),
+    ///     Ipv6Net::from_str("fd00::3/128").unwrap(),
+    /// ]);
     /// ```
-    pub fn subnets(&self, new_prefix_len: u8) -> Ipv6NetIter {
+    pub fn subnets(&self, new_prefix_len: u8) -> IpNetIter<Ipv6Net> {
         let new_prefix_len = if new_prefix_len > 128 {
             128
         }
@@ -826,15 +765,11 @@ impl Ipv6Net {
         else {
             new_prefix_len
         };
-
-        let step = Emu128::from([0u64, 1u64]).saturating_shl(128 - new_prefix_len);
         
-        Ipv6NetIter {
-            start: self.network(),
-            end: self.broadcast(),
-            step: step,
-            prefix_len: new_prefix_len,
-        }
+        IpNetIter::new(
+            Ipv6Net::new(self.network(), new_prefix_len),
+            Ipv6Net::new(self.broadcast(), new_prefix_len),
+        )
     }
 
     /// Return an `Iterator` over the host addresses in this network.
@@ -1015,5 +950,121 @@ impl<'a> Contains<&'a Ipv6Net> for Ipv6Net {
 impl<'a> Contains<&'a Ipv6Addr> for Ipv6Net {
     fn contains(&self, other: &'a Ipv6Addr) -> bool {
         self.network() <= *other && *other <= self.broadcast()
+    }
+}
+
+/// An `Iterator` over a range of IP network addresses.
+///
+/// This might be deprecated and replaced with an implementation of
+/// `Range` when it and its required traits are stablized.
+///
+/// # Examples
+///
+/// ```
+/// use std::str::FromStr;
+/// use ipnet::{IpNet, Ipv4Net, Ipv6Net, IpNetIter};
+///
+/// let i = IpNetIter::new(IpNet::from_str("10.0.0.0/26").unwrap(), IpNet::from_str("10.0.0.192/26").unwrap());
+/// let i4 = IpNetIter::new(Ipv4Net::from_str("10.0.0.0/26").unwrap(), Ipv4Net::from_str("10.0.0.192/26").unwrap());
+/// let i6 = IpNetIter::new(Ipv6Net::from_str("fd00::/18").unwrap(), Ipv6Net::from_str("fd00:c000::/18").unwrap());
+/// 
+/// assert_eq!(i.collect::<Vec<IpNet>>(), vec![
+///     IpNet::from_str("10.0.0.0/26").unwrap(),
+///     IpNet::from_str("10.0.0.64/26").unwrap(),
+///     IpNet::from_str("10.0.0.128/26").unwrap(),
+///     IpNet::from_str("10.0.0.192/26").unwrap(),
+/// ]);
+///
+/// assert_eq!(i4.collect::<Vec<Ipv4Net>>(), vec![
+///     Ipv4Net::from_str("10.0.0.0/26").unwrap(),
+///     Ipv4Net::from_str("10.0.0.64/26").unwrap(),
+///     Ipv4Net::from_str("10.0.0.128/26").unwrap(),
+///     Ipv4Net::from_str("10.0.0.192/26").unwrap(),
+/// ]);
+///
+/// assert_eq!(i6.collect::<Vec<Ipv6Net>>(), vec![
+///     Ipv6Net::from_str("fd00::/18").unwrap(),
+///     Ipv6Net::from_str("fd00:4000::/18").unwrap(),
+///     Ipv6Net::from_str("fd00:8000::/18").unwrap(),
+///     Ipv6Net::from_str("fd00:c000::/18").unwrap(),
+/// ]);
+/// ```
+#[derive(Debug)]
+pub struct IpNetIter<T> {
+    pub start: T,
+    pub end: T,
+}
+
+impl<T> IpNetIter<T> {
+    pub fn new(start: T, end: T) -> Self {
+        IpNetIter {
+            start: start,
+            end: end,
+        }
+    }
+}
+
+impl IpNetIter<IpNet> {
+    fn forward(&self) -> IpNet {
+        match self.start {
+            IpNet::V4(ref a) => IpNet::V4(
+                Ipv4Net::new(a.broadcast().saturating_add(1), a.prefix_len)
+            ),
+            IpNet::V6(ref a) => IpNet::V6(
+                Ipv6Net::new(a.broadcast().saturating_add(1), a.prefix_len)
+            ),
+        }
+    }
+}
+
+impl IpNetIter<Ipv4Net> {
+    fn forward(&self) -> Ipv4Net {
+        Ipv4Net::new(self.start.broadcast().saturating_add(1), self.start.prefix_len)
+    }
+}
+
+impl IpNetIter<Ipv6Net> {
+    fn forward(&self) -> Ipv6Net {
+        Ipv6Net::new(self.start.broadcast().saturating_add(1), self.start.prefix_len)
+    }
+}
+
+// TODO: Will infinitely loop if end is all ones because start <= end.
+impl Iterator for IpNetIter<IpNet> {
+    type Item = IpNet;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.start <= self.end {
+            let res = Some(self.start);
+            self.start = self.forward();
+            return res;
+        }
+        None
+    }
+}
+
+impl Iterator for IpNetIter<Ipv4Net> {
+    type Item = Ipv4Net;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.start <= self.end {
+            let res = Some(self.start);
+            self.start = self.forward();
+            return res;
+        }
+        None
+    }
+}
+
+impl Iterator for IpNetIter<Ipv6Net> {
+    type Item = Ipv6Net;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.start <= self.end {
+            let res = Some(self.start);
+            self.start = self.forward();
+            return res;
+        }
+        None
     }
 }
