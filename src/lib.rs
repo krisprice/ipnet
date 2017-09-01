@@ -13,9 +13,8 @@
 //! * [`Ipv4Net`] and [`Ipv6Net`] are respectively IPv4 and IPv6 network
 //!   addresses.
 //! * [`IpAddrIter`] provides iteration over a range of IP addresses.
-//!   [`Ipv4NetIter`] and [`Ipv6NetIter`] does the same for IP network
-//!   addresses. These are returned by methods on `IpNet`, `Ipv4Net`,
-//!   and `Ipv6Net`.
+//!   [`IpNetIter`] does the same for IP network addresses. These are
+//!   returned by methods on `IpNet`, `Ipv4Net`, and `Ipv6Net`.
 //! * The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
 //!   the `Ipv4Addr` and `Ipv6Addr` types to include these operations.
 //! * [`Emu128`] is an emulated 128 bit unsigned integer implemented in
@@ -25,7 +24,6 @@
 //!
 //! # TODO:
 //! * What's going on with AddrParseError(()) in parser.rs?
-//! * Should we convert subnets() and aggregate() methods to iterators?
 //! * Should new() truncate the input Ipv4Addr to the prefix_len and
 //!   store that instead? Technically it doesn't matter, but users
 //!   may expect one behavior over the other.
@@ -50,8 +48,7 @@
 //! [`Ipv4Net`]: struct.Ipv4Net.html
 //! [`Ipv6Net`]: struct.Ipv6Net.html
 //! [`IpAddrIter`]: struct.IpAddrIter.html
-//! [`Ipv4NetIter`]: struct.Ipv4NetIter.html
-//! [`Ipv6NetIter`]: struct.Ipv6NetIter.html
+//! [`IpNetIter`]: struct.IpNetIter.html
 //! [`IpAdd`]: trait.IpAdd.html
 //! [`IpSub`]: trait.IpAdd.html
 //! [`IpBitAnd`]: trait.IpAdd.html
