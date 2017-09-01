@@ -903,8 +903,8 @@ pub trait Contains<T> {
     /// # let ip1 = IpAddr::from_str("10.1.1.1").unwrap();
     /// # let n6_1 = IpNet::from_str("fd00::/16").unwrap();
     /// # let ip6_1 = IpAddr::from_str("fd00::1").unwrap();
-    /// assert!(!n1.contains(&n6_1) || !n6_1.contains(&n1));
-    /// assert!(!n1.contains(&ip6_1) || !n6_1.contains(&ip1));
+    /// assert!(!n1.contains(&n6_1) && !n6_1.contains(&n1));
+    /// assert!(!n1.contains(&ip6_1) && !n6_1.contains(&ip1));
     /// ```
     fn contains(&self, other: T) -> bool;
 }
