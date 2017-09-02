@@ -1,6 +1,6 @@
 //! A private parser implementation of IPv4 and IPv6 network addresses.
 //!
-//! The existing `std::net::parser module` cannot be extended because it
+//! The existing `std::net::parser` module cannot be extended because it
 //! is private. It is copied and extended here with methods for parsing
 //! IP network addresses.
 
@@ -335,9 +335,6 @@ impl FromStr for Ipv6Net {
 ///
 /// This error is used as the error type for the [`FromStr`] implementation for
 /// [`IpNet`], [`Ipv4Net`], and [`Ipv6Net`].
-///
-/// TODO: This is copied from the std::net::parser module. I'm not sure
-/// why I couldn't re-use it that implementation given it is public.
 ///
 /// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
 /// [`IpNet`]: enum.IpNet.html
