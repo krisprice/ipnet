@@ -22,25 +22,6 @@
 //!   because Rust's `u128` type is not yet marked stable. This can be
 //!   replaced when `u128` is stable.
 //!
-//! # TODO:
-//! * What's going on with AddrParseError(()) in parser.rs?
-//! * Should new() truncate the input Ipv4Addr to the prefix_len and
-//!   store that instead? Technically it doesn't matter, but users
-//!   may expect one behavior over the other.
-//! * Should new() precompute the netmask, hostmask, network, and
-//!   broadcast addresses and store these to avoid recomputing
-//!   everytime the methods are called?
-//! * Can we implement the `std::ops::{Add, Sub, BitAnd, BitOr}` traits
-//!   for `Ipv4Addr` and `Ipv6Addr` in the standard library? These are
-//!   common operations on IP addresses.
-//! * Explore representing the results of methods such as `hosts()` and
-//!   `subnets()` as a `Range`. This requires both the `Add` and `Step`
-//!   traits be implemented on the target type. For the three `IpAddr`
-//!   types implementing `Add` must be done through an enhancement to
-//!   the standard library. For all types, using `Step` means we must
-//!   use nightly because it is not yet stable. This crate only uses
-//!   stable Rust features.
-//!
 //! [`IpAddr`]: https://doc.rust-lang.org/std/net/enum.IpAddr.html
 //! [`Ipv4Addr`]: https://doc.rust-lang.org/std/net/struct.Ipv4Addr.html
 //! [`Ipv6Addr`]: https://doc.rust-lang.org/std/net/struct.Ipv6Addr.html
