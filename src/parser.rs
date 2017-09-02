@@ -250,13 +250,6 @@ impl<'a> Parser<'a> {
     fn read_ipv6_addr(&mut self) -> Option<Ipv6Addr> {
         self.read_atomically(|p| p.read_ipv6_addr_impl())
     }
-
-    // read_ip_addr is not used.
-    //fn read_ip_addr(&mut self) -> Option<IpAddr> {
-    //    let ipv4_addr = |p: &mut Parser| p.read_ipv4_addr().map(IpAddr::V4);
-    //    let ipv6_addr = |p: &mut Parser| p.read_ipv6_addr().map(IpAddr::V6);
-    //    self.read_or(&mut [Box::new(ipv4_addr), Box::new(ipv6_addr)])
-    //}
     
     /* Additions for IpNet below. */
 
