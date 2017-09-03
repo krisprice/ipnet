@@ -48,7 +48,7 @@ pub enum IpNet {
 /// the CIDR notation.
 ///
 /// [`IpNet`]: enum.IpAddr.html
-/// [RFC 4632]: https://tools.ietf.org/html/rfc4632
+/// [IETF RFC 4632]: https://tools.ietf.org/html/rfc4632
 /// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
 ///
 /// # Examples
@@ -339,8 +339,8 @@ impl IpNet {
     /// Returns an `Iterator` over the subnets of this network with the
     /// given prefix length.
     ///
-    /// If `new_prefix_len` is greater than the bit width of the IP
-    /// address type it will be clamped to that bit width.
+    /// * If `new_prefix_len` is greater than the bit width of the
+    /// underlying IP address type it will be clamped to that bit width.
     ///
     /// # Examples
     ///
@@ -469,7 +469,7 @@ impl Ipv4Net {
     /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
     /// length.
     ///
-    /// If `prefix_len` is greater than 32 it will be clamped to 32.
+    /// * If `prefix_len` is greater than 32 it will be clamped to 32.
     ///
     /// # Examples
     ///
@@ -541,8 +541,7 @@ impl Ipv4Net {
         Ipv4Addr::from(u32::from(self.addr) & self.netmask_u32())
     }
 
-    /// Returns the broadcast address. Returns the provided Ipv4Addr
-    /// with all bits after the prefix length set.
+    /// Returns the broadcast address.
     ///
     /// # Examples
     ///
@@ -659,7 +658,7 @@ impl Ipv4Net {
     /// Returns an `Iterator` over the subnets of this network with the
     /// given prefix length.
     ///
-    /// If `new_prefix_len` is greater than 32 it will be clamped to 32.
+    /// * If `new_prefix_len` is greater than 32 it will be clamped to 32.
     ///
     /// # Examples
     ///
@@ -747,7 +746,7 @@ impl Ipv6Net {
     /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
     /// length.
     ///
-    /// If `prefix_len` is greater than 128 it will be clamped to 128.
+    /// * If `prefix_len` is greater than 128 it will be clamped to 128.
     ///
     /// # Examples
     ///
@@ -808,8 +807,7 @@ impl Ipv6Net {
         Emu128::max_value().checked_shr(self.prefix_len).unwrap_or(Emu128::min_value())
     }
 
-    /// Returns the network address. Truncates the provided Ipv6Addr to
-    /// the prefix length.
+    /// Returns the network address.
     ///
     /// # Examples
     ///
@@ -826,8 +824,7 @@ impl Ipv6Net {
         (Emu128::from(self.addr) & self.netmask_emu128()).into()
     }
     
-    /// Returns the broadcast address. Returns the provided Ipv6Addr
-    /// with all bits after the prefix length set.
+    /// Returns the broadcast address.
     ///
     /// * Technically there is no such thing as a broadcast address for
     ///   IPv6. This can be thought of as an `end()` method.
@@ -932,8 +929,8 @@ impl Ipv6Net {
     /// Returns an `Iterator` over the subnets of this network with the
     /// given prefix length.
     ///
-    /// If `new_prefix_len` is greater than 128 it will be clamped to
-    /// 128.
+    /// * If `new_prefix_len` is greater than 128 it will be clamped to
+    ///   128.
     ///
     /// # Examples
     ///
