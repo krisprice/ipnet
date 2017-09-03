@@ -334,6 +334,19 @@ impl IpSub<u32> for IpAddr {
     }
 }
 
+impl IpSub<IpAddr> for IpAddr {
+    type Output = IpAddr;
+
+    #[inline]
+    fn saturating_sub(self, rhs: IpAddr) -> IpAddr {
+        match (self, rhs) {
+            (IpAddr::V4(a), IpAddr::V4(b)) => IpAddr::V4(a.saturating_sub(b)),
+            (IpAddr::V6(a), IpAddr::V6(b)) => IpAddr::V6(a.saturating_sub(b)),
+            _ => panic!("can't subtract Ipv4Addr and Ipv6Addr"),
+        }
+    }
+}
+
 macro_rules! ip_addsub_impl {
     ($(($lhs:ty, $rhs:ty, $t:ty),)*) => {
     $(
@@ -448,5 +461,21 @@ mod tests {
             Ipv6Addr::from_str("fd00::2").unwrap(),
             Ipv6Addr::from_str("fd00::3").unwrap(),
         ]);
+    }
+    
+    #[test]
+    #[should_panic]
+    fn test_ipaddr_add() {
+        let ip4 = IpAddr::from_str("10.1.1.1").unwrap();
+        let ip6 = IpAddr::from_str("::1").unwrap();
+        ip4.saturating_add(ip6);
+    }
+    
+    #[test]
+    #[should_panic]
+    fn test_ipaddr_sub() {
+        let ip4 = IpAddr::from_str("10.1.1.1").unwrap();
+        let ip6 = IpAddr::from_str("::1").unwrap();
+        ip4.saturating_sub(ip6);
     }
 }
