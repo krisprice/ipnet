@@ -12,11 +12,11 @@ Available on [Crates.io] and read the [documentation] for the full details.
 ## TODO / Open Questions:
 
 * Should new() truncate the input Ipv4Addr to the prefix_len and store that instead? Technically it doesn't matter, but users may expect one behavior over the other. At the moment there is a trunc() method that does this.
-* Can we implement the std::ops::{Add, Sub, BitAnd, BitOr} traits for Ipv4Addr and Ipv6Addr in the standard library? These are common operations on IP addresses. I've started a thread on this over here: https://internals.rust-lang.org/t/pre-rfc-implementing-add-sub-bitand-bitor-for-ipaddr-ipv4addr-ipv6addr/
 
 ## Future
 
 * Explore representing the results of methods such as hosts() and subnets() as a Range. This requires both the Add and Step traits be implemented on the target type. For the three IpAddr types implementing Add must be done through an enhancement to the standard library. For all types, using Step means we must use nightly because it is not yet stable. This crate only uses stable Rust features.
+* Can we implement the std::ops::{Add, Sub, BitAnd, BitOr} traits for Ipv4Addr and Ipv6Addr in the standard library? These are common operations on IP addresses. I've started a thread on this over on [Rust Internals](https://internals.rust-lang.org/t/pre-rfc-implementing-add-sub-bitand-bitor-for-ipaddr-ipv4addr-ipv6addr/).
 
 ## Legal
 
