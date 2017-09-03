@@ -45,4 +45,3 @@ mod emu128;
 mod ipext;
 mod ipnet;
 mod parser;
-mod saturating_shifts;

@@ -515,7 +515,11 @@ impl Ipv4Net {
     /// assert_eq!(net.hostmask(), Ipv4Addr::from_str("0.0.15.255").unwrap());
     /// ```
     pub fn hostmask(&self) -> Ipv4Addr {
-        Ipv4Addr::from(u32::max_value().checked_shr(self.prefix_len as u32).unwrap_or(0))
+        Ipv4Addr::from(self.hostmask_u32())
+    }
+
+    fn hostmask_u32(&self) -> u32 {
+        u32::max_value().checked_shr(self.prefix_len as u32).unwrap_or(0)
     }
 
     /// Returns the network address.
@@ -546,7 +550,8 @@ impl Ipv4Net {
     /// assert_eq!(net.broadcast(), Ipv4Addr::from_str("172.16.3.255").unwrap());
     /// ```
     pub fn broadcast(&self) -> Ipv4Addr {
-        self.addr.bitor(u32::max_value().checked_shr(self.prefix_len as u32).unwrap_or(0))
+        //self.addr.bitor(u32::max_value().checked_shr(self.prefix_len as u32).unwrap_or(0))
+        Ipv4Addr::from(u32::from(self.addr) | self.hostmask_u32())
     }
     
     /// Return a copy of the network with the address truncated to the
