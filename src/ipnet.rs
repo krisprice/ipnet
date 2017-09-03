@@ -501,7 +501,7 @@ impl Ipv4Net {
     /// assert_eq!(net.netmask(), Ipv4Addr::from_str("255.255.240.0").unwrap());
     /// ```
     pub fn netmask(&self) -> Ipv4Addr {
-        Ipv4Addr::from(u32::max_value().saturating_shl(32 - self.prefix_len))
+        Ipv4Addr::from(u32::max_value().checked_shl(32 - self.prefix_len as u32).unwrap_or(0))
     }
 
     /// Returns the host mask.
@@ -516,7 +516,7 @@ impl Ipv4Net {
     /// assert_eq!(net.hostmask(), Ipv4Addr::from_str("0.0.15.255").unwrap());
     /// ```
     pub fn hostmask(&self) -> Ipv4Addr {
-        Ipv4Addr::from(u32::max_value().saturating_shr(self.prefix_len))
+        Ipv4Addr::from(u32::max_value().checked_shr(self.prefix_len as u32).unwrap_or(0))
     }
 
     /// Returns the network address.
@@ -531,7 +531,7 @@ impl Ipv4Net {
     /// assert_eq!(net.network(), Ipv4Addr::from_str("172.16.0.0").unwrap());
     /// ```
     pub fn network(&self) -> Ipv4Addr {
-        self.addr.bitand(u32::max_value().saturating_shl(32 - self.prefix_len))
+        self.addr.bitand(u32::max_value().checked_shl(32 - self.prefix_len as u32).unwrap_or(0))
     }
 
     /// Returns the broadcast address. Returns the provided Ipv4Addr
@@ -547,7 +547,7 @@ impl Ipv4Net {
     /// assert_eq!(net.broadcast(), Ipv4Addr::from_str("172.16.3.255").unwrap());
     /// ```
     pub fn broadcast(&self) -> Ipv4Addr {
-        self.addr.bitor(u32::max_value().saturating_shr(self.prefix_len))
+        self.addr.bitor(u32::max_value().checked_shr(self.prefix_len as u32).unwrap_or(0))
     }
     
     /// Return a copy of the network with the address truncated to the
@@ -716,7 +716,7 @@ impl Ipv4Net {
                 let num_bits = 32u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
                 let prefix_len = 32 - min(num_bits, start.trailing_zeros());
                 res.push(Ipv4Net::new(Ipv4Addr::from(start), prefix_len as u8));
-                let step = 1u32.saturating_shl(32 - prefix_len as u8);
+                let step = 1u32.checked_shl(32 - prefix_len as u32).unwrap_or(0);
                 start = start.saturating_add(step);
             }
         }

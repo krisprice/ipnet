@@ -1,22 +1,22 @@
 //! Provides left and right shift methods that check the RHS is less
-//! than the bit width of the LHS, and if returns zero if it isn't.
-//! This avoids a panic as rust doesn't support overflowing shifts.
+//! than the bit width of the LHS, and returns zero if not. This avoids
+//! a panic as Rust doesn't permit overflowing shifts.
 //!
-//!  Does not support negative right hand sides. This is fine for my uses.
+//! Does not support negative right hand sides. This is fine for my uses.
 //! If a negative use used it will panic at runtime. It's an easy change
 //! below to fix this if needed.
 
 use emu128::Emu128;
 
 /// Provides a `saturating_shl()` method that avoids a panic if the RHS
-/// is greater than the bit width.
+/// is not less than the bit width.
 pub trait SaturatingShl<RHS> {
     type Output;
     fn saturating_shl(self, rhs: RHS) -> Self::Output;
 }
 
 /// Provides a `saturating_shr()` method that avoids a panic if the RHS
-/// is greater than the bit width.
+/// is not less than the bit width.
 pub trait SaturatingShr<RHS> {
     type Output;
     fn saturating_shr(self, rhs: RHS) -> Self::Output;
@@ -44,7 +44,7 @@ macro_rules! saturating_shl_shr_impl {
     )
 }
 
-saturating_shl_shr_impl!(u32, u8, 32, 0);
+//saturating_shl_shr_impl!(u32, u8, 32, 0);
 saturating_shl_shr_impl!(u64, u8, 64, 0);
 saturating_shl_shr_impl!(Emu128, u8, 128, Emu128::min_value());
 
@@ -66,7 +66,7 @@ mod tests {
         )
     }
 
-    saturating_shl_shr_test!(test_saturating_shl_u32, 32, ::std::u32::MIN, ::std::u32::MAX);
+    //saturating_shl_shr_test!(test_saturating_shl_u32, 32, ::std::u32::MIN, ::std::u32::MAX);
     saturating_shl_shr_test!(test_saturating_shl_u64, 64, ::std::u64::MIN, ::std::u64::MAX);
     saturating_shl_shr_test!(test_saturating_shl_emu128, 128, Emu128::min_value(), Emu128::max_value());
 }
