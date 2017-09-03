@@ -7,7 +7,6 @@ use std::option::Option::{Some, None};
 
 use emu128::Emu128;
 use ipext::{IpAddrIter, IpAdd, IpSub, IpBitAnd, IpBitOr};
-use saturating_shifts::{SaturatingShl, SaturatingShr};
 
 /// An IP network address, either IPv4 or IPv6.
 ///
@@ -773,7 +772,7 @@ impl Ipv6Net {
     /// );
     /// ```
     pub fn netmask(&self) -> Ipv6Addr {
-        Emu128::max_value().saturating_shl(128 - self.prefix_len).into()
+        Emu128::max_value().checked_shl(128 - self.prefix_len).unwrap_or(Emu128::min_value()).into()
     }
 
     /// Returns the host mask.
@@ -790,7 +789,7 @@ impl Ipv6Net {
     /// );
     /// ```
     pub fn hostmask(&self) -> Ipv6Addr {
-        Emu128::max_value().saturating_shr(self.prefix_len).into()
+        Emu128::max_value().checked_shr(self.prefix_len).unwrap_or(Emu128::min_value()).into()
     }
 
     /// Returns the network address. Truncates the provided Ipv6Addr to
@@ -808,7 +807,7 @@ impl Ipv6Net {
     /// );
     /// ```
     pub fn network(&self) -> Ipv6Addr {
-        self.addr.bitand(Emu128::max_value().saturating_shl(128 - self.prefix_len))
+        self.addr.bitand(Emu128::max_value().checked_shl(128 - self.prefix_len).unwrap_or(Emu128::min_value()))
     }
     
     /// Returns the broadcast address. Returns the provided Ipv6Addr
@@ -829,7 +828,7 @@ impl Ipv6Net {
     /// );
     /// ```
     pub fn broadcast(&self) -> Ipv6Addr {
-        self.addr.bitor(Emu128::max_value().saturating_shr(self.prefix_len))
+        self.addr.bitor(Emu128::max_value().checked_shr(self.prefix_len).unwrap_or(Emu128::min_value()))
     }
     
     /// Return a copy of the network with the address truncated to the
@@ -982,7 +981,7 @@ impl Ipv6Net {
                 let num_bits = 128u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
                 let prefix_len = 128 - min(num_bits, start.trailing_zeros());
                 res.push(Ipv6Net::new(start.into(), prefix_len as u8));
-                let step = Emu128::from([0, 1]).saturating_shl(128 - prefix_len as u8);
+                let step = Emu128::from([0, 1]).checked_shl(128 - prefix_len as u8).unwrap_or(Emu128::min_value());
                 start = start.saturating_add(step);
             }
         }

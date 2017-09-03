@@ -70,6 +70,16 @@ impl Emu128 {
         }
     }
 
+    pub fn checked_shl(self, rhs: u8) -> Option<Self> {
+        if rhs < 128 { Some(self << rhs) }
+        else { None }
+    }
+    
+    pub fn checked_shr(self, rhs: u8) -> Option<Self> {
+        if rhs < 128 { Some(self >> rhs) } 
+        else { None }
+    }
+
     pub fn leading_zeros(self) -> u32 {
         if self.hi > 0 { self.hi.leading_zeros() } else { self.lo.leading_zeros() + 64 } 
     }

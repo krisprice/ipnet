@@ -44,7 +44,7 @@ macro_rules! saturating_shl_shr_impl {
     )
 }
 
-//saturating_shl_shr_impl!(u32, u8, 32, 0);
+saturating_shl_shr_impl!(u32, u8, 32, 0);
 saturating_shl_shr_impl!(u64, u8, 64, 0);
 saturating_shl_shr_impl!(Emu128, u8, 128, Emu128::min_value());
 
@@ -66,7 +66,7 @@ mod tests {
         )
     }
 
-    //saturating_shl_shr_test!(test_saturating_shl_u32, 32, ::std::u32::MIN, ::std::u32::MAX);
+    saturating_shl_shr_test!(test_saturating_shl_u32, 32, ::std::u32::MIN, ::std::u32::MAX);
     saturating_shl_shr_test!(test_saturating_shl_u64, 64, ::std::u64::MIN, ::std::u64::MAX);
     saturating_shl_shr_test!(test_saturating_shl_emu128, 128, Emu128::min_value(), Emu128::max_value());
 }
