@@ -31,9 +31,9 @@
 //! [`IpAddrIter`]: struct.IpAddrIter.html
 //! [`IpNetIter`]: struct.IpNetIter.html
 //! [`IpAdd`]: trait.IpAdd.html
-//! [`IpSub`]: trait.IpAdd.html
-//! [`IpBitAnd`]: trait.IpAdd.html
-//! [`IpBitOr`]: trait.IpAdd.html
+//! [`IpSub`]: trait.IpSub.html
+//! [`IpBitAnd`]: trait.IpBitAnd.html
+//! [`IpBitOr`]: trait.IpBitOr.html
 //! [`Emu128`]: struct.Emu128.html
 
 pub use self::emu128::Emu128;
