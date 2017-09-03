@@ -11,7 +11,7 @@ Available on [Crates.io] and read the [documentation] for the full details.
 
 ## TODO / Open Questions:
 
-* Should new() truncate the input Ipv4Addr to the prefix_len and store that instead? Technically it doesn't matter, but users may expect one behavior over the other. At the moment there is a trunc() method that does this.
+* Should `IpNet::new()` truncate the input `IpAddr` to the prefix_len and store that instead? Users may expect one behavior over the other. Truncating it at creation time means that the provided address can't be returned if the user has a need for it, and sort behaviour won't be influenced by it. Though we don't have a way to access it as the field is not public there is no `address()` method, this could be added. There is a `trunc()` method that does truncate the network, but chaining `IpNet::new().trunc()` or `IpNet::from().unwrap().trunc()` is kind of ugly. I am leaning towards changing this behaviour so the address is truncated at creation, then in future if Rust provides default args having a default `truncate=true` argument that users can override if they don't want it truncated.
 
 ## Future
 
