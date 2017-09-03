@@ -6,7 +6,7 @@ use std::ops::Deref;
 use std::option::Option::{Some, None};
 
 use emu128::Emu128;
-use ipext::{IpAddrIter, IpAdd, IpSub, IpBitAnd, IpBitOr};
+use ipext::{IpAddrIter, IpAdd, IpSub};
 
 /// An IP network address, either IPv4 or IPv6.
 ///
@@ -500,7 +500,11 @@ impl Ipv4Net {
     /// assert_eq!(net.netmask(), Ipv4Addr::from_str("255.255.240.0").unwrap());
     /// ```
     pub fn netmask(&self) -> Ipv4Addr {
-        Ipv4Addr::from(u32::max_value().checked_shl(32 - self.prefix_len as u32).unwrap_or(0))
+        Ipv4Addr::from(self.netmask_u32())
+    }
+
+    fn netmask_u32(&self) -> u32 {
+        u32::max_value().checked_shl(32 - self.prefix_len as u32).unwrap_or(0)
     }
 
     /// Returns the host mask.
@@ -534,7 +538,7 @@ impl Ipv4Net {
     /// assert_eq!(net.network(), Ipv4Addr::from_str("172.16.0.0").unwrap());
     /// ```
     pub fn network(&self) -> Ipv4Addr {
-        self.addr.bitand(u32::max_value().checked_shl(32 - self.prefix_len as u32).unwrap_or(0))
+        Ipv4Addr::from(u32::from(self.addr) & self.netmask_u32())
     }
 
     /// Returns the broadcast address. Returns the provided Ipv4Addr
@@ -550,7 +554,6 @@ impl Ipv4Net {
     /// assert_eq!(net.broadcast(), Ipv4Addr::from_str("172.16.3.255").unwrap());
     /// ```
     pub fn broadcast(&self) -> Ipv4Addr {
-        //self.addr.bitor(u32::max_value().checked_shr(self.prefix_len as u32).unwrap_or(0))
         Ipv4Addr::from(u32::from(self.addr) | self.hostmask_u32())
     }
     
@@ -777,7 +780,11 @@ impl Ipv6Net {
     /// );
     /// ```
     pub fn netmask(&self) -> Ipv6Addr {
-        Emu128::max_value().checked_shl(128 - self.prefix_len).unwrap_or(Emu128::min_value()).into()
+        self.netmask_emu128().into()
+    }
+
+    fn netmask_emu128(&self) -> Emu128 {
+        Emu128::max_value().checked_shl(128 - self.prefix_len).unwrap_or(Emu128::min_value())
     }
 
     /// Returns the host mask.
@@ -794,7 +801,11 @@ impl Ipv6Net {
     /// );
     /// ```
     pub fn hostmask(&self) -> Ipv6Addr {
-        Emu128::max_value().checked_shr(self.prefix_len).unwrap_or(Emu128::min_value()).into()
+        self.hostmask_emu128().into()
+    }
+
+    fn hostmask_emu128(&self) -> Emu128 {
+        Emu128::max_value().checked_shr(self.prefix_len).unwrap_or(Emu128::min_value())
     }
 
     /// Returns the network address. Truncates the provided Ipv6Addr to
@@ -812,7 +823,7 @@ impl Ipv6Net {
     /// );
     /// ```
     pub fn network(&self) -> Ipv6Addr {
-        self.addr.bitand(Emu128::max_value().checked_shl(128 - self.prefix_len).unwrap_or(Emu128::min_value()))
+        (Emu128::from(self.addr) & self.netmask_emu128()).into()
     }
     
     /// Returns the broadcast address. Returns the provided Ipv6Addr
@@ -833,7 +844,7 @@ impl Ipv6Net {
     /// );
     /// ```
     pub fn broadcast(&self) -> Ipv6Addr {
-        self.addr.bitor(Emu128::max_value().checked_shr(self.prefix_len).unwrap_or(Emu128::min_value()))
+        (Emu128::from(self.addr) | self.hostmask_emu128()).into()
     }
     
     /// Return a copy of the network with the address truncated to the
