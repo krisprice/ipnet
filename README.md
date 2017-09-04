@@ -12,6 +12,9 @@ Available on [Crates.io] and read the [documentation] for the full details.
 ## TODO / Open Questions:
 
 * Should `IpNet::new()` truncate the input `IpAddr` to the prefix_len and store that instead? Users may expect one behavior over the other. Truncating it at creation time means that the provided address can't be returned if the user has a need for it, and sort behaviour won't be influenced by it. Though we don't have a way to access it as the field is not public there is no `address()` method, this could be added. There is a `trunc()` method that does truncate the network, but chaining `IpNet::new().trunc()` or `IpNet::from().unwrap().trunc()` is kind of ugly. I am leaning towards changing this behaviour so the address is truncated at creation, then in future if Rust provides default args having a default `truncate=true` argument that users can override if they don't want it truncated.
+* Perhaps this should be solved with a `new_with_trunc()` constructor method. Or perhaps a series of (builder methods)[https://rust-lang-nursery.github.io/api-guidelines/type-safety.html#non-consuming-builders-preferred]?
+* Should prefix_len be it's own type? This seems like newtype overload, but the API guidelines would tend to indicate it (should be)[https://rust-lang-nursery.github.io/api-guidelines/dependability.html].
+* 
 
 ## Future
 

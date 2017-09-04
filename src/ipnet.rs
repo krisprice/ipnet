@@ -372,32 +372,32 @@ impl IpNet {
                 let new_prefix_len = clamp(new_prefix_len, 0, 32);
 
                 if new_prefix_len < self.prefix_len() {
-                    IpNetIter {
-                        start: IpNet::V4(Ipv4Net::new(Ipv4Addr::new(1, 1, 1, 1), 32)),
-                        end: IpNet::V4(Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 32)),
-                    }
+                    IpNetIter::new(
+                        IpNet::V4(Ipv4Net::new(Ipv4Addr::new(1, 1, 1, 1), 32)),
+                        IpNet::V4(Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 32)),
+                    )
                 }
                 else {   
-                    IpNetIter {
-                        start: IpNet::V4(Ipv4Net::new(a.network(), new_prefix_len)),
-                        end: IpNet::V4(Ipv4Net::new(a.broadcast(), new_prefix_len)),
-                    }
+                    IpNetIter::new(
+                        IpNet::V4(Ipv4Net::new(a.network(), new_prefix_len)),
+                        IpNet::V4(Ipv4Net::new(a.broadcast(), new_prefix_len)),
+                    )
                 }
             },
             IpNet::V6(ref a) => {
                 let new_prefix_len = clamp(new_prefix_len, 0, 128);
                 
                 if new_prefix_len < self.prefix_len() {
-                    IpNetIter {
-                        start: IpNet::V6(Ipv6Net::new(Ipv6Addr::new(1, 1, 1, 1, 1, 1, 1, 1), 128)),
-                        end: IpNet::V6(Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 128)),
-                    }
+                    IpNetIter::new(
+                        IpNet::V6(Ipv6Net::new(Ipv6Addr::new(1, 1, 1, 1, 1, 1, 1, 1), 128)),
+                        IpNet::V6(Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 128)),
+                    )
                 }
                 else {
-                    IpNetIter {
-                        start: IpNet::V6(Ipv6Net::new(a.network(), new_prefix_len)),
-                        end: IpNet::V6(Ipv6Net::new(a.broadcast(), new_prefix_len)),
-                    }
+                    IpNetIter::new(
+                        IpNet::V6(Ipv6Net::new(a.network(), new_prefix_len)),
+                        IpNet::V6(Ipv6Net::new(a.broadcast(), new_prefix_len)),
+                    )
                 }
             },
         }
@@ -688,16 +688,16 @@ impl Ipv4Net {
         let new_prefix_len = clamp(new_prefix_len, 0, 32);
 
         if new_prefix_len < self.prefix_len {
-            IpNetIter {
-                start: Ipv4Net::new(Ipv4Addr::new(1, 1, 1, 1), 32),
-                end: Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 32),
-            }
+            IpNetIter::new(
+                Ipv4Net::new(Ipv4Addr::new(1, 1, 1, 1), 32),
+                Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 32),
+            )
         }
         else {   
-            IpNetIter {
-                start: Ipv4Net::new(self.network(), new_prefix_len),
-                end: Ipv4Net::new(self.broadcast(), new_prefix_len),
-            }
+            IpNetIter::new(
+                Ipv4Net::new(self.network(), new_prefix_len),
+                Ipv4Net::new(self.broadcast(), new_prefix_len),
+            )
         }
     }
 
@@ -960,16 +960,16 @@ impl Ipv6Net {
         let new_prefix_len = clamp(new_prefix_len, 0, 128);
 
         if new_prefix_len < self.prefix_len {
-            IpNetIter {
-                start: Ipv6Net::new(Ipv6Addr::new(1, 1, 1, 1, 1, 1, 1, 1), 128),
-                end: Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 128),
-            }
+            IpNetIter::new(
+                Ipv6Net::new(Ipv6Addr::new(1, 1, 1, 1, 1, 1, 1, 1), 128),
+                Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 128),
+            )
         }
         else {   
-            IpNetIter {
-                start: Ipv6Net::new(self.network(), new_prefix_len),
-                end: Ipv6Net::new(self.broadcast(), new_prefix_len),
-            }
+            IpNetIter::new(
+                Ipv6Net::new(self.network(), new_prefix_len),
+                Ipv6Net::new(self.broadcast(), new_prefix_len),
+            )
         }
     }
 
@@ -1164,8 +1164,8 @@ impl<'a> Contains<&'a Ipv6Addr> for Ipv6Net {
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct IpNetIter<T> {
-    pub start: T,
-    pub end: T,
+    start: T,
+    end: T,
 }
 
 impl<T> IpNetIter<T> {

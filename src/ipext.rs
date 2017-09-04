@@ -50,8 +50,8 @@ use emu128::Emu128;
 /// assert_eq!(i6.collect::<Vec<Ipv6Addr>>(), v6);
 /// ```
 pub struct IpAddrIter<T> {
-    pub start: T,
-    pub end: T,
+    start: T,
+    end: T,
 }
 
 impl<T> IpAddrIter<T> {
