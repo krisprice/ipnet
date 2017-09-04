@@ -13,6 +13,7 @@
 //!
 //! [`Emu128`]: struct.Emu128.html
 
+use std::net::Ipv6Addr;
 use std::ops::{BitAnd, BitOr, Shr, Shl};
 
 /// An emulated 128 bit unsigned integer.
@@ -26,16 +27,29 @@ use std::ops::{BitAnd, BitOr, Shr, Shl};
 /// implementation.
 ///
 /// Conversion between `Ipv6Addr` and `Emu128` is provided by a `From`
-/// and `Into` implementation on `Emu128`.
+/// and `Into` implementation on `Emu128`. The `into()` method must be
+/// used to convert from an `Ipv6Addr` to an `Emu128` because it is not
+/// possible to implement `From<Emu128> for Ipv6Addr`.
 ///
 /// # Examples
 ///
 /// ```
+/// use std::net::Ipv6Addr;
+/// use std::str::FromStr;
 /// use ipnet::Emu128;
 ///
 /// let i1 = Emu128::from(1); // convert from u32
 /// let i2 = Emu128::from([1, 1]); // convert from [u64; 2]
 /// let slice: [u64; 2] = i2.into(); // convert into [u64; 2]
+///
+/// let a = Ipv6Addr::from_str("fd00::1").unwrap();
+/// let u = Emu128 { hi: 0xfd00_0000_0000_0000, lo: 1 };
+/// let a2: Ipv6Addr = u.into();
+/// let u2: Emu128 = a.into();
+///
+/// assert_eq!(a, a2);
+/// assert_eq!(u, u2);
+/// assert_eq!(u, Emu128::from(a));
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Emu128 {
@@ -176,6 +190,31 @@ impl From<[u64; 2]> for Emu128 {
 impl From<Emu128> for [u64; 2] {
     fn from(u: Emu128) -> Self {
         [u.hi, u.lo]
+    }
+}
+
+impl From<Ipv6Addr> for Emu128 {
+    fn from(ip: Ipv6Addr) -> Self {
+        let ip = ip.octets();
+        Emu128 {
+            hi: ((ip[0] as u64) << 56) + ((ip[1] as u64) << 48) +
+                ((ip[2] as u64) << 40) + ((ip[3] as u64) << 32) +
+                ((ip[4] as u64) << 24) + ((ip[5] as u64) << 16) +
+                ((ip[6] as u64) << 8) + (ip[7] as u64),
+            lo: ((ip[8] as u64) << 56) + ((ip[9] as u64) << 48) +
+                ((ip[10] as u64) << 40) + ((ip[11] as u64) << 32) +
+                ((ip[12] as u64) << 24) + ((ip[13] as u64) << 16) +
+                ((ip[14] as u64) << 8) + (ip[15] as u64),
+        }
+    }
+}
+
+impl Into<Ipv6Addr> for Emu128 {
+    fn into(self) -> Ipv6Addr {
+        Ipv6Addr::new(
+            (self.hi >> 48) as u16, (self.hi >> 32) as u16, (self.hi >> 16) as u16, self.hi as u16,
+            (self.lo >> 48) as u16, (self.lo >> 32) as u16, (self.lo >> 16) as u16, self.lo as u16,
+        )    
     }
 }
 

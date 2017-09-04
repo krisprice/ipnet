@@ -9,65 +9,6 @@ use std::mem;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use emu128::Emu128;
 
-/// Convert an `Ipv6Addr` into an `Emu128`.
-///
-/// # Examples
-///
-/// ```
-/// use std::net::Ipv6Addr;
-/// use std::str::FromStr;
-/// use ipnet::Emu128;
-///
-/// let a = Ipv6Addr::from_str("fd00::1").unwrap();
-/// let u = Emu128 { hi: 0xfd00_0000_0000_0000, lo: 1 };
-/// let a2: Ipv6Addr = u.into();
-///
-/// assert_eq!(a, a2);
-/// assert_eq!(u, a.into());
-/// assert_eq!(u, Emu128::from(a));
-/// ```
-impl From<Ipv6Addr> for Emu128 {
-    fn from(ip: Ipv6Addr) -> Self {
-        let ip = ip.octets();
-        Emu128 {
-            hi: ((ip[0] as u64) << 56) + ((ip[1] as u64) << 48) +
-                ((ip[2] as u64) << 40) + ((ip[3] as u64) << 32) +
-                ((ip[4] as u64) << 24) + ((ip[5] as u64) << 16) +
-                ((ip[6] as u64) << 8) + (ip[7] as u64),
-            lo: ((ip[8] as u64) << 56) + ((ip[9] as u64) << 48) +
-                ((ip[10] as u64) << 40) + ((ip[11] as u64) << 32) +
-                ((ip[12] as u64) << 24) + ((ip[13] as u64) << 16) +
-                ((ip[14] as u64) << 8) + (ip[15] as u64),
-        }
-    }
-}
-
-/// Convert an `Emu128` into an `Ipv6Addr`.
-///
-/// # Examples
-///
-/// ```
-/// use std::net::Ipv6Addr;
-/// use std::str::FromStr;
-/// use ipnet::Emu128;
-///
-/// let a = Ipv6Addr::from_str("fd00::1").unwrap();
-/// let u = Emu128 { hi: 0xfd00_0000_0000_0000, lo: 1 };
-/// let a2: Ipv6Addr = u.into();
-///
-/// assert_eq!(a, a2);
-/// assert_eq!(u, a.into());
-/// assert_eq!(u, Emu128::from(a));
-/// ```
-impl Into<Ipv6Addr> for Emu128 {
-    fn into(self) -> Ipv6Addr {
-        Ipv6Addr::new(
-            (self.hi >> 48) as u16, (self.hi >> 32) as u16, (self.hi >> 16) as u16, self.hi as u16,
-            (self.lo >> 48) as u16, (self.lo >> 32) as u16, (self.lo >> 16) as u16, self.lo as u16,
-        )    
-    }
-}
-
 /// An `Iterator` over a range of IPv4 or IPv6 addresses.
 ///
 /// This might be deprecated and replaced with an implementation of
@@ -462,7 +403,7 @@ mod tests {
             Ipv6Addr::from_str("fd00::3").unwrap(),
         ]);
     }
-    
+
     #[test]
     #[should_panic]
     fn test_ipaddr_add() {
