@@ -29,7 +29,7 @@ use ipext::{IpAddrIter, IpAdd, IpSub};
 /// assert_eq!("10.1.1.0".parse(), Ok(net_v4.network()));
 /// assert_eq!("fd00::".parse(), Ok(net_v6.network()));
 /// ```
-#[derive(Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum IpNet {
     V4(Ipv4Net),
     V6(Ipv6Net),
@@ -61,7 +61,7 @@ pub enum IpNet {
 /// let net_v4 = Ipv4Net::from_str("10.1.1.0/24").unwrap();
 /// assert_eq!("10.1.1.0".parse(), Ok(net_v4.network()));
 /// ```
-#[derive(Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Ipv4Net {
     addr: Ipv4Addr,
     prefix_len: u8,
@@ -93,7 +93,7 @@ pub struct Ipv4Net {
 /// let net_v6 = Ipv6Net::from_str("fd00::/32").unwrap();
 /// assert_eq!("fd00::".parse(), Ok(net_v6.network()));
 /// ```
-#[derive(Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Ipv6Net {
     addr: Ipv6Addr,
     prefix_len: u8,
@@ -1162,7 +1162,7 @@ impl<'a> Contains<&'a Ipv6Addr> for Ipv6Net {
 ///     Ipv6Net::from_str("fd00:c000::/18").unwrap(),
 /// ]);
 /// ```
-#[derive(Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct IpNetIter<T> {
     pub start: T,
     pub end: T,
