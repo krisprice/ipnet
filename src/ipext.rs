@@ -120,6 +120,11 @@ impl<T> Iterator for IpAddrIter<T>
 
 /// Provides a `saturating_add()` method for `Ipv4Addr` and `Ipv6Addr`.
 ///
+/// # Panics
+///
+/// When attempting to add an `IpAddr::V4` from an `IpAddr::V6` and vice
+/// versa.
+///
 /// # Examples
 ///
 /// ```
@@ -151,6 +156,11 @@ pub trait IpAdd<RHS = Self> {
 }
 
 /// Provides a `saturating_sub()` method for `Ipv4Addr` and `Ipv6Addr`.
+///
+/// # Panics
+///
+/// When attempting to subtract an `IpAddr::V4` from an `IpAddr::V6` and
+/// vice versa.
 ///
 /// # Examples
 ///
