@@ -13,6 +13,7 @@
 //!
 //! [`Emu128`]: struct.Emu128.html
 
+use std::fmt;
 use std::net::Ipv6Addr;
 use std::ops::{BitAnd, BitOr, Shr, Shl};
 
@@ -51,7 +52,7 @@ use std::ops::{BitAnd, BitOr, Shr, Shl};
 /// assert_eq!(u, u2);
 /// assert_eq!(u, Emu128::from(a));
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct Emu128 {
     pub hi: u64,
     pub lo: u64,
@@ -215,6 +216,12 @@ impl Into<Ipv6Addr> for Emu128 {
             (self.hi >> 48) as u16, (self.hi >> 32) as u16, (self.hi >> 16) as u16, self.hi as u16,
             (self.lo >> 48) as u16, (self.lo >> 32) as u16, (self.lo >> 16) as u16, self.lo as u16,
         )    
+    }
+}
+
+impl fmt::Display for Emu128 {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "({}, {})", self.hi, self.lo)
     }
 }
 
