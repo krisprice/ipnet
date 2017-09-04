@@ -8,5 +8,6 @@ repository = "https://github.com/krisprice/ipnet"
 keywords = ["IP", "CIDR", "network", "prefix", "subnet"]
 categories = ["network-programming"]
 readme = "README.md"
+documentation = "https://docs.rs/ipnet"
 
 [dependencies]
