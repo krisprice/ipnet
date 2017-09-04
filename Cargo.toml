@@ -1,6 +1,6 @@
 [package]
 name = "ipnet"
-version = "0.26.2"
+version = "0.26.3"
 authors = ["Kris Price <kris@krisprice.nz>"]
 description = "Provides types and methods for working with IPv4 and IPv6 network addresses, commonly called IP prefixes. Uses only stable Rust features and aligns to the standard library IpAddr, Ipv4Addr, and Ipv6Addr types. Nearing 1.0 release, reviews very welcome."
 license = "Apache-2.0"
