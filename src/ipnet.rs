@@ -479,7 +479,7 @@ impl Ipv4Net {
     /// let net = Ipv4Net::new(Ipv4Addr::new(10, 1, 1, 0), 24);
     /// ```
     pub fn new(ip: Ipv4Addr, prefix_len: u8) -> Ipv4Net {
-        let prefix_len = if prefix_len > 32 { 32 } else { prefix_len };
+        let prefix_len = clamp(prefix_len, 0, 32);
         Ipv4Net { addr: ip, prefix_len: prefix_len }
     }
 
@@ -756,7 +756,7 @@ impl Ipv6Net {
     /// let net = Ipv6Net::new(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0), 24);
     /// ```
     pub fn new(ip: Ipv6Addr, prefix_len: u8) -> Ipv6Net {
-        let prefix_len = if prefix_len > 128 { 128 } else { prefix_len };
+        let prefix_len = clamp(prefix_len, 0, 128);
         Ipv6Net { addr: ip, prefix_len: prefix_len }
     }
 
