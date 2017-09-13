@@ -8,6 +8,29 @@ use std::option::Option::{Some, None};
 use emu128::Emu128;
 use ipext::{IpAddrIter, IpAdd, IpSub};
 
+/// An error that is returned when the prefix length is invalid. Valid
+/// prefix lengths are 0 to 32 for Ipv4 and 0 to 128 for IPv6.
+///
+/// This error is used as the error type for the `new()` methods on
+/// [`Ipv4Net`] and [`Ipv6Net`].
+///
+/// [`Ipv4Net`]: struct.Ipv4Net.html
+/// [`Ipv6Net`]: struct.Ipv6Net.html
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PrefixLenError(());
+
+impl fmt::Display for PrefixLenError {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_str(self.description())
+    }
+}
+
+impl Error for PrefixLenError {
+    fn description(&self) -> &str {
+        "invalid IP prefix length"
+    }
+}
+
 /// An IP network address, either IPv4 or IPv6.
 ///
 /// This enum can contain either an [`Ipv4Net`] or an [`Ipv6Net`], see their
