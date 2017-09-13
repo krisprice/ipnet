@@ -368,16 +368,13 @@ impl IpNet {
     /// Returns an `Iterator` over the subnets of this network with the
     /// given prefix length.
     ///
-    /// * If `new_prefix_len` is greater than the bit width of the
-    /// underlying IP address type it will be clamped to that bit width.
-    ///
     /// # Examples
     ///
     /// ```
     /// # use std::str::FromStr;
-    /// # use ipnet::IpNet;
+    /// # use ipnet::{IpNet, PrefixLenError};
     /// let net = IpNet::from_str("10.0.0.0/24").unwrap();
-    /// assert_eq!(net.subnets(26).collect::<Vec<IpNet>>(), vec![
+    /// assert_eq!(net.subnets(26).unwrap().collect::<Vec<IpNet>>(), vec![
     ///     IpNet::from_str("10.0.0.0/26").unwrap(),
     ///     IpNet::from_str("10.0.0.64/26").unwrap(),
     ///     IpNet::from_str("10.0.0.128/26").unwrap(),
@@ -385,49 +382,46 @@ impl IpNet {
     /// ]);
     ///
     /// let net = IpNet::from_str("fd00::/16").unwrap();
-    /// assert_eq!(net.subnets(18).collect::<Vec<IpNet>>(), vec![
+    /// assert_eq!(net.subnets(18).unwrap().collect::<Vec<IpNet>>(), vec![
     ///     IpNet::from_str("fd00::/18").unwrap(),
     ///     IpNet::from_str("fd00:4000::/18").unwrap(),
     ///     IpNet::from_str("fd00:8000::/18").unwrap(),
     ///     IpNet::from_str("fd00:c000::/18").unwrap(),
     /// ]);
     ///
+    /// let net = IpNet::from_str("10.0.0.0/24").unwrap();
+    /// assert_eq!(net.subnets(23), Err(PrefixLenError));
+    ///
+    /// let net = IpNet::from_str("10.0.0.0/24").unwrap();
+    /// assert_eq!(net.subnets(33), Err(PrefixLenError));
+    ///
     /// let net = IpNet::from_str("fd00::/16").unwrap();
-    /// assert_eq!(net.subnets(15).collect::<Vec<IpNet>>(), vec![]);
+    /// assert_eq!(net.subnets(15), Err(PrefixLenError));
+    ///
+    /// let net = IpNet::from_str("fd00::/16").unwrap();
+    /// assert_eq!(net.subnets(129), Err(PrefixLenError));
     /// ```
-    pub fn subnets(&self, new_prefix_len: u8) -> IpNetIter<IpNet> {
+    pub fn subnets(&self, new_prefix_len: u8) -> Result<IpNetIter<IpNet>, PrefixLenError> {
         match *self {
             IpNet::V4(ref a) => {
-                let new_prefix_len = clamp(new_prefix_len, 0, 32);
-
-                if new_prefix_len < self.prefix_len() {
-                    IpNetIter::new(
-                        IpNet::V4(Ipv4Net::new(Ipv4Addr::new(1, 1, 1, 1), 32).unwrap()),
-                        IpNet::V4(Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 32).unwrap()),
-                    )
+                if a.prefix_len > new_prefix_len || new_prefix_len > 32 {
+                    return Err(PrefixLenError);
                 }
-                else {   
-                    IpNetIter::new(
-                        IpNet::V4(Ipv4Net::new(a.network(), new_prefix_len).unwrap()),
-                        IpNet::V4(Ipv4Net::new(a.broadcast(), new_prefix_len).unwrap()),
-                    )
-                }
+                
+                Ok(IpNetIter::new(
+                    IpNet::V4(Ipv4Net::new(a.network(), new_prefix_len).unwrap()),
+                    IpNet::V4(Ipv4Net::new(a.broadcast(), new_prefix_len).unwrap()),
+                ))
             },
             IpNet::V6(ref a) => {
-                let new_prefix_len = clamp(new_prefix_len, 0, 128);
+                if a.prefix_len > new_prefix_len || new_prefix_len > 128 {
+                    return Err(PrefixLenError);
+                }
                 
-                if new_prefix_len < self.prefix_len() {
-                    IpNetIter::new(
-                        IpNet::V6(Ipv6Net::new(Ipv6Addr::new(1, 1, 1, 1, 1, 1, 1, 1), 128).unwrap()),
-                        IpNet::V6(Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 128).unwrap()),
-                    )
-                }
-                else {
-                    IpNetIter::new(
-                        IpNet::V6(Ipv6Net::new(a.network(), new_prefix_len).unwrap()),
-                        IpNet::V6(Ipv6Net::new(a.broadcast(), new_prefix_len).unwrap()),
-                    )
-                }
+                Ok(IpNetIter::new(
+                    IpNet::V6(Ipv6Net::new(a.network(), new_prefix_len).unwrap()),
+                    IpNet::V6(Ipv6Net::new(a.broadcast(), new_prefix_len).unwrap()),
+                ))
             },
         }
     }
@@ -723,7 +717,6 @@ impl Ipv4Net {
     ///
     /// let net = Ipv4Net::from_str("10.0.0.0/24").unwrap();
     /// assert_eq!(net.subnets(33), Err(PrefixLenError));
-    /// ```
     /// ```
     pub fn subnets(&self, new_prefix_len: u8) -> Result<IpNetIter<Ipv4Net>, PrefixLenError> {
         if self.prefix_len > new_prefix_len || new_prefix_len > 32 {
