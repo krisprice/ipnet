@@ -1,5 +1,6 @@
 use std::cmp::{min, max};
 use std::convert::From;
+use std::error::Error;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ops::Deref;
@@ -17,7 +18,7 @@ use ipext::{IpAddrIter, IpAdd, IpSub};
 /// [`Ipv4Net`]: struct.Ipv4Net.html
 /// [`Ipv6Net`]: struct.Ipv6Net.html
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PrefixLenError(());
+pub struct PrefixLenError;
 
 impl fmt::Display for PrefixLenError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
@@ -396,14 +397,14 @@ impl IpNet {
 
                 if new_prefix_len < self.prefix_len() {
                     IpNetIter::new(
-                        IpNet::V4(Ipv4Net::new(Ipv4Addr::new(1, 1, 1, 1), 32)),
-                        IpNet::V4(Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 32)),
+                        IpNet::V4(Ipv4Net::new(Ipv4Addr::new(1, 1, 1, 1), 32).unwrap()),
+                        IpNet::V4(Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 32).unwrap()),
                     )
                 }
                 else {   
                     IpNetIter::new(
-                        IpNet::V4(Ipv4Net::new(a.network(), new_prefix_len)),
-                        IpNet::V4(Ipv4Net::new(a.broadcast(), new_prefix_len)),
+                        IpNet::V4(Ipv4Net::new(a.network(), new_prefix_len).unwrap()),
+                        IpNet::V4(Ipv4Net::new(a.broadcast(), new_prefix_len).unwrap()),
                     )
                 }
             },
@@ -498,12 +499,20 @@ impl Ipv4Net {
     ///
     /// ```
     /// # use std::net::Ipv4Addr;
-    /// # use ipnet::Ipv4Net;
+    /// # use ipnet::{Ipv4Net, PrefixLenError};
     /// let net = Ipv4Net::new(Ipv4Addr::new(10, 1, 1, 0), 24);
+    /// assert_eq!(
+    ///     Ipv4Net::new(Ipv4Addr::new(10, 1, 1, 0), 33),
+    ///     Err(PrefixLenError)
+    /// );
     /// ```
-    pub fn new(ip: Ipv4Addr, prefix_len: u8) -> Ipv4Net {
-        let prefix_len = clamp(prefix_len, 0, 32);
-        Ipv4Net { addr: ip, prefix_len: prefix_len }
+    pub fn new(ip: Ipv4Addr, prefix_len: u8) -> Result<Ipv4Net, PrefixLenError> {
+        if prefix_len > 32 {
+            Err(PrefixLenError)
+        }
+        else {
+            Ok(Ipv4Net { addr: ip, prefix_len: prefix_len })
+        }
     }
 
     /// Returns the prefix length.
@@ -593,7 +602,7 @@ impl Ipv4Net {
     /// );
     /// ```
     pub fn trunc(&self) -> Ipv4Net {
-        Ipv4Net::new(self.network(), self.prefix_len)
+        Ipv4Net::new(self.network(), self.prefix_len).unwrap()
     }
 
     /// Returns the `Ipv4Net` that contains this one.
@@ -610,12 +619,7 @@ impl Ipv4Net {
     /// );
     /// ```
     pub fn supernet(&self) -> Option<Ipv4Net> {
-        if self.prefix_len > 0 {
-            Some(Ipv4Net::new(self.addr, self.prefix_len - 1))
-        }
-        else {
-            None
-        }
+        Ipv4Net::new(self.addr, self.prefix_len.wrapping_sub(1)).ok()
     }
 
     /// Returns `true` if this network and the given network are 
@@ -712,14 +716,14 @@ impl Ipv4Net {
 
         if new_prefix_len < self.prefix_len {
             IpNetIter::new(
-                Ipv4Net::new(Ipv4Addr::new(1, 1, 1, 1), 32),
-                Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 32),
+                Ipv4Net::new(Ipv4Addr::new(1, 1, 1, 1), 32).unwrap(),
+                Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 32).unwrap(),
             )
         }
         else {   
             IpNetIter::new(
-                Ipv4Net::new(self.network(), new_prefix_len),
-                Ipv4Net::new(self.broadcast(), new_prefix_len),
+                Ipv4Net::new(self.network(), new_prefix_len).unwrap(),
+                Ipv4Net::new(self.broadcast(), new_prefix_len).unwrap(),
             )
         }
     }
@@ -744,7 +748,7 @@ impl Ipv4Net {
                 let range = end.saturating_sub(start);
                 let num_bits = 32u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
                 let prefix_len = 32 - min(num_bits, start.trailing_zeros());
-                res.push(Ipv4Net::new(Ipv4Addr::from(start), prefix_len as u8));
+                res.push(Ipv4Net::new(Ipv4Addr::from(start), prefix_len as u8).unwrap());
                 let step = 1u32.checked_shl(32 - prefix_len as u32).unwrap_or(0);
                 start = start.saturating_add(step);
             }
@@ -1207,7 +1211,7 @@ impl IpNetIter<IpNet> {
     fn zero(&self) -> IpNet {
         match self.start {
             IpNet::V4(_) => IpNet::V4(
-                Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 0)
+                Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 0).unwrap()
             ),
             IpNet::V6(_) => IpNet::V6(
                 Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 0)
@@ -1217,7 +1221,7 @@ impl IpNetIter<IpNet> {
     fn forward(&self) -> IpNet {
         match self.start {
             IpNet::V4(ref a) => IpNet::V4(
-                Ipv4Net::new(a.broadcast().saturating_add(1), a.prefix_len)
+                Ipv4Net::new(a.broadcast().saturating_add(1), a.prefix_len).unwrap()
             ),
             IpNet::V6(ref a) => IpNet::V6(
                 Ipv6Net::new(a.broadcast().saturating_add(1), a.prefix_len)
@@ -1256,11 +1260,11 @@ impl Iterator for IpNetIter<Ipv4Net> {
         }
         match self.start.trunc().partial_cmp(&self.end.trunc()) {
             Some(Less) => {
-                let next = Ipv4Net::new(self.start.broadcast().saturating_add(1), self.start.prefix_len); // self.start.add_one();
+                let next = Ipv4Net::new(self.start.broadcast().saturating_add(1), self.start.prefix_len).unwrap(); // self.start.add_one();
                 Some(mem::replace(&mut self.start, next))
             },
             Some(Equal) => {
-                self.end = Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 0); // self.end.replace_zero();
+                self.end = Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 0).unwrap(); // self.end.replace_zero();
                 Some(self.start)
             },
             _ => None,
