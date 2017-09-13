@@ -514,11 +514,9 @@ impl Ipv4Net {
     /// ```
     pub fn new(ip: Ipv4Addr, prefix_len: u8) -> Result<Ipv4Net, PrefixLenError> {
         if prefix_len > 32 {
-            Err(PrefixLenError)
+            return Err(PrefixLenError);
         }
-        else {
-            Ok(Ipv4Net { addr: ip, prefix_len: prefix_len })
-        }
+        Ok(Ipv4Net { addr: ip, prefix_len: prefix_len })
     }
 
     /// Returns the address.
@@ -797,11 +795,9 @@ impl Ipv6Net {
     /// ```
     pub fn new(ip: Ipv6Addr, prefix_len: u8) -> Result<Ipv6Net, PrefixLenError> {
         if prefix_len > 128 {
-            Err(PrefixLenError)
+            return Err(PrefixLenError);
         }
-        else {
-            Ok(Ipv6Net { addr: ip, prefix_len: prefix_len })
-        }
+        Ok(Ipv6Net { addr: ip, prefix_len: prefix_len })
     }
     
     /// Returns the address.
@@ -1305,19 +1301,6 @@ impl Iterator for IpNetIter<Ipv6Net> {
     }
 }
 
-// Helper function used to clamp values to valid ranges.
-fn clamp<T: Ord>(val: T, min: T, max: T) -> T {
-    if val > max {
-        max
-    }
-    else if val < min {
-        min
-    }
-    else {
-        val
-    }
-}
-
 // Generic function for merging a vector of intervals.
 fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
     let mut res: Vec<(T, T)> = Vec::new();
@@ -1351,19 +1334,6 @@ fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_clamp() {
-        assert_eq!(clamp(-1, 0, 32), 0);
-        assert_eq!(clamp(0, 0, 32), 0);
-        assert_eq!(clamp(1, 0, 32), 1);
-        assert_eq!(clamp(31, 0, 32), 31);
-        assert_eq!(clamp(32, 0, 32), 32);
-        assert_eq!(clamp(33, 0, 32), 32);
-        assert_eq!(clamp(127, 0, 128), 127);
-        assert_eq!(clamp(128, 0, 128), 128);
-        assert_eq!(clamp(129, 0, 128), 128);
-    }
 
     #[test]
     fn test_merge_intervals() {
