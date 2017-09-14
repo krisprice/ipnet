@@ -271,14 +271,14 @@ impl IpNet {
     /// let n2 = IpNet::from_str("172.16.0.0/23").unwrap();
     /// let n3 = IpNet::from_str("172.16.0.0/0").unwrap();
     ///
-    /// assert_eq!(n1.supernet().unwrap().trunc(), n2);
+    /// assert_eq!(n1.supernet().unwrap(), n2);
     /// assert_eq!(n3.supernet(), None);
     ///
     /// let n1 = IpNet::from_str("fd00:ff00::/24").unwrap();
     /// let n2 = IpNet::from_str("fd00:fe00::/23").unwrap();
     /// let n3 = IpNet::from_str("fd00:fe00::/0").unwrap();
     ///
-    /// assert_eq!(n1.supernet().unwrap().trunc(), n2);
+    /// assert_eq!(n1.supernet().unwrap(), n2);
     /// assert_eq!(n3.supernet(), None);
     /// ```
     pub fn supernet(&self) -> Option<IpNet> {
@@ -619,11 +619,11 @@ impl Ipv4Net {
     /// let n2 = Ipv4Net::from_str("172.16.0.0/23").unwrap();
     /// let n3 = Ipv4Net::from_str("172.16.0.0/0").unwrap();
     ///
-    /// assert_eq!(n1.supernet().unwrap().trunc(), n2);
+    /// assert_eq!(n1.supernet().unwrap(), n2);
     /// assert_eq!(n3.supernet(), None);
     /// ```
     pub fn supernet(&self) -> Option<Ipv4Net> {
-        Ipv4Net::new(self.addr, self.prefix_len.wrapping_sub(1)).ok()
+        Ipv4Net::new(self.addr, self.prefix_len.wrapping_sub(1)).map(|n| n.trunc()).ok()
     }
 
     /// Returns `true` if this network and the given network are 
@@ -910,11 +910,11 @@ impl Ipv6Net {
     /// let n2 = Ipv6Net::from_str("fd00:fe00::/23").unwrap();
     /// let n3 = Ipv6Net::from_str("fd00:fe00::/0").unwrap();
     ///
-    /// assert_eq!(n1.supernet().unwrap().trunc(), n2);
+    /// assert_eq!(n1.supernet().unwrap(), n2);
     /// assert_eq!(n3.supernet(), None);
     /// ```
     pub fn supernet(&self) -> Option<Ipv6Net> {
-        Ipv6Net::new(self.addr, self.prefix_len.wrapping_sub(1)).ok()
+        Ipv6Net::new(self.addr, self.prefix_len.wrapping_sub(1)).map(|n| n.trunc()).ok()
     }
 
     /// Returns `true` if this network and the given network are 
