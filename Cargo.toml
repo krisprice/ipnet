@@ -1,6 +1,6 @@
 [package]
 name = "ipnet"
-version = "0.26.5" # Remember to update html_root_url
+version = "0.27.0" # Remember to update html_root_url
 authors = ["Kris Price <kris@krisprice.nz>"]
 description = "Provides types and methods for working with IPv4 and IPv6 network addresses, commonly called IP prefixes. Uses only stable Rust features and aligns to the standard library IpAddr, Ipv4Addr, and Ipv6Addr types."
 license = "Apache-2.0"
