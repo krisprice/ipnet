@@ -263,7 +263,7 @@ impl<'a> Parser<'a> {
 
         self.read_seq_3(ip_addr, slash, prefix_len).map(|t| {
             let (ip, _, prefix_len): (Ipv4Addr, char, u8) = t;
-            Ipv4Net::new(ip, prefix_len)
+            Ipv4Net::new(ip, prefix_len).unwrap()
         })
     }
 
@@ -277,7 +277,7 @@ impl<'a> Parser<'a> {
 
         self.read_seq_3(ip_addr, slash, prefix_len).map(|t| {
             let (ip, _, prefix_len): (Ipv6Addr, char, u8) = t;
-            Ipv6Net::new(ip, prefix_len)
+            Ipv6Net::new(ip, prefix_len).unwrap()
         })
     }
 
