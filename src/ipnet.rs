@@ -1211,88 +1211,64 @@ use std::mem;
 impl IpNetIter<IpNet> {
     fn zero(&self) -> IpNet {
         match self.start {
-            IpNet::V4(_) => IpNet::V4(
-                Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 0).unwrap()
-            ),
-            IpNet::V6(_) => IpNet::V6(
-                Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 0).unwrap()
-            ),
+            IpNet::V4(_) => IpNet::V4(Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 0).unwrap()),
+            IpNet::V6(_) => IpNet::V6(Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 0).unwrap()),
         }
     }
     fn forward(&self) -> IpNet {
         match self.start {
-            IpNet::V4(ref a) => IpNet::V4(
-                Ipv4Net::new(a.broadcast().saturating_add(1), a.prefix_len).unwrap()
-            ),
-            IpNet::V6(ref a) => IpNet::V6(
-                Ipv6Net::new(a.broadcast().saturating_add(1), a.prefix_len).unwrap()
-            ),
+            IpNet::V4(ref a) => IpNet::V4(Ipv4Net::new(a.broadcast().saturating_add(1), a.prefix_len).unwrap()),
+            IpNet::V6(ref a) => IpNet::V6(Ipv6Net::new(a.broadcast().saturating_add(1), a.prefix_len).unwrap()),
         }
     }
 }
 
-impl Iterator for IpNetIter<IpNet> {
-    type Item = IpNet;
-    
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.start.prefix_len() != self.end.prefix_len() {
-            return None;
-        }
-        match self.start.trunc().partial_cmp(&self.end.trunc()) {
-            Some(Less) => {
-                let next = self.forward(); // self.start.add_one();
-                Some(mem::replace(&mut self.start, next))
-            },
-            Some(Equal) => {
-                self.end = self.zero(); // self.end.replace_zero();
-                Some(self.start)
-            },
-            _ => None,
-        }
+impl IpNetIter<Ipv4Net> {
+    fn zero(&self) -> Ipv4Net {
+        Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 0).unwrap()
+    }
+    fn forward(&self) -> Ipv4Net {
+        Ipv4Net::new(self.start.broadcast().saturating_add(1), self.start.prefix_len).unwrap()
     }
 }
 
-impl Iterator for IpNetIter<Ipv4Net> {
-    type Item = Ipv4Net;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.start.prefix_len() != self.end.prefix_len() {
-            return None;
-        }
-        match self.start.trunc().partial_cmp(&self.end.trunc()) {
-            Some(Less) => {
-                let next = Ipv4Net::new(self.start.broadcast().saturating_add(1), self.start.prefix_len).unwrap(); // self.start.add_one();
-                Some(mem::replace(&mut self.start, next))
-            },
-            Some(Equal) => {
-                self.end = Ipv4Net::new(Ipv4Addr::new(0, 0, 0, 0), 0).unwrap(); // self.end.replace_zero();
-                Some(self.start)
-            },
-            _ => None,
-        }
+impl IpNetIter<Ipv6Net> {
+    fn zero(&self) -> Ipv6Net {
+        Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 0).unwrap()
+    }
+    fn forward(&self) -> Ipv6Net {
+        Ipv6Net::new(self.start.broadcast().saturating_add(1), self.start.prefix_len).unwrap()
     }
 }
 
-impl Iterator for IpNetIter<Ipv6Net> {
-    type Item = Ipv6Net;
+macro_rules! ip_net_iter_impl {
+    ($t:ty) => (
+        impl Iterator for IpNetIter<$t> {
+            type Item = $t;
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.start.prefix_len() != self.end.prefix_len() {
-            return None;
+            fn next(&mut self) -> Option<Self::Item> {
+                if self.start.prefix_len() != self.end.prefix_len() {
+                    return None;
+                }
+                match self.start.trunc().partial_cmp(&self.end.trunc()) {
+                    Some(Less) => {
+                        let next = self.forward(); // self.start.add_one();
+                        Some(mem::replace(&mut self.start, next))
+                    },
+                    Some(Equal) => {
+                        self.end = self.zero(); // self.end.replace_zero();
+                        Some(self.start)
+                    },
+                    _ => None,
+                }
+            }
         }
-        match self.start.trunc().partial_cmp(&self.end.trunc()) {
-            Some(Less) => {
-                let next = Ipv6Net::new(self.start.broadcast().saturating_add(1), self.start.prefix_len).unwrap(); // self.start.add_one();
-                Some(mem::replace(&mut self.start, next))
-            },
-            Some(Equal) => {
-                self.end = Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 0).unwrap(); // self.end.replace_zero();
-                Some(self.start)
-            },
-            _ => None,
-        }
-    }
+    )
 }
+
+ip_net_iter_impl!(IpNet);
+ip_net_iter_impl!(Ipv4Net);
+ip_net_iter_impl!(Ipv6Net);
 
 // Generic function for merging a vector of intervals.
 fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
