@@ -492,8 +492,6 @@ impl Ipv4Net {
     /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
     /// length.
     ///
-    /// * If `prefix_len` is greater than 32 it will be clamped to 32.
-    ///
     /// # Examples
     ///
     /// ```
@@ -688,8 +686,6 @@ impl Ipv4Net {
 
     /// Returns an `Iterator` over the subnets of this network with the
     /// given prefix length.
-    ///
-    /// * If `new_prefix_len` is greater than 32 it will be clamped to 32.
     ///
     /// # Examples
     ///
