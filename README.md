@@ -2,9 +2,9 @@
 
 Nearing 1.0 release, feedback and requests are very welcome. Just open an [issue on GitHub](https://github.com/krisprice/ipnet/issues) or email me.
 
-This module provides types and methods for working with IPv4 and IPv6 network addresses, commonly called IP prefixes. Its design aligns to the existing `IpAddr`, `Ipv4Addr`, and `Ipv6Addr` types provided in the Rust standard library. It will always use only stable features, so that it will always compile using the stable toolchain.
+This module provides types and methods for working with IPv4 and IPv6 network addresses, commonly called IP prefixes. Its design aligns to and makes use of the existing `IpAddr`, `Ipv4Addr`, and `Ipv6Addr` types provided in the Rust standard library. It will always use only the stable Rust features, so that it will always compile using the stable toolchain.
 
-The module includes extension traits to provide Add, Sub, BitAnd, and BitOr operations to `Ipv4Addr` and `Ipv6Addr`.
+The module includes extension traits to provide Add, Sub, BitAnd, and BitOr operations and iterations to `Ipv4Addr` and `Ipv6Addr`.
 
 Available on [Crates.io] and read the [documentation] for the full details.
 

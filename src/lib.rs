@@ -2,8 +2,9 @@
 //! Types for IPv4 and IPv6 network addresses.
 //!
 //! This module provides types and methods for working with IPv4 and
-//! IPv6 network addresses. It aims for alignment with the [`IpAddr`],
-//! [`Ipv4Addr`], and [`Ipv6Addr`] types in Rust's standard library.
+//! IPv6 network addresses, commonly called IP prefixes. Its design
+//! aligns to and makes use of the existing [`IpAddr`], [`Ipv4Addr`],
+//! and [`Ipv6Addr`] types provided in the Rust standard library.
 //!
 //! The module also provides traits that extend `Ipv4Addr` and
 //! `Ipv6Addr` to support Add, Sub, BitAnd, and BitOr operations.
