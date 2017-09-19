@@ -1268,13 +1268,12 @@ ip_net_iter_impl!(Ipv6Net);
 
 // Generic function for merging a vector of intervals.
 fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
-    let mut res: Vec<(T, T)> = Vec::new();
-    
     if intervals.len() == 0 {
-        return res;
+        return intervals;
     }
 
     intervals.sort();
+    let mut res: Vec<(T, T)> = Vec::new();
     let (mut start, mut end) = intervals[0];
     
     let mut i = 1;
@@ -1292,6 +1291,7 @@ fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
         }
         i += 1;
     }
+
     res.push((start, end));
     res
 }
