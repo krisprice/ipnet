@@ -1,7 +1,9 @@
 use std::cmp::{min, max};
+use std::cmp::Ordering::*;
 use std::convert::From;
 use std::error::Error;
 use std::fmt;
+use std::mem;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ops::Deref;
 use std::option::Option::{Some, None};
@@ -10,10 +12,10 @@ use emu128::Emu128;
 use ipext::{IpAddrIter, IpAdd, IpSub};
 
 /// An error that is returned when the prefix length is invalid. Valid
-/// prefix lengths are 0 to 32 for Ipv4 and 0 to 128 for IPv6.
+/// prefix lengths are 0 to 32 for IPv4 and 0 to 128 for IPv6.
 ///
-/// This error is used as the error type for the `new()` methods on
-/// [`Ipv4Net`] and [`Ipv6Net`].
+/// This error is used as the error type for the `new()` and `subnets()`
+/// methods on [`Ipv4Net`] and [`Ipv6Net`].
 ///
 /// [`Ipv4Net`]: struct.Ipv4Net.html
 /// [`Ipv6Net`]: struct.Ipv6Net.html
@@ -339,30 +341,27 @@ impl IpNet {
     ///     IpAddr::from_str("10.0.0.0").unwrap(),
     ///     IpAddr::from_str("10.0.0.1").unwrap(),
     /// ]);
+    ///
+    /// let net = IpNet::from_str("fd00::/126").unwrap();
+    /// assert_eq!(net.hosts().collect::<Vec<IpAddr>>(), vec![
+    ///     IpAddr::from_str("fd00::").unwrap(),
+    ///     IpAddr::from_str("fd00::1").unwrap(),
+    ///     IpAddr::from_str("fd00::2").unwrap(),
+    ///     IpAddr::from_str("fd00::3").unwrap(),
+    /// ]);
     /// ```
     pub fn hosts(&self) -> IpAddrIter<IpAddr> {
-        match *self {
-            IpNet::V4(_) => {               
-                let mut start = self.network();
-                let mut end = self.broadcast();
-                
-                if self.prefix_len() < 31 {
-                    start = start.saturating_add(1);
-                    end = end.saturating_sub(1);
-                }
-                
-                IpAddrIter::new(
-                    start,
-                    end,
-                )
-            },
-            IpNet::V6(_) => {
-                IpAddrIter::new(
-                    self.network(),
-                    self.broadcast(),
-                )
-            },
+        let mut start = self.network();
+        let mut end = self.broadcast();        
+
+        if let IpNet::V4(_) = *self {
+            if self.prefix_len() < 31 {
+                start = start.saturating_add(1);
+                end = end.saturating_sub(1);
+            }
         }
+
+        IpAddrIter::new(start, end)
     }
     
     /// Returns an `Iterator` over the subnets of this network with the
@@ -678,10 +677,7 @@ impl Ipv4Net {
             end = end.saturating_sub(1);
         }
         
-        IpAddrIter::new(
-            start,
-            end,
-        )
+        IpAddrIter::new(start, end)
     }
 
     /// Returns an `Iterator` over the subnets of this network with the
@@ -950,10 +946,7 @@ impl Ipv6Net {
     /// ]);
     /// ```
     pub fn hosts(&self) -> IpAddrIter<Ipv6Addr> {
-        IpAddrIter::new(
-            self.network(),
-            self.broadcast(),
-        )
+        IpAddrIter::new(self.network(), self.broadcast())
     }
 
     /// Returns an `Iterator` over the subnets of this network with the
@@ -1200,9 +1193,6 @@ impl<T> IpNetIter<T> {
         }
     }
 }
-
-use std::cmp::Ordering::*;
-use std::mem;
 
 impl IpNetIter<IpNet> {
     fn zero(&self) -> IpNet {
