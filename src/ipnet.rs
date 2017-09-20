@@ -449,11 +449,19 @@ impl IpNet {
     /// ]);
     /// ```
     pub fn aggregate(networks: &Vec<IpNet>) -> Vec<IpNet> {
-        let ipv4nets: Vec<Ipv4Net> = networks.iter().filter_map(|p| if let IpNet::V4(x) = *p { Some(x) } else { None }).collect();
-        let ipv6nets: Vec<Ipv6Net> = networks.iter().filter_map(|p| if let IpNet::V6(x) = *p { Some(x) } else { None }).collect();
+        let mut ipv4nets: Vec<Ipv4Net> = Vec::new();
+        let mut ipv6nets: Vec<Ipv6Net> = Vec::new();
+
+        for n in networks {
+            match *n {
+                IpNet::V4(x) => ipv4nets.push(x),
+                IpNet::V6(x) => ipv6nets.push(x),
+            }
+        }
+
+        let mut res: Vec<IpNet> = Vec::new();
         let ipv4aggs = Ipv4Net::aggregate(&ipv4nets);
         let ipv6aggs = Ipv6Net::aggregate(&ipv6nets);
-        let mut res: Vec<IpNet> = Vec::new();
         res.extend::<Vec<IpNet>>(ipv4aggs.into_iter().map(IpNet::V4).collect::<Vec<IpNet>>());
         res.extend::<Vec<IpNet>>(ipv6aggs.into_iter().map(IpNet::V6).collect::<Vec<IpNet>>());
         res
