@@ -454,8 +454,8 @@ impl IpNet {
         let ipv4aggs = Ipv4Net::aggregate(&ipv4nets);
         let ipv6aggs = Ipv6Net::aggregate(&ipv6nets);
         let mut res: Vec<IpNet> = Vec::new();
-        res.extend::<Vec<IpNet>>(ipv4aggs.into_iter().map(|n| IpNet::V4(n)).collect::<Vec<IpNet>>());
-        res.extend::<Vec<IpNet>>(ipv6aggs.into_iter().map(|n| IpNet::V6(n)).collect::<Vec<IpNet>>());
+        res.extend::<Vec<IpNet>>(ipv4aggs.into_iter().map(IpNet::V4).collect::<Vec<IpNet>>());
+        res.extend::<Vec<IpNet>>(ipv6aggs.into_iter().map(IpNet::V6).collect::<Vec<IpNet>>());
         res
     }
 }
