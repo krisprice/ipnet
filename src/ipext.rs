@@ -260,7 +260,7 @@ impl IpAdd<u32> for IpAddr {
     }
 }
 
-impl IpAdd<IpAddr> for IpAddr {
+/*impl IpAdd<IpAddr> for IpAddr {
     type Output = IpAddr;
 
     #[inline]
@@ -271,7 +271,7 @@ impl IpAdd<IpAddr> for IpAddr {
             _ => panic!("can't add Ipv4Addr and Ipv6Addr"),
         }
     }
-}
+}*/
 
 impl IpSub<u32> for IpAddr {
     type Output = IpAddr;
@@ -285,7 +285,7 @@ impl IpSub<u32> for IpAddr {
     }
 }
 
-impl IpSub<IpAddr> for IpAddr {
+/*impl IpSub<IpAddr> for IpAddr {
     type Output = IpAddr;
 
     #[inline]
@@ -296,9 +296,39 @@ impl IpSub<IpAddr> for IpAddr {
             _ => panic!("can't subtract Ipv4Addr and Ipv6Addr"),
         }
     }
+}*/
+/*
+impl IpAdd<u32> for Ipv4Addr {
+    type Output = Ipv4Addr;
+
+    fn saturating_add(self, rhs: u32) -> Ipv4Addr {
+        let lhs: u32 = self.into();
+        let rhs: u32 = rhs.into();
+        lhs.saturating_add(rhs).into()
+    }
 }
 
-macro_rules! ip_addsub_impl {
+impl IpSub<Ipv4Addr> for Ipv4Addr {
+    type Output = u32;
+
+    fn saturating_sub(self, rhs: Ipv4Addr) -> u32 {
+        let lhs: u32 = self.into();
+        let rhs: u32 = rhs.into();
+        lhs.saturating_sub(rhs)
+    }
+}
+
+impl IpSub<u32> for Ipv4Addr {
+    type Output = Ipv4Addr;
+
+    fn saturating_sub(self, rhs: u32) -> Ipv4Addr {
+        let lhs: u32 = self.into();
+        let rhs: u32 = rhs.into();
+        lhs.saturating_sub(rhs).into()
+    }
+}*/
+
+/*macro_rules! ip_addsub_impl {
     ($(($lhs:ty, $rhs:ty, $t:ty),)*) => {
     $(
         impl IpAdd<$rhs> for $lhs {
@@ -324,7 +354,52 @@ macro_rules! ip_addsub_impl {
         }
     )*
     }
+}*/
+
+macro_rules! ip_addsub_impl {
+    ($(($lhs:ty, $rhs:ty, $output:ty, $inner:ty),)*) => {
+    $(
+        impl IpAdd<$rhs> for $lhs {
+            type Output = $output;
+
+            #[inline]
+            fn saturating_add(self, rhs: $rhs) -> $output {
+                let lhs: $inner = self.into();
+                let rhs: $inner = rhs.into();
+                (lhs.saturating_add(rhs.into())).into()
+            }
+        }
+
+        impl IpSub<$rhs> for $lhs {
+            type Output = $output;
+
+            #[inline]
+            fn saturating_sub(self, rhs: $rhs) -> $output {
+                let lhs: $inner = self.into();
+                let rhs: $inner = rhs.into();
+                (lhs.saturating_sub(rhs.into())).into()
+            }
+        }
+    )*
+    }
 }
+
+// lhs, rhs, output, inner type
+ip_addsub_impl! {
+    (Ipv4Addr, Ipv4Addr, u32, u32),
+    (Ipv4Addr, u32, Ipv4Addr, u32),
+    (Ipv6Addr, Ipv6Addr, Emu128, Emu128),
+    (Ipv6Addr, Emu128, Ipv6Addr, Emu128),
+    (Ipv6Addr, u32, Ipv6Addr, Emu128),
+}
+
+/*ip_addsub_impl! {
+    (Ipv4Addr, Ipv4Addr, u32),
+    (Ipv4Addr, u32, u32),
+    (Ipv6Addr, Ipv6Addr, Emu128),
+    (Ipv6Addr, Emu128, Emu128),
+    (Ipv6Addr, u32, Emu128),
+}*/
 
 macro_rules! ip_bitops_impl {
     ($(($lhs:ty, $rhs:ty, $t:ty),)*) => {
@@ -352,14 +427,6 @@ macro_rules! ip_bitops_impl {
         }
     )*
     }
-}
-
-ip_addsub_impl! {
-    (Ipv4Addr, Ipv4Addr, u32),
-    (Ipv4Addr, u32, u32),
-    (Ipv6Addr, Ipv6Addr, Emu128),
-    (Ipv6Addr, Emu128, Emu128),
-    (Ipv6Addr, u32, Emu128),
 }
 
 ip_bitops_impl! {

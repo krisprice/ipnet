@@ -40,7 +40,7 @@
 
 pub use self::emu128::Emu128;
 pub use self::ipext::{IpAddrIter, IpAdd, IpSub, IpBitAnd, IpBitOr};
-pub use self::ipnet::{IpNet, Ipv4Net, Ipv6Net, IpNetIter, Contains, PrefixLenError};
+pub use self::ipnet::{IpNet, Ipv4Net, Ipv6Net, IpNetIter, Contains, PrefixLenError, NewSubnets, Subnets};
 pub use self::parser::AddrParseError;
 
 mod emu128;
