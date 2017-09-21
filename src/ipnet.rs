@@ -1439,4 +1439,42 @@ mod tests {
 
         assert_eq!(vec, res);
     }
+
+    #[test]
+    fn test_aggregate() {
+        let strings = vec![
+            "10.0.0.0/24", "10.0.1.0/24", "10.0.1.1/24", "10.0.1.2/24",
+            "10.0.2.0/24",
+            "10.1.0.0/24", "10.1.1.0/24",
+            "192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24",
+            "fd00::/32", "fd00:1::/32",
+        ];
+
+        let res_all = vec![
+            IpNet::from_str("10.0.0.0/23").unwrap(),
+            IpNet::from_str("10.0.2.0/24").unwrap(),
+            IpNet::from_str("10.1.0.0/23").unwrap(),
+            IpNet::from_str("192.168.0.0/22").unwrap(),
+            IpNet::from_str("fd00::/31").unwrap(),
+        ];
+
+        let res_ipv4 = vec![
+            Ipv4Net::from_str("10.0.0.0/23").unwrap(),
+            Ipv4Net::from_str("10.0.2.0/24").unwrap(),
+            Ipv4Net::from_str("10.1.0.0/23").unwrap(),
+            Ipv4Net::from_str("192.168.0.0/22").unwrap(),
+        ];
+        
+        let res_ipv6 = vec![
+            Ipv6Net::from_str("fd00::/31").unwrap(),
+        ];
+
+        let ipnets: Vec<IpNet> = strings.iter().map(|p| IpNet::from_str(p).unwrap()).collect();
+        let ipv4nets: Vec<Ipv4Net> = ipnets.iter().filter_map(|p| if let IpNet::V4(x) = *p { Some(x) } else { None }).collect();
+        let ipv6nets: Vec<Ipv6Net> = ipnets.iter().filter_map(|p| if let IpNet::V6(x) = *p { Some(x) } else { None }).collect();
+
+        assert_eq!(IpNet::aggregate(&ipnets), res_all);
+        assert_eq!(Ipv4Net::aggregate(&ipv4nets), res_ipv4);
+        assert_eq!(Ipv6Net::aggregate(&ipv6nets), res_ipv6);
+    }
 }
