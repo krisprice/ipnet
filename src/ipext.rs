@@ -133,22 +133,22 @@ impl<T> Iterator for IpAddrIter<T>
 /// use ipnet::{IpAdd, Emu128};
 ///
 /// let ip0 = Ipv4Addr::from_str("0.0.0.0").unwrap();
-/// let ip1 = Ipv4Addr::from_str("1.1.1.1").unwrap();
-/// let ip2 = Ipv4Addr::from_str("254.254.254.254").unwrap();
+/// let ip1 = Ipv4Addr::from_str("0.0.0.1").unwrap();
+/// let ip2 = Ipv4Addr::from_str("255.255.255.254").unwrap();
+/// let ip3 = Ipv4Addr::from_str("255.255.255.255").unwrap();
 ///
-/// assert_eq!(ip1.saturating_add(ip0), Ipv4Addr::from_str("1.1.1.1").unwrap());
-/// assert_eq!(ip1.saturating_add(ip1), Ipv4Addr::from_str("2.2.2.2").unwrap());
-/// assert_eq!(u32::from(ip2.saturating_add(ip1)), u32::max_value());
-/// assert_eq!(u32::from(ip2.saturating_add(ip2)), u32::max_value());
+/// assert_eq!(ip0.saturating_add(1u32), ip1);
+/// assert_eq!(ip2.saturating_add(1u32), ip3);
+/// assert_eq!(ip2.saturating_add(1u32), ip3);
 ///
-/// let ip60 = Ipv6Addr::from_str("::").unwrap();
-/// let ip61 = Ipv6Addr::from_str("::1").unwrap();
+/// let ip60 = Ipv6Addr::from_str("fd00::").unwrap();
+/// let ip61 = Ipv6Addr::from_str("fd00::1").unwrap();
 /// let ip62 = Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe").unwrap();
+/// let ip63 = Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap();
 ///
-/// assert_eq!(ip61.saturating_add(ip60), Ipv6Addr::from_str("::1").unwrap());
-/// assert_eq!(ip61.saturating_add(ip61), Ipv6Addr::from_str("::2").unwrap());
-/// assert_eq!(Emu128::from(ip62.saturating_add(ip61)), Emu128::max_value());
-/// assert_eq!(Emu128::from(ip62.saturating_add(ip62)), Emu128::max_value());
+/// assert_eq!(ip60.saturating_add(1u32), ip61);
+/// assert_eq!(ip62.saturating_add(1u32), ip63);
+/// assert_eq!(ip62.saturating_add(1u32), ip63);
 /// ```
 pub trait IpAdd<RHS = Self> {
     type Output;
@@ -157,31 +157,30 @@ pub trait IpAdd<RHS = Self> {
 
 /// Provides a `saturating_sub()` method for `Ipv4Addr` and `Ipv6Addr`.
 ///
-/// # Panics
-///
-/// When attempting to subtract an `IpAddr::V4` from an `IpAddr::V6` and
-/// vice versa.
-///
 /// # Examples
 ///
 /// ```
 /// use std::net::{Ipv4Addr, Ipv6Addr};
 /// use std::str::FromStr;
-/// use ipnet::IpSub;
+/// use ipnet::{IpSub, Emu128};
 ///
 /// let ip0 = Ipv4Addr::from_str("0.0.0.0").unwrap();
-/// let ip1 = Ipv4Addr::from_str("1.1.1.1").unwrap();
-/// let ip2 = Ipv4Addr::from_str("2.2.2.2").unwrap();
+/// let ip1 = Ipv4Addr::from_str("0.0.0.1").unwrap();
+/// let ip2 = Ipv4Addr::from_str("0.0.0.2").unwrap();
 ///
-/// assert_eq!(ip0.saturating_sub(ip1), Ipv4Addr::from_str("0.0.0.0").unwrap());
-/// assert_eq!(ip2.saturating_sub(ip1), Ipv4Addr::from_str("1.1.1.1").unwrap());
+/// assert_eq!(ip0.saturating_sub(ip1), 0);
+/// assert_eq!(ip2.saturating_sub(ip1), 1);
+/// assert_eq!(ip0.saturating_sub(1u32), ip0);
+/// assert_eq!(ip2.saturating_sub(1u32), ip1);
 /// 
 /// let ip60 = Ipv6Addr::from_str("::").unwrap();
 /// let ip61 = Ipv6Addr::from_str("::1").unwrap();
 /// let ip62 = Ipv6Addr::from_str("::2").unwrap();
 ///
-/// assert_eq!(ip60.saturating_sub(ip61), Ipv6Addr::from_str("::").unwrap());
-/// assert_eq!(ip62.saturating_sub(ip61), Ipv6Addr::from_str("::1").unwrap());
+/// assert_eq!(ip60.saturating_sub(ip61), Emu128::from(0));
+/// assert_eq!(ip62.saturating_sub(ip61), Emu128::from(1));
+/// assert_eq!(ip60.saturating_sub(1u32), ip60);
+/// assert_eq!(ip62.saturating_sub(1u32), ip61);
 /// ```
 pub trait IpSub<RHS = Self> {
     type Output;
@@ -260,19 +259,6 @@ impl IpAdd<u32> for IpAddr {
     }
 }
 
-/*impl IpAdd<IpAddr> for IpAddr {
-    type Output = IpAddr;
-
-    #[inline]
-    fn saturating_add(self, rhs: IpAddr) -> IpAddr {
-        match (self, rhs) {
-            (IpAddr::V4(a), IpAddr::V4(b)) => IpAddr::V4(a.saturating_add(b)),
-            (IpAddr::V6(a), IpAddr::V6(b)) => IpAddr::V6(a.saturating_add(b)),
-            _ => panic!("can't add Ipv4Addr and Ipv6Addr"),
-        }
-    }
-}*/
-
 impl IpSub<u32> for IpAddr {
     type Output = IpAddr;
 
@@ -285,80 +271,8 @@ impl IpSub<u32> for IpAddr {
     }
 }
 
-/*impl IpSub<IpAddr> for IpAddr {
-    type Output = IpAddr;
-
-    #[inline]
-    fn saturating_sub(self, rhs: IpAddr) -> IpAddr {
-        match (self, rhs) {
-            (IpAddr::V4(a), IpAddr::V4(b)) => IpAddr::V4(a.saturating_sub(b)),
-            (IpAddr::V6(a), IpAddr::V6(b)) => IpAddr::V6(a.saturating_sub(b)),
-            _ => panic!("can't subtract Ipv4Addr and Ipv6Addr"),
-        }
-    }
-}*/
-/*
-impl IpAdd<u32> for Ipv4Addr {
-    type Output = Ipv4Addr;
-
-    fn saturating_add(self, rhs: u32) -> Ipv4Addr {
-        let lhs: u32 = self.into();
-        let rhs: u32 = rhs.into();
-        lhs.saturating_add(rhs).into()
-    }
-}
-
-impl IpSub<Ipv4Addr> for Ipv4Addr {
-    type Output = u32;
-
-    fn saturating_sub(self, rhs: Ipv4Addr) -> u32 {
-        let lhs: u32 = self.into();
-        let rhs: u32 = rhs.into();
-        lhs.saturating_sub(rhs)
-    }
-}
-
-impl IpSub<u32> for Ipv4Addr {
-    type Output = Ipv4Addr;
-
-    fn saturating_sub(self, rhs: u32) -> Ipv4Addr {
-        let lhs: u32 = self.into();
-        let rhs: u32 = rhs.into();
-        lhs.saturating_sub(rhs).into()
-    }
-}*/
-
-/*macro_rules! ip_addsub_impl {
-    ($(($lhs:ty, $rhs:ty, $t:ty),)*) => {
-    $(
-        impl IpAdd<$rhs> for $lhs {
-            type Output = $lhs;
-
-            #[inline]
-            fn saturating_add(self, rhs: $rhs) -> $lhs {
-                let lhs: $t = self.into();
-                let rhs: $t = rhs.into();
-                (lhs.saturating_add(rhs.into())).into()
-            }
-        }
-
-        impl IpSub<$rhs> for $lhs {
-            type Output = $lhs;
-
-            #[inline]
-            fn saturating_sub(self, rhs: $rhs) -> $lhs {
-                let lhs: $t = self.into();
-                let rhs: $t = rhs.into();
-                (lhs.saturating_sub(rhs.into())).into()
-            }
-        }
-    )*
-    }
-}*/
-
-macro_rules! ip_addsub_impl {
-    ($(($lhs:ty, $rhs:ty, $output:ty, $inner:ty),)*) => {
-    $(
+macro_rules! ip_add_impl {
+    ($lhs:ty, $rhs:ty, $output:ty, $inner:ty) => (
         impl IpAdd<$rhs> for $lhs {
             type Output = $output;
 
@@ -369,7 +283,11 @@ macro_rules! ip_addsub_impl {
                 (lhs.saturating_add(rhs.into())).into()
             }
         }
+    )
+}
 
+macro_rules! ip_sub_impl {
+    ($lhs:ty, $rhs:ty, $output:ty, $inner:ty) => (
         impl IpSub<$rhs> for $lhs {
             type Output = $output;
 
@@ -380,26 +298,18 @@ macro_rules! ip_addsub_impl {
                 (lhs.saturating_sub(rhs.into())).into()
             }
         }
-    )*
-    }
+    )
 }
 
-// lhs, rhs, output, inner type
-ip_addsub_impl! {
-    (Ipv4Addr, Ipv4Addr, u32, u32),
-    (Ipv4Addr, u32, Ipv4Addr, u32),
-    (Ipv6Addr, Ipv6Addr, Emu128, Emu128),
-    (Ipv6Addr, Emu128, Ipv6Addr, Emu128),
-    (Ipv6Addr, u32, Ipv6Addr, Emu128),
-}
+ip_add_impl!(Ipv4Addr, u32, Ipv4Addr, u32);
+ip_add_impl!(Ipv6Addr, Emu128, Ipv6Addr, Emu128);
+ip_add_impl!(Ipv6Addr, u32, Ipv6Addr, Emu128);
 
-/*ip_addsub_impl! {
-    (Ipv4Addr, Ipv4Addr, u32),
-    (Ipv4Addr, u32, u32),
-    (Ipv6Addr, Ipv6Addr, Emu128),
-    (Ipv6Addr, Emu128, Emu128),
-    (Ipv6Addr, u32, Emu128),
-}*/
+ip_sub_impl!(Ipv4Addr, Ipv4Addr, u32, u32);
+ip_sub_impl!(Ipv4Addr, u32, Ipv4Addr, u32);
+ip_sub_impl!(Ipv6Addr, Ipv6Addr, Emu128, Emu128);
+ip_sub_impl!(Ipv6Addr, Emu128, Ipv6Addr, Emu128);
+ip_sub_impl!(Ipv6Addr, u32, Ipv6Addr, Emu128);
 
 macro_rules! ip_bitops_impl {
     ($(($lhs:ty, $rhs:ty, $t:ty),)*) => {
@@ -479,21 +389,5 @@ mod tests {
             Ipv6Addr::from_str("fd00::2").unwrap(),
             Ipv6Addr::from_str("fd00::3").unwrap(),
         ]);
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_ipaddr_add() {
-        let ip4 = IpAddr::from_str("10.1.1.1").unwrap();
-        let ip6 = IpAddr::from_str("::1").unwrap();
-        ip4.saturating_add(ip6);
-    }
-    
-    #[test]
-    #[should_panic]
-    fn test_ipaddr_sub() {
-        let ip4 = IpAddr::from_str("10.1.1.1").unwrap();
-        let ip6 = IpAddr::from_str("::1").unwrap();
-        ip4.saturating_sub(ip6);
     }
 }
