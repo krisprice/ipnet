@@ -22,12 +22,11 @@ use ipext::{IpAddrIter, IpAdd, IpSub, IpStep};
 ///
 /// ```
 /// use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-/// use std::str::FromStr;
 /// use ipnet::{IpNet, Ipv4Net, Ipv6Net};
 ///
-/// let net_v4 = IpNet::from_str("10.1.1.0/24").unwrap();
-/// let net_v6 = IpNet::from_str("fd00::/32").unwrap();
-/// 
+/// let net_v4 = "10.1.1.0/24".parse::<Ipv4Net>().unwrap();
+/// let net_v6 = "fd00::/32".parse::<Ipv6Net>().unwrap();
+///
 /// assert_eq!("10.1.1.0".parse(), Ok(net_v4.network()));
 /// assert_eq!("fd00::".parse(), Ok(net_v6.network()));
 /// ```
@@ -44,23 +43,23 @@ pub enum IpNet {
 ///
 /// # Textual representation
 ///
-/// `Ipv4Net` provides a [`FromStr`] implementation. This is represented
-/// using the `FromStr` implementation for `Ipv4Addr` followed by a `/`
-/// character and the prefix length in decimal. See [IETF RFC 4632] for
-/// the CIDR notation.
+/// `Ipv4Net` provides a [`FromStr`] implementation for parsing networks
+/// represented in CIDR notation. This uses the same representation as
+/// [`Ipv4Addr`] followed by the `/` character and the prefix length in
+/// decimal. See [IETF RFC 4632] for the CIDR notation.
 ///
 /// [`IpNet`]: enum.IpAddr.html
-/// [IETF RFC 4632]: https://tools.ietf.org/html/rfc4632
 /// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
+/// [`Ipv4Addr`]: https://doc.rust-lang.org/std/net/struct.Ipv4Addr.html
+/// [IETF RFC 4632]: https://tools.ietf.org/html/rfc4632
 ///
 /// # Examples
 ///
 /// ```
 /// use std::net::Ipv4Addr;
-/// use std::str::FromStr;
 /// use ipnet::Ipv4Net;
 ///
-/// let net_v4 = Ipv4Net::from_str("10.1.1.0/24").unwrap();
+/// let net_v4 = "10.1.1.0/24".parse::<Ipv4Net>().unwrap();
 /// assert_eq!("10.1.1.0".parse(), Ok(net_v4.network()));
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -76,23 +75,23 @@ pub struct Ipv4Net {
 ///
 /// # Textual representation
 ///
-/// `Ipv6Net` provides a [`FromStr`] implementation. This is represented
-/// using the `FromStr` implementation for `Ipv6Addr` followed by a `/`
-/// character and the prefix length in decimal. See [IETF RFC 4632] for
-/// the CIDR notation.
+/// `Ipv6Net` provides a [`FromStr`] implementation for parsing networks
+/// represented in CIDR notation. This uses the same representation as
+/// [`Ipv6Addr`] followed by the `/` character and the prefix length in
+/// decimal. See [IETF RFC 4632] for the CIDR notation.
 ///
 /// [`IpNet`]: enum.IpAddr.html
-/// [IETF RFC 4632]: https://tools.ietf.org/html/rfc4632
 /// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
+/// [`Ipv6Addr`]: https://doc.rust-lang.org/std/net/struct.Ipv6Addr.html
+/// [IETF RFC 4632]: https://tools.ietf.org/html/rfc4632
 ///
 /// # Examples
 ///
 /// ```
 /// use std::net::Ipv6Addr;
-/// use std::str::FromStr;
 /// use ipnet::Ipv6Net;
 ///
-/// let net_v6 = Ipv6Net::from_str("fd00::/32").unwrap();
+/// let net_v6 = "fd00::/32".parse::<Ipv6Net>().unwrap();
 /// assert_eq!("fd00::".parse(), Ok(net_v6.network()));
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -141,7 +140,32 @@ impl Deref for Ipv6Net {
 }
 
 impl IpNet {
-    /// Return the address.
+    /// Returns a copy of the network with the address truncated to the
+    /// prefix length.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::str::FromStr;
+    /// # use ipnet::IpNet;
+    /// assert_eq!(
+    ///     IpNet::from_str("192.168.12.34/16").unwrap().trunc(),
+    ///     IpNet::from_str("192.168.0.0/16").unwrap()
+    /// );
+    ///
+    /// assert_eq!(
+    ///     IpNet::from_str("fd00::1:2:3:4/16").unwrap().trunc(),
+    ///     IpNet::from_str("fd00::/16").unwrap()
+    /// );
+    /// ```
+    pub fn trunc(&self) -> IpNet {
+        match *self {
+            IpNet::V4(ref a) => IpNet::V4(a.trunc()),
+            IpNet::V6(ref a) => IpNet::V6(a.trunc()),
+        }
+    }
+
+    /// Returns the address.
     pub fn addr(&self) -> IpAddr {
         match *self {
             IpNet::V4(ref a) => IpAddr::V4(a.addr),
@@ -149,7 +173,7 @@ impl IpNet {
         }
     }
 
-    /// Return the prefix length.
+    /// Returns the prefix length.
     pub fn prefix_len(&self) -> u8 {
         match *self {
             IpNet::V4(ref a) => a.prefix_len(),
@@ -157,8 +181,8 @@ impl IpNet {
         }
     }
 
-    /// Return the maximum valid prefix length.
-    fn max_prefix_len(&self) -> u8 {
+    /// Returns the maximum valid prefix length.
+    pub fn max_prefix_len(&self) -> u8 {
         match *self {
             IpNet::V4(ref a) => a.max_prefix_len(),
             IpNet::V6(ref a) => a.max_prefix_len(),
@@ -249,26 +273,6 @@ impl IpNet {
         }
     }
     
-    /// Return a copy of the network with the address truncated to the
-    /// prefix length.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::str::FromStr;
-    /// # use ipnet::IpNet;
-    /// assert_eq!(
-    ///     IpNet::from_str("192.168.1.2/16").unwrap().trunc(),
-    ///     IpNet::from_str("192.168.0.0/16").unwrap()
-    /// );
-    /// ```
-    pub fn trunc(&self) -> IpNet {
-        match *self {
-            IpNet::V4(ref a) => IpNet::V4(a.trunc()),
-            IpNet::V6(ref a) => IpNet::V6(a.trunc()),
-        }
-    }
-
     /// Returns the `IpNet` that contains this one.
     ///
     /// # Examples
@@ -327,9 +331,6 @@ impl IpNet {
     }
 
     /// Return an `Iterator` over the host addresses in this network.
-    ///
-    /// See the implementations on `Ipv4Net` and `Ipv6Net` for more
-    /// information.
     ///
     /// # Examples
     ///
@@ -515,6 +516,23 @@ impl Ipv4Net {
         Ok(Ipv4Net { addr: ip, prefix_len: prefix_len })
     }
 
+    /// Returns a copy of the network with the address truncated to the
+    /// prefix length.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::str::FromStr;
+    /// # use ipnet::Ipv4Net;
+    /// assert_eq!(
+    ///     Ipv4Net::from_str("192.168.12.34/16").unwrap().trunc(),
+    ///     Ipv4Net::from_str("192.168.0.0/16").unwrap()
+    /// );
+    /// ```
+    pub fn trunc(&self) -> Ipv4Net {
+        Ipv4Net::new(self.network(), self.prefix_len).unwrap()
+    }
+
     /// Returns the address.
     pub fn addr(&self) -> Ipv4Addr {
         self.addr
@@ -525,8 +543,8 @@ impl Ipv4Net {
         self.prefix_len
     }
 
-    /// Return the maximum valid prefix length.
-    fn max_prefix_len(&self) -> u8 {
+    /// Returns the maximum valid prefix length.
+    pub fn max_prefix_len(&self) -> u8 {
         32
     }
     
@@ -597,23 +615,6 @@ impl Ipv4Net {
     pub fn broadcast(&self) -> Ipv4Addr {
         Ipv4Addr::from(u32::from(self.addr) | self.hostmask_u32())
     }
-    
-    /// Return a copy of the network with the address truncated to the
-    /// prefix length.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::str::FromStr;
-    /// # use ipnet::Ipv4Net;
-    /// assert_eq!(
-    ///     Ipv4Net::from_str("192.168.1.2/16").unwrap().trunc(),
-    ///     Ipv4Net::from_str("192.168.0.0/16").unwrap()
-    /// );
-    /// ```
-    pub fn trunc(&self) -> Ipv4Net {
-        Ipv4Net::new(self.network(), self.prefix_len).unwrap()
-    }
 
     /// Returns the `Ipv4Net` that contains this one.
     ///
@@ -655,10 +656,9 @@ impl Ipv4Net {
     
     /// Return an `Iterator` over the host addresses in this network.
     ///
-    /// * For networks that have a prefix length less than 31 both the
-    ///   network and broadcast addresses are excluded. These are
-    ///   considered invalid for use as host addresses except when the
-    ///   prefix length is 31.
+    /// If the prefix length is less than 31 both the network address
+    /// and broadcast address are excluded. These are only valid host
+    /// addresses when the prefix length is 31.
     ///
     /// # Examples
     ///
@@ -792,6 +792,23 @@ impl Ipv6Net {
         }
         Ok(Ipv6Net { addr: ip, prefix_len: prefix_len })
     }
+
+    /// Returns a copy of the network with the address truncated to the
+    /// prefix length.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::str::FromStr;
+    /// # use ipnet::Ipv6Net;
+    /// assert_eq!(
+    ///     Ipv6Net::from_str("fd00::1:2:3:4/16").unwrap().trunc(),
+    ///     Ipv6Net::from_str("fd00::/16").unwrap()
+    /// );
+    /// ```
+    pub fn trunc(&self) -> Ipv6Net {
+        Ipv6Net::new(self.network(), self.prefix_len).unwrap()
+    }
     
     /// Returns the address.
     pub fn addr(&self) -> Ipv6Addr {
@@ -803,8 +820,8 @@ impl Ipv6Net {
         self.prefix_len
     }
     
-    /// Return the maximum valid prefix length.
-    fn max_prefix_len(&self) -> u8 {
+    /// Returns the maximum valid prefix length.
+    pub fn max_prefix_len(&self) -> u8 {
         128
     }
 
@@ -867,10 +884,10 @@ impl Ipv6Net {
         (Emu128::from(self.addr) & self.netmask_emu128()).into()
     }
     
-    /// Returns the broadcast address.
+    /// Returns the last address.
     ///
-    /// * Technically there is no such thing as a broadcast address for
-    ///   IPv6. This can be thought of as an `end()` method.
+    /// Technically there is no such thing as a broadcast address for
+    /// IPv6. The name is used for consistency with colloquial usage.
     ///
     /// # Examples
     ///
@@ -885,23 +902,6 @@ impl Ipv6Net {
     /// ```
     pub fn broadcast(&self) -> Ipv6Addr {
         (Emu128::from(self.addr) | self.hostmask_emu128()).into()
-    }
-    
-    /// Return a copy of the network with the address truncated to the
-    /// prefix length.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use std::str::FromStr;
-    /// # use ipnet::Ipv6Net;
-    /// assert_eq!(
-    ///     Ipv6Net::from_str("fd00::1:2:3:4/16").unwrap().trunc(),
-    ///     Ipv6Net::from_str("fd00::/16").unwrap()
-    /// );
-    /// ```
-    pub fn trunc(&self) -> Ipv6Net {
-        Ipv6Net::new(self.network(), self.prefix_len).unwrap()
     }
 
     /// Returns the `Ipv6Net` that contains this one.
@@ -1350,134 +1350,96 @@ mod tests {
         assert_eq!(merge_intervals(v), v_ok);
         assert_eq!(merge_intervals(vv), vv_ok);
     }
-
-    #[test]
-    fn test_subnets_zero_zero() {
-        let vec = Subnets::new(
-            Ipv4Addr::new(0, 0, 0, 0),
-            Ipv4Addr::new(0, 0, 0, 0),
-            0,
-        ).collect::<Vec<Ipv4Net>>();
-
-        let res = vec![
-            Ipv4Net::from_str("0.0.0.0/32").unwrap(),
-        ];
-
-        assert_eq!(vec, res);
-    }
-
-    #[test]
-    fn test_subnets_max_max() {
-        let vec = Subnets::new(
-            Ipv4Addr::new(255, 255, 255, 255),
-            Ipv4Addr::new(255, 255, 255, 255),
-            0,
-        ).collect::<Vec<Ipv4Net>>();;
-
-        let res = vec![
-            Ipv4Net::from_str("255.255.255.255/32").unwrap(),
-        ];
-
-        assert_eq!(vec, res);
-    }
     
-    #[test]
-    fn test_subnets_none() {
-        let vec = Subnets::new(
-            Ipv4Addr::new(0, 0, 0, 1),
-            Ipv4Addr::new(0, 0, 0, 0),
-            0,
-        ).collect::<Vec<Ipv4Net>>();;
-
-        let res = vec![];
-
-        assert_eq!(vec, res);
+    macro_rules! ipnet_vec {
+        ($($x:expr),*) => ( vec![$(IpNet::from_str($x).unwrap(),)*] );
+        ($($x:expr,)*) => ( ipnet_vec![$($x),*] );
     }
+
+    macro_rules! make_subnets_test {
+        ($name:ident, $start:expr, $end:expr, $min_prefix_len:expr, $($x:expr),*) => (
+            #[test]
+            fn $name() {
+                let subnets = Subnets::<IpAddr>::new(
+                    IpAddr::from_str($start).unwrap(),
+                    IpAddr::from_str($end).unwrap(),
+                    $min_prefix_len,
+                );
+                let results = ipnet_vec![$($x),*];
+                assert_eq!(subnets.collect::<Vec<IpNet>>(), results);
+            }
+        );
+        ($name:ident, $start:expr, $end:expr, $min_prefix_len:expr, $($x:expr,)*) => (
+            make_subnets_test!($name, $start, $end, $min_prefix_len, $($x),*);
+        );
+    }
+
+    make_subnets_test!(
+        test_subnets_zero_zero,
+        "0.0.0.0", "0.0.0.0", 0,
+        "0.0.0.0/32",
+    );
+
+    make_subnets_test!(
+        test_subnets_max_max,
+        "255.255.255.255", "255.255.255.255", 0,
+        "255.255.255.255/32",
+    );
     
-    #[test]
-    fn test_subnets_one() {
-        let vec = Subnets::new(
-            Ipv4Addr::new(0, 0, 0, 0),
-            Ipv4Addr::new(0, 0, 0, 1),
-            0,
-        ).collect::<Vec<Ipv4Net>>();;
-
-        let res = vec![
-            Ipv4Net::from_str("0.0.0.0/31").unwrap(),
-        ];
-
-        assert_eq!(vec, res);
-    }
-
-    #[test]
-    fn test_subnets_two() {
-        let vec = Subnets::new(
-            Ipv4Addr::new(0, 0, 0, 0),
-            Ipv4Addr::new(0, 0, 0, 2),
-            0,
-        ).collect::<Vec<Ipv4Net>>();;
-
-        let res = vec![
-            Ipv4Net::from_str("0.0.0.0/31").unwrap(),
-            Ipv4Net::from_str("0.0.0.2/32").unwrap(),
-        ];
-
-        assert_eq!(vec, res);
-    }
+    make_subnets_test!(
+        test_subnets_none,
+        "0.0.0.1", "0.0.0.0", 0,
+    );
     
-    #[test]
-    fn test_subnets_taper() {
-        let vec = Subnets::new(
-            Ipv4Addr::new(0, 0, 0, 0),
-            Ipv4Addr::new(0, 0, 0, 10),
-            30,
-        ).collect::<Vec<Ipv4Net>>();;
+    make_subnets_test!(
+        test_subnets_one,
+        "0.0.0.0", "0.0.0.1", 0,
+        "0.0.0.0/31",
+    );
 
-        let res = vec![
-            Ipv4Net::from_str("0.0.0.0/30").unwrap(),
-            Ipv4Net::from_str("0.0.0.4/30").unwrap(),
-            Ipv4Net::from_str("0.0.0.8/31").unwrap(),
-            Ipv4Net::from_str("0.0.0.10/32").unwrap(),
-        ];
-
-        assert_eq!(vec, res);
-    }
+    make_subnets_test!(
+        test_subnets_two,
+        "0.0.0.0", "0.0.0.2", 0,
+        "0.0.0.0/31",
+        "0.0.0.2/32",
+    );
+    
+    make_subnets_test!(
+        test_subnets_taper,
+        "0.0.0.0", "0.0.0.10", 30,
+        "0.0.0.0/30",
+        "0.0.0.4/30",
+        "0.0.0.8/31",
+        "0.0.0.10/32",
+    );
 
     #[test]
     fn test_aggregate() {
-        let strings = vec![
+        let ip_nets = ipnet_vec![
             "10.0.0.0/24", "10.0.1.0/24", "10.0.1.1/24", "10.0.1.2/24",
             "10.0.2.0/24",
             "10.1.0.0/24", "10.1.1.0/24",
             "192.168.0.0/24", "192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24",
             "fd00::/32", "fd00:1::/32",
+            "fd00:2::/32",
         ];
 
-        let res_all = vec![
-            IpNet::from_str("10.0.0.0/23").unwrap(),
-            IpNet::from_str("10.0.2.0/24").unwrap(),
-            IpNet::from_str("10.1.0.0/23").unwrap(),
-            IpNet::from_str("192.168.0.0/22").unwrap(),
-            IpNet::from_str("fd00::/31").unwrap(),
+        let ip_aggs = ipnet_vec![
+            "10.0.0.0/23",
+            "10.0.2.0/24",
+            "10.1.0.0/23",
+            "192.168.0.0/22",
+            "fd00::/31",
+            "fd00:2::/32",
         ];
 
-        let res_ipv4 = vec![
-            Ipv4Net::from_str("10.0.0.0/23").unwrap(),
-            Ipv4Net::from_str("10.0.2.0/24").unwrap(),
-            Ipv4Net::from_str("10.1.0.0/23").unwrap(),
-            Ipv4Net::from_str("192.168.0.0/22").unwrap(),
-        ];
-        
-        let res_ipv6 = vec![
-            Ipv6Net::from_str("fd00::/31").unwrap(),
-        ];
+        let ipv4_nets: Vec<Ipv4Net> = ip_nets.iter().filter_map(|p| if let IpNet::V4(x) = *p { Some(x) } else { None }).collect();
+        let ipv4_aggs: Vec<Ipv4Net> = ip_aggs.iter().filter_map(|p| if let IpNet::V4(x) = *p { Some(x) } else { None }).collect();
+        let ipv6_nets: Vec<Ipv6Net> = ip_nets.iter().filter_map(|p| if let IpNet::V6(x) = *p { Some(x) } else { None }).collect();
+        let ipv6_aggs: Vec<Ipv6Net> = ip_aggs.iter().filter_map(|p| if let IpNet::V6(x) = *p { Some(x) } else { None }).collect();
 
-        let ipnets: Vec<IpNet> = strings.iter().map(|p| IpNet::from_str(p).unwrap()).collect();
-        let ipv4nets: Vec<Ipv4Net> = ipnets.iter().filter_map(|p| if let IpNet::V4(x) = *p { Some(x) } else { None }).collect();
-        let ipv6nets: Vec<Ipv6Net> = ipnets.iter().filter_map(|p| if let IpNet::V6(x) = *p { Some(x) } else { None }).collect();
-
-        assert_eq!(IpNet::aggregate(&ipnets), res_all);
-        assert_eq!(Ipv4Net::aggregate(&ipv4nets), res_ipv4);
-        assert_eq!(Ipv6Net::aggregate(&ipv6nets), res_ipv6);
+        assert_eq!(IpNet::aggregate(&ip_nets), ip_aggs);
+        assert_eq!(Ipv4Net::aggregate(&ipv4_nets), ipv4_aggs);
+        assert_eq!(Ipv6Net::aggregate(&ipv6_nets), ipv6_aggs);
     }
 }
