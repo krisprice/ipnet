@@ -1,5 +1,5 @@
 use std::cmp::{min, max};
-use std::cmp::Ordering::*;
+use std::cmp::Ordering::{Less, Equal};
 use std::convert::From;
 use std::error::Error;
 use std::fmt;

@@ -7,18 +7,21 @@
 //! and [`Ipv6Addr`] types provided in the Rust standard library.
 //!
 //! The module also provides traits that extend `Ipv4Addr` and
-//! `Ipv6Addr` to support Add, Sub, BitAnd, and BitOr operations.
+//! `Ipv6Addr` to support Add, Sub, BitAnd, and BitOr operations, and
+//! iteration over an IP.
 //!
 //! # Organization
 //!
 //! * [`IpNet`] represents IP network addresses of either IPv4 or IPv6.
 //! * [`Ipv4Net`] and [`Ipv6Net`] are respectively IPv4 and IPv6 network
 //!   addresses.
+//! * [`Subnets`] is an iterator that generates the valid IP network
+//!   addresses bound by a given IP address range and minimum prefix
+//!   length.
 //! * [`IpAddrIter`] provides iteration over a range of IP addresses.
-//!   [`IpNetIter`] does the same for IP network addresses. These are
-//!   returned by methods on `IpNet`, `Ipv4Net`, and `Ipv6Net`.
 //! * The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
-//!   the `Ipv4Addr` and `Ipv6Addr` types to include these operations.
+//!   the `Ipv4Addr` and `Ipv6Addr` types with methods to perform these
+//!   operations.
 //! * [`Emu128`] is an emulated 128 bit unsigned integer implemented in
 //!   this module using a struct of two `u64` types. This is necessary
 //!   because Rust's `u128` type is not yet marked stable. This can be
@@ -30,8 +33,8 @@
 //! [`IpNet`]: enum.IpNet.html
 //! [`Ipv4Net`]: struct.Ipv4Net.html
 //! [`Ipv6Net`]: struct.Ipv6Net.html
+//! [`Subnets`]: struct.Subnets.html
 //! [`IpAddrIter`]: struct.IpAddrIter.html
-//! [`IpNetIter`]: struct.IpNetIter.html
 //! [`IpAdd`]: trait.IpAdd.html
 //! [`IpSub`]: trait.IpSub.html
 //! [`IpBitAnd`]: trait.IpBitAnd.html
