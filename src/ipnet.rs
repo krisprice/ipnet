@@ -443,6 +443,9 @@ impl IpNet {
     /// ]);
     /// ```
     pub fn aggregate(networks: &Vec<IpNet>) -> Vec<IpNet> {
+        // It's 2.5x faster to split the input up and run them using the
+        // specific IPv4 and IPV6 implementations. The comparisons and
+        // merge_intervals are much faster running over integers.
         let mut ipv4nets: Vec<Ipv4Net> = Vec::new();
         let mut ipv6nets: Vec<Ipv6Net> = Vec::new();
 

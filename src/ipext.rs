@@ -1,7 +1,7 @@
 //! Extensions to the standard IP address types for common operations.
 //!
 //! The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
-//! the `Ipv4Addr` and `Ipv6Addr` types to provide their respective
+//! the `Ipv4Addr` and `Ipv6Addr` types with methods to perform these
 //! operations.
 
 use std::cmp::Ordering::{Less, Equal};
@@ -11,8 +11,8 @@ use emu128::Emu128;
 
 /// An `Iterator` over a range of IPv4 or IPv6 addresses.
 ///
-/// This might be deprecated and replaced with an implementation of
-/// `Range` for IP addresses when `Range` and it's required traits are
+/// This may be deprecated and replaced with an implementation of
+/// `Range` for IP addresses when `Range` and its required traits are
 /// stablized.
 ///
 /// # Examples
@@ -119,11 +119,6 @@ impl<T> Iterator for IpAddrIter<T>
 }
 
 /// Provides a `saturating_add()` method for `Ipv4Addr` and `Ipv6Addr`.
-///
-/// # Panics
-///
-/// When attempting to add an `IpAddr::V4` from an `IpAddr::V6` and vice
-/// versa.
 ///
 /// # Examples
 ///
