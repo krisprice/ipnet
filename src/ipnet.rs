@@ -1199,24 +1199,6 @@ impl<T> Subnets<T> {
     }
 }
 
-impl Subnets<IpAddr> {
-    fn forward(&mut self) -> IpNet {
-        match (self.start, self.end) {
-            (IpAddr::V4(start), IpAddr::V4(end)) => {
-                let n = IpNet::V4(next_ipv4_subnet(start, end, self.min_prefix_len));
-                self.start = n.broadcast().saturating_add(1);
-                n
-            },
-            (IpAddr::V6(start), IpAddr::V6(end)) => {
-                let n = IpNet::V6(next_ipv6_subnet(start, end, self.min_prefix_len));
-                self.start = n.broadcast().saturating_add(1);
-                n
-            },
-            _ => unreachable!(),
-        }
-    }
-}
-
 fn next_ipv4_subnet(start: Ipv4Addr, end: Ipv4Addr, min_prefix_len: u8) -> Ipv4Net {
     let range = end.saturating_sub(start);
     let range = range.saturating_add(1);
@@ -1237,6 +1219,24 @@ fn next_ipv6_subnet(start: Ipv6Addr, end: Ipv6Addr, min_prefix_len: u8) -> Ipv6N
     let new_prefix_len = 128 - num_bits;
     let next_prefix_len = max(new_prefix_len as u8, min_prefix_len);
     Ipv6Net::new(start, next_prefix_len as u8).unwrap()
+}
+
+impl Subnets<IpAddr> {
+    fn forward(&mut self) -> IpNet {
+        match (self.start, self.end) {
+            (IpAddr::V4(start), IpAddr::V4(end)) => {
+                let n = IpNet::from(next_ipv4_subnet(start, end, self.min_prefix_len));
+                self.start = n.broadcast().saturating_add(1);
+                n
+            },
+            (IpAddr::V6(start), IpAddr::V6(end)) => {
+                let n = IpNet::from(next_ipv6_subnet(start, end, self.min_prefix_len));
+                self.start = n.broadcast().saturating_add(1);
+                n
+            },
+            _ => unreachable!(),
+        }
+    }
 }
 
 impl Subnets<Ipv4Addr> {
@@ -1350,7 +1350,7 @@ mod tests {
         assert_eq!(merge_intervals(v), v_ok);
         assert_eq!(merge_intervals(vv), vv_ok);
     }
-    
+
     macro_rules! ipnet_vec {
         ($($x:expr),*) => ( vec![$(IpNet::from_str($x).unwrap(),)*] );
         ($($x:expr,)*) => ( ipnet_vec![$($x),*] );

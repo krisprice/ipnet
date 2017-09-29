@@ -1,10 +1,8 @@
 [![Build Status](https://travis-ci.org/krisprice/ipnet.svg?branch=master)](https://travis-ci.org/krisprice/ipnet)
 
-Nearing 1.0 release, feedback and requests are very welcome. Just open an [issue on GitHub] or email me.
+This module provides types and useful methods for working with IPv4 and IPv6 network addresses, commonly called IP prefixes. The new `IpNet`, `Ipv4Net`, and `Ipv6Net` types build on the existing `IpAddr`, `Ipv4Addr`, and `Ipv6Addr` types already provided in Rust's standard library and align to their design to stay consistent. The module also provides useful traits that extend `Ipv4Addr` and `Ipv6Addr` with methods for `Add`, `Sub`, `BitAnd`, and `BitOr` operations.
 
-This module provides types and methods for working with IPv4 and IPv6 network addresses, commonly called IP prefixes. Its design aligns to and makes use of the existing `IpAddr`, `Ipv4Addr`, and `Ipv6Addr` types provided in Rust's standard library. It only uses Rust's stable features,so it's guaranteed to compile with the stable toolchain.
-
-The module also includes some traits that extend `Ipv4Addr` and `Ipv6Addr` with methods for `Add`, `Sub`, `BitAnd`, and `BitOr` operations.
+The module is guaranteed to compile using the stable toolchain. Testing is fairly extensive, and contained in test modules or the doctests. Please file an [issue on GitHub] if you have any problems, feedback, or requests.
 
 Read the [documentation] for the full details. And find it on [Crates.io].
 
@@ -12,10 +10,17 @@ Read the [documentation] for the full details. And find it on [Crates.io].
 [Crates.io]: https://crates.io/crates/ipnet
 [issue on GitHub]: https://github.com/krisprice/ipnet/issues
 
+## Examples
+
+```
+// ...
+```
+
 ## Future
 
-* The results of methods such as `hosts()` and `subnets()` could be represented as a `Range`. This requires both the `Add` and `Step` traits be implemented on the target types. For `IpAddr` this requires a change to the standard library. Also `Step` is still unstable, so exploring this will wait until it has stablized.
-* Implementing the `std::ops::{Add, Sub, BitAnd, BitOr}` traits for `Ipv4Addr` and `Ipv6Addr` would be useful as these are common operations on IP addresses. `Add` is also a precursor to implementing `Range` for these types. Implementing these requires a change to the standard library. I've started a thread on this topic on [Rust Internals](https://internals.rust-lang.org/t/pre-rfc-implementing-add-sub-bitand-bitor-for-ipaddr-ipv4addr-ipv6addr/) discussion board.
+* When `u128` is stablized it will replace `Emu128` and the major version will be incremented.
+* Implementing `std::ops::{Add, Sub, BitAnd, BitOr}` for `Ipv4Addr` and `Ipv6Addr` would be useful as these are common operations on IP addresses. If done, the extension traits provided in this module would be removed and the major version incremented. Implementing these requires a change to the standard library. I've started a thread on this topic on the [Rust Internals](https://internals.rust-lang.org/t/pre-rfc-implementing-add-sub-bitand-bitor-for-ipaddr-ipv4addr-ipv6addr/) discussion board.
+* The results of `hosts()` and potentially `subnets()` should be represented as a `Range` rather than the custom `IpAddrIter` and `Subnets` types provided in this module. This requires the target types to have `Add` and `Step` implemented for them. Implementing `Add` for `IpAddr`, `Ipv4Addr`, and `Ipv6Addr` requires a change to the standard library (see above). And `Step` is still unstable so exploring this will also wait until it has stablized.
 
 ## License
 

@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/ipnet/0.28.1")]
+#![doc(html_root_url = "https://docs.rs/ipnet/1.0.0-rc1")]
 //! Types for IPv4 and IPv6 network addresses.
 //!
 //! This module provides types and methods for working with IPv4 and
