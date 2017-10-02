@@ -42,7 +42,7 @@
 //! [`Emu128`]: struct.Emu128.html
 
 pub use self::emu128::Emu128;
-pub use self::ipext::{IpAddrIter, IpAdd, IpSub, IpBitAnd, IpBitOr};
+pub use self::ipext::{IpAdd, IpSub, IpBitAnd, IpBitOr, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
 pub use self::ipnet::{IpNet, Ipv4Net, Ipv6Net, Contains, PrefixLenError, Subnets};
 pub use self::parser::AddrParseError;
 

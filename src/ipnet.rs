@@ -8,7 +8,7 @@ use std::ops::Deref;
 use std::option::Option::{Some, None};
 
 use emu128::Emu128;
-use ipext::{IpAddrIter, IpAdd, IpSub, IpStep};
+use ipext::{IpAdd, IpSub, IpStep, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
 
 /// An IP network address, either IPv4 or IPv6.
 ///
@@ -358,18 +358,11 @@ impl IpNet {
     ///     IpAddr::from_str("fd00::3").unwrap(),
     /// ]);
     /// ```
-    pub fn hosts(&self) -> IpAddrIter<IpAddr> {
-        let mut start = self.network();
-        let mut end = self.broadcast();        
-
-        if let IpNet::V4(_) = *self {
-            if self.prefix_len() < 31 {
-                start = start.saturating_add(1);
-                end = end.saturating_sub(1);
-            }
+    pub fn hosts(&self) -> IpAddrRange {
+        match *self {
+            IpNet::V4(ref a) => IpAddrRange::V4(a.hosts()),
+            IpNet::V6(ref a) => IpAddrRange::V6(a.hosts()),
         }
-
-        IpAddrIter::new(start, end)
     }
     
     /// Returns an `Iterator` over the subnets of this network with the
@@ -678,7 +671,7 @@ impl Ipv4Net {
     ///     Ipv4Addr::from_str("10.0.0.1").unwrap(),
     /// ]);
     /// ```
-    pub fn hosts(&self) -> IpAddrIter<Ipv4Addr> {
+    pub fn hosts(&self) -> Ipv4AddrRange {
         let mut start = self.network();
         let mut end = self.broadcast();
         
@@ -687,7 +680,7 @@ impl Ipv4Net {
             end = end.saturating_sub(1);
         }
         
-        IpAddrIter::new(start, end)
+        Ipv4AddrRange::new(start, end)
     }
 
     /// Returns an `Iterator` over the subnets of this network with the
@@ -958,8 +951,8 @@ impl Ipv6Net {
     ///     Ipv6Addr::from_str("fd00::3").unwrap(),
     /// ]);
     /// ```
-    pub fn hosts(&self) -> IpAddrIter<Ipv6Addr> {
-        IpAddrIter::new(self.network(), self.broadcast())
+    pub fn hosts(&self) -> Ipv6AddrRange {
+        Ipv6AddrRange::new(self.network(), self.broadcast())
     }
 
     /// Returns an `Iterator` over the subnets of this network with the

@@ -9,61 +9,8 @@ use std::mem;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use emu128::Emu128;
 
-/// An `Iterator` over a range of IPv4 or IPv6 addresses.
-///
-/// This may be deprecated and replaced with an implementation of
-/// `Range` for IP addresses when `Range` and its required traits are
-/// stablized.
-///
-/// # Examples
-///
-/// ```
-/// use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-/// use std::str::FromStr;
-/// use ipnet::{IpAddrIter, IpAdd};
-///
-/// let i = IpAddrIter::new(IpAddr::from_str("10.0.0.0").unwrap(), IpAddr::from_str("10.0.0.3").unwrap());
-/// let i4 = IpAddrIter::new(Ipv4Addr::from_str("10.0.0.0").unwrap(), Ipv4Addr::from_str("10.0.0.3").unwrap());
-/// let i6 = IpAddrIter::new(Ipv6Addr::from_str("fd00::").unwrap(), Ipv6Addr::from_str("fd00::3").unwrap());
-///
-/// let v = vec![
-///     IpAddr::from_str("10.0.0.0").unwrap(),
-///     IpAddr::from_str("10.0.0.1").unwrap(),
-///     IpAddr::from_str("10.0.0.2").unwrap(),
-///     IpAddr::from_str("10.0.0.3").unwrap(),
-/// ];
-/// let v4 = vec![
-///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
-///     Ipv4Addr::from_str("10.0.0.1").unwrap(),
-///     Ipv4Addr::from_str("10.0.0.2").unwrap(),
-///     Ipv4Addr::from_str("10.0.0.3").unwrap(),
-/// ];
-/// let v6 = vec![
-///     Ipv6Addr::from_str("fd00::").unwrap(),
-///     Ipv6Addr::from_str("fd00::1").unwrap(),
-///     Ipv6Addr::from_str("fd00::2").unwrap(),
-///     Ipv6Addr::from_str("fd00::3").unwrap(),
-/// ];
-///
-/// assert_eq!(i.collect::<Vec<IpAddr>>(), v);
-/// assert_eq!(i4.collect::<Vec<Ipv4Addr>>(), v4);
-/// assert_eq!(i6.collect::<Vec<Ipv6Addr>>(), v6);
-/// ```
-pub struct IpAddrIter<T> {
-    start: T,
-    end: T,
-}
-
-impl<T> IpAddrIter<T> {
-    pub fn new(start: T, end: T) -> Self {
-        IpAddrIter {
-            start: start,
-            end: end,
-        }
-    }
-}
-
-// A barebones copy of the current unstable Step trait.
+// A barebones copy of the current unstable Step trait used by the
+// IpAddrRange, Ipv4AddrRange, and Ipv6AddrRange types below.
 pub trait IpStep {
     fn replace_zero(&mut self) -> Self;
     fn add_one(&self) -> Self;
@@ -99,9 +46,157 @@ impl IpStep for Ipv6Addr {
     }
 }
 
-impl<T> Iterator for IpAddrIter<T>
-    where T: Copy + PartialOrd + IpStep {
-    type Item = T;
+/// An `Iterator` over a range of IP addresses, either IPv4 or IPv6.
+///
+/// # Examples
+///
+/// ```
+/// use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+/// use std::str::FromStr;
+/// use ipnet::{IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
+///
+/// let i = IpAddrRange::from(Ipv4AddrRange::new(
+///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
+///     Ipv4Addr::from_str("10.0.0.3").unwrap(),
+/// ));
+///
+/// assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
+///     IpAddr::from_str("10.0.0.0").unwrap(),
+///     IpAddr::from_str("10.0.0.1").unwrap(),
+///     IpAddr::from_str("10.0.0.2").unwrap(),
+///     IpAddr::from_str("10.0.0.3").unwrap(),
+/// ]);
+///
+/// let i = IpAddrRange::from(Ipv6AddrRange::new(
+///     Ipv6Addr::from_str("fd00::").unwrap(),
+///     Ipv6Addr::from_str("fd00::3").unwrap(),
+/// ));
+///
+/// assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
+///     IpAddr::from_str("fd00::").unwrap(),
+///     IpAddr::from_str("fd00::1").unwrap(),
+///     IpAddr::from_str("fd00::2").unwrap(),
+///     IpAddr::from_str("fd00::3").unwrap(),
+/// ]);
+/// ```
+pub enum IpAddrRange {
+    V4(Ipv4AddrRange),
+    V6(Ipv6AddrRange),
+}
+
+/// An `Iterator` over a range of IPv4 addresses.
+///
+/// # Examples
+///
+/// ```
+/// use std::net::Ipv4Addr;
+/// use std::str::FromStr;
+/// use ipnet::Ipv4AddrRange;
+///
+/// let i = Ipv4AddrRange::new(
+///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
+///     Ipv4Addr::from_str("10.0.0.3").unwrap(),
+/// );
+///
+/// assert_eq!(i.collect::<Vec<Ipv4Addr>>(), vec![
+///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
+///     Ipv4Addr::from_str("10.0.0.1").unwrap(),
+///     Ipv4Addr::from_str("10.0.0.2").unwrap(),
+///     Ipv4Addr::from_str("10.0.0.3").unwrap(),
+/// ]);
+/// ```
+pub struct Ipv4AddrRange {
+    start: Ipv4Addr,
+    end: Ipv4Addr,
+}
+
+/// An `Iterator` over a range of IPv4 or IPv6 addresses.
+///
+/// # Examples
+///
+/// ```
+/// use std::net::Ipv6Addr;
+/// use std::str::FromStr;
+/// use ipnet::Ipv6AddrRange;
+///
+/// let i = Ipv6AddrRange::new(
+///     Ipv6Addr::from_str("fd00::").unwrap(),
+///     Ipv6Addr::from_str("fd00::3").unwrap(),
+/// );
+///
+/// assert_eq!(i.collect::<Vec<Ipv6Addr>>(), vec![
+///     Ipv6Addr::from_str("fd00::").unwrap(),
+///     Ipv6Addr::from_str("fd00::1").unwrap(),
+///     Ipv6Addr::from_str("fd00::2").unwrap(),
+///     Ipv6Addr::from_str("fd00::3").unwrap(),
+/// ]);
+/// ```
+pub struct Ipv6AddrRange {
+    start: Ipv6Addr,
+    end: Ipv6Addr,
+}
+
+impl Ipv4AddrRange {
+    pub fn new(start: Ipv4Addr, end: Ipv4Addr) -> Self {
+        Ipv4AddrRange {
+            start: start,
+            end: end,
+        }
+    }
+}
+
+impl Ipv6AddrRange {
+    pub fn new(start: Ipv6Addr, end: Ipv6Addr) -> Self {
+        Ipv6AddrRange {
+            start: start,
+            end: end,
+        }
+    }
+}
+
+impl From<Ipv4AddrRange> for IpAddrRange {
+    fn from(i: Ipv4AddrRange) -> IpAddrRange {
+        IpAddrRange::V4(i)
+    }
+}
+
+impl From<Ipv6AddrRange> for IpAddrRange {
+    fn from(i: Ipv6AddrRange) -> IpAddrRange {
+        IpAddrRange::V6(i)
+    }
+}
+
+impl Iterator for IpAddrRange {
+    type Item = IpAddr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match *self {
+            IpAddrRange::V4(ref mut a) => a.next().map(IpAddr::V4),
+            IpAddrRange::V6(ref mut a) => a.next().map(IpAddr::V6),
+        }
+    }
+}
+
+impl Iterator for Ipv4AddrRange {
+    type Item = Ipv4Addr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.start.partial_cmp(&self.end) {
+            Some(Less) => {
+                let next = self.start.add_one();
+                Some(mem::replace(&mut self.start, next))
+            },
+            Some(Equal) => {
+                self.end.replace_zero();
+                Some(self.start)
+            },
+            _ => None,
+        }
+    }
+}
+
+impl Iterator for Ipv6AddrRange {
+    type Item = Ipv6Addr;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.start.partial_cmp(&self.end) {
@@ -348,22 +443,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_ipaddriter() {
-        let i = IpAddrIter::new(IpAddr::from_str("10.0.0.0").unwrap(), IpAddr::from_str("10.0.0.3").unwrap());
-        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
-            IpAddr::from_str("10.0.0.0").unwrap(),
-            IpAddr::from_str("10.0.0.1").unwrap(),
-            IpAddr::from_str("10.0.0.2").unwrap(),
-            IpAddr::from_str("10.0.0.3").unwrap(),
-        ]);
+    fn test_ipaddrrange() {
+        let i = Ipv4AddrRange::new(
+            Ipv4Addr::from_str("10.0.0.0").unwrap(),
+            Ipv4Addr::from_str("10.0.0.3").unwrap()
+        );
 
-        let i = IpAddrIter::new(IpAddr::from_str("255.255.255.254").unwrap(), IpAddr::from_str("255.255.255.255").unwrap());
-        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
-            IpAddr::from_str("255.255.255.254").unwrap(),
-            IpAddr::from_str("255.255.255.255").unwrap(),
-        ]);
-
-        let i = IpAddrIter::new(Ipv4Addr::from_str("10.0.0.0").unwrap(), Ipv4Addr::from_str("10.0.0.3").unwrap());
         assert_eq!(i.collect::<Vec<Ipv4Addr>>(), vec![
             Ipv4Addr::from_str("10.0.0.0").unwrap(),
             Ipv4Addr::from_str("10.0.0.1").unwrap(),
@@ -371,18 +456,80 @@ mod tests {
             Ipv4Addr::from_str("10.0.0.3").unwrap(),
         ]);
 
-        let i = IpAddrIter::new(Ipv4Addr::from_str("255.255.255.254").unwrap(), Ipv4Addr::from_str("255.255.255.255").unwrap());
+        let i = Ipv4AddrRange::new(
+            Ipv4Addr::from_str("255.255.255.254").unwrap(),
+            Ipv4Addr::from_str("255.255.255.255").unwrap()
+        );
+
         assert_eq!(i.collect::<Vec<Ipv4Addr>>(), vec![
             Ipv4Addr::from_str("255.255.255.254").unwrap(),
             Ipv4Addr::from_str("255.255.255.255").unwrap(),
         ]);
 
-        let i = IpAddrIter::new(Ipv6Addr::from_str("fd00::").unwrap(), Ipv6Addr::from_str("fd00::3").unwrap());
+        let i = Ipv6AddrRange::new(
+            Ipv6Addr::from_str("fd00::").unwrap(),
+            Ipv6Addr::from_str("fd00::3").unwrap(),
+        );
+
         assert_eq!(i.collect::<Vec<Ipv6Addr>>(), vec![
             Ipv6Addr::from_str("fd00::").unwrap(),
             Ipv6Addr::from_str("fd00::1").unwrap(),
             Ipv6Addr::from_str("fd00::2").unwrap(),
             Ipv6Addr::from_str("fd00::3").unwrap(),
+        ]);
+
+        let i = Ipv6AddrRange::new(
+            Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe").unwrap(),
+            Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
+        );
+
+        assert_eq!(i.collect::<Vec<Ipv6Addr>>(), vec![
+            Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe").unwrap(),
+            Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
+        ]);
+        
+        let i = IpAddrRange::from(Ipv4AddrRange::new(
+            Ipv4Addr::from_str("10.0.0.0").unwrap(),
+            Ipv4Addr::from_str("10.0.0.3").unwrap(),
+        ));
+
+        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
+            IpAddr::from_str("10.0.0.0").unwrap(),
+            IpAddr::from_str("10.0.0.1").unwrap(),
+            IpAddr::from_str("10.0.0.2").unwrap(),
+            IpAddr::from_str("10.0.0.3").unwrap(),
+        ]);
+        
+        let i = IpAddrRange::from(Ipv4AddrRange::new(
+            Ipv4Addr::from_str("255.255.255.254").unwrap(),
+            Ipv4Addr::from_str("255.255.255.255").unwrap()
+        ));
+
+        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
+            IpAddr::from_str("255.255.255.254").unwrap(),
+            IpAddr::from_str("255.255.255.255").unwrap(),
+        ]);
+
+        let i = IpAddrRange::from(Ipv6AddrRange::new(
+            Ipv6Addr::from_str("fd00::").unwrap(),
+            Ipv6Addr::from_str("fd00::3").unwrap(),
+        ));
+
+        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
+            IpAddr::from_str("fd00::").unwrap(),
+            IpAddr::from_str("fd00::1").unwrap(),
+            IpAddr::from_str("fd00::2").unwrap(),
+            IpAddr::from_str("fd00::3").unwrap(),
+        ]);
+
+        let i = IpAddrRange::from(Ipv6AddrRange::new(
+            Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe").unwrap(),
+            Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
+        ));
+
+        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
+            IpAddr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe").unwrap(),
+            IpAddr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
         ]);
     }
 }
