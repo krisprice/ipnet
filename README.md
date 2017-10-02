@@ -14,7 +14,7 @@ Read the [documentation] for the full details. And find it on [Crates.io].
 
 Aggregate a list of prefixes.
 
-```
+```rust
 extern crate ipnet;
 use ipnet::IpNet;
 
