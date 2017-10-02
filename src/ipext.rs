@@ -10,7 +10,8 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use emu128::Emu128;
 
 // A barebones copy of the current unstable Step trait used by the
-// IpAddrRange, Ipv4AddrRange, and Ipv6AddrRange types below.
+// IpAddrRange, Ipv4AddrRange, and Ipv6AddrRange types below, and the
+// Subnets types in ipnet.
 pub trait IpStep {
     fn replace_zero(&mut self) -> Self;
     fn add_one(&self) -> Self;
@@ -51,34 +52,34 @@ impl IpStep for Ipv6Addr {
 /// # Examples
 ///
 /// ```
-/// use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-/// use std::str::FromStr;
-/// use ipnet::{IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
-///
-/// let i = IpAddrRange::from(Ipv4AddrRange::new(
+/// # use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+/// # use std::str::FromStr;
+/// # use ipnet::{IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
+/// let hosts = IpAddrRange::from(Ipv4AddrRange::new(
 ///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
 ///     Ipv4Addr::from_str("10.0.0.3").unwrap(),
 /// ));
 ///
-/// assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
+/// assert_eq!(hosts.collect::<Vec<IpAddr>>(), vec![
 ///     IpAddr::from_str("10.0.0.0").unwrap(),
 ///     IpAddr::from_str("10.0.0.1").unwrap(),
 ///     IpAddr::from_str("10.0.0.2").unwrap(),
 ///     IpAddr::from_str("10.0.0.3").unwrap(),
 /// ]);
 ///
-/// let i = IpAddrRange::from(Ipv6AddrRange::new(
+/// let hosts = IpAddrRange::from(Ipv6AddrRange::new(
 ///     Ipv6Addr::from_str("fd00::").unwrap(),
 ///     Ipv6Addr::from_str("fd00::3").unwrap(),
 /// ));
 ///
-/// assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
+/// assert_eq!(hosts.collect::<Vec<IpAddr>>(), vec![
 ///     IpAddr::from_str("fd00::").unwrap(),
 ///     IpAddr::from_str("fd00::1").unwrap(),
 ///     IpAddr::from_str("fd00::2").unwrap(),
 ///     IpAddr::from_str("fd00::3").unwrap(),
 /// ]);
 /// ```
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum IpAddrRange {
     V4(Ipv4AddrRange),
     V6(Ipv6AddrRange),
@@ -89,22 +90,22 @@ pub enum IpAddrRange {
 /// # Examples
 ///
 /// ```
-/// use std::net::Ipv4Addr;
-/// use std::str::FromStr;
-/// use ipnet::Ipv4AddrRange;
-///
-/// let i = Ipv4AddrRange::new(
+/// # use std::net::Ipv4Addr;
+/// # use std::str::FromStr;
+/// # use ipnet::Ipv4AddrRange;
+/// let hosts = Ipv4AddrRange::new(
 ///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
 ///     Ipv4Addr::from_str("10.0.0.3").unwrap(),
 /// );
 ///
-/// assert_eq!(i.collect::<Vec<Ipv4Addr>>(), vec![
+/// assert_eq!(hosts.collect::<Vec<Ipv4Addr>>(), vec![
 ///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
 ///     Ipv4Addr::from_str("10.0.0.1").unwrap(),
 ///     Ipv4Addr::from_str("10.0.0.2").unwrap(),
 ///     Ipv4Addr::from_str("10.0.0.3").unwrap(),
 /// ]);
 /// ```
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub struct Ipv4AddrRange {
     start: Ipv4Addr,
     end: Ipv4Addr,
@@ -115,22 +116,22 @@ pub struct Ipv4AddrRange {
 /// # Examples
 ///
 /// ```
-/// use std::net::Ipv6Addr;
-/// use std::str::FromStr;
-/// use ipnet::Ipv6AddrRange;
-///
-/// let i = Ipv6AddrRange::new(
+/// # use std::net::Ipv6Addr;
+/// # use std::str::FromStr;
+/// # use ipnet::Ipv6AddrRange;
+/// let hosts = Ipv6AddrRange::new(
 ///     Ipv6Addr::from_str("fd00::").unwrap(),
 ///     Ipv6Addr::from_str("fd00::3").unwrap(),
 /// );
 ///
-/// assert_eq!(i.collect::<Vec<Ipv6Addr>>(), vec![
+/// assert_eq!(hosts.collect::<Vec<Ipv6Addr>>(), vec![
 ///     Ipv6Addr::from_str("fd00::").unwrap(),
 ///     Ipv6Addr::from_str("fd00::1").unwrap(),
 ///     Ipv6Addr::from_str("fd00::2").unwrap(),
 ///     Ipv6Addr::from_str("fd00::3").unwrap(),
 /// ]);
 /// ```
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub struct Ipv6AddrRange {
     start: Ipv6Addr,
     end: Ipv6Addr,

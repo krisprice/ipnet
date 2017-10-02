@@ -401,16 +401,11 @@ impl IpNet {
     /// let net = IpNet::from_str("fd00::/16").unwrap();
     /// assert_eq!(net.subnets(129), Err(PrefixLenError));
     /// ```
-    pub fn subnets(&self, new_prefix_len: u8) -> Result<Subnets<IpAddr>, PrefixLenError> {
-        if self.prefix_len() > new_prefix_len || new_prefix_len > self.max_prefix_len() {
-            return Err(PrefixLenError);
+    pub fn subnets(&self, new_prefix_len: u8) -> Result<IpSubnets, PrefixLenError> {
+        match *self {
+            IpNet::V4(ref a) => a.subnets(new_prefix_len).map(IpSubnets::V4),
+            IpNet::V6(ref a) => a.subnets(new_prefix_len).map(IpSubnets::V6),
         }
-
-        Ok(Subnets::new(
-            self.network(),
-            self.broadcast(),
-            new_prefix_len,
-        ))
     }
 
     /// Aggregate a `Vec` of `IpNet`s and return the result as a new
@@ -713,12 +708,12 @@ impl Ipv4Net {
     /// let net = Ipv4Net::from_str("10.0.0.0/24").unwrap();
     /// assert_eq!(net.subnets(33), Err(PrefixLenError));
     /// ```
-    pub fn subnets(&self, new_prefix_len: u8) -> Result<Subnets<Ipv4Addr>, PrefixLenError> {
+    pub fn subnets(&self, new_prefix_len: u8) -> Result<Ipv4Subnets, PrefixLenError> {
         if self.prefix_len > new_prefix_len || new_prefix_len > 32 {
             return Err(PrefixLenError);
         }
         
-        Ok(Subnets::new(
+        Ok(Ipv4Subnets::new(
             self.network(),
             self.broadcast(),
             new_prefix_len,
@@ -741,7 +736,7 @@ impl Ipv4Net {
         let mut res: Vec<Ipv4Net> = Vec::new();
         
         for (start, end) in intervals {
-            let iter = Subnets::new(Ipv4Addr::from(start), Ipv4Addr::from(end.saturating_sub(1)), 0);
+            let iter = Ipv4Subnets::new(Ipv4Addr::from(start), Ipv4Addr::from(end.saturating_sub(1)), 0);
 
             for n in iter {
                 res.push(n);
@@ -985,12 +980,12 @@ impl Ipv6Net {
     /// let net = Ipv6Net::from_str("fd00::/16").unwrap();
     /// assert_eq!(net.subnets(129), Err(PrefixLenError));
     /// ```
-    pub fn subnets(&self, new_prefix_len: u8) -> Result<Subnets<Ipv6Addr>, PrefixLenError> {
+    pub fn subnets(&self, new_prefix_len: u8) -> Result<Ipv6Subnets, PrefixLenError> {
         if self.prefix_len > new_prefix_len || new_prefix_len > 128 {
             return Err(PrefixLenError);
         }
         
-        Ok(Subnets::new(
+        Ok(Ipv6Subnets::new(
             self.network(),
             self.broadcast(),
             new_prefix_len,
@@ -1013,7 +1008,7 @@ impl Ipv6Net {
         let mut res: Vec<Ipv6Net> = Vec::new();
 
         for (start, end) in intervals {
-            let iter: Subnets<Ipv6Addr> = Subnets::new(
+            let iter = Ipv6Subnets::new(
                 start.into(),
                 end.saturating_sub(Emu128::from(1)).into(),
                 0,
@@ -1147,7 +1142,8 @@ impl<'a> Contains<&'a Ipv6Addr> for Ipv6Net {
     }
 }
 
-/// An `Iterator` that generates IP network addresses.
+/// An `Iterator` that generates IP network addresses, either IPv4 or
+/// IPv6.
 ///
 /// Generates the subnets between the provided `start` and `end` IP
 /// addresses inclusive of `end`. Each iteration generates the next
@@ -1157,15 +1153,14 @@ impl<'a> Contains<&'a Ipv6Addr> for Ipv6Net {
 /// # Examples
 ///
 /// ```
-/// # use std::net::IpAddr;
+/// # use std::net::{Ipv4Addr, Ipv6Addr};
 /// # use std::str::FromStr;
-/// use ipnet::{IpNet, Subnets};
-///
-/// let subnets = Subnets::new(
-///     IpAddr::from_str("10.0.0.0").unwrap(),
-///     IpAddr::from_str("10.0.0.239").unwrap(),
+/// # use ipnet::{IpNet, IpSubnets, Ipv4Subnets, Ipv6Subnets};
+/// let subnets = IpSubnets::from(Ipv4Subnets::new(
+///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
+///     Ipv4Addr::from_str("10.0.0.239").unwrap(),
 ///     26,
-/// );
+/// ));
 /// 
 /// assert_eq!(subnets.collect::<Vec<IpNet>>(), vec![
 ///     IpNet::from_str("10.0.0.0/26").unwrap(),
@@ -1174,20 +1169,134 @@ impl<'a> Contains<&'a Ipv6Addr> for Ipv6Net {
 ///     IpNet::from_str("10.0.0.192/27").unwrap(),
 ///     IpNet::from_str("10.0.0.224/28").unwrap(),
 /// ]);
+///
+/// let subnets = IpSubnets::from(Ipv6Subnets::new(
+///     Ipv6Addr::from_str("fd00::").unwrap(),
+///     Ipv6Addr::from_str("fd00:ef:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
+///     26,
+/// ));
+/// 
+/// assert_eq!(subnets.collect::<Vec<IpNet>>(), vec![
+///     IpNet::from_str("fd00::/26").unwrap(),
+///     IpNet::from_str("fd00:40::/26").unwrap(),
+///     IpNet::from_str("fd00:80::/26").unwrap(),
+///     IpNet::from_str("fd00:c0::/27").unwrap(),
+///     IpNet::from_str("fd00:e0::/28").unwrap(),
+/// ]);
 /// ```
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-pub struct Subnets<T> {
-    start: T,
-    end: T, // end is inclusive
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub enum IpSubnets {
+    V4(Ipv4Subnets),
+    V6(Ipv6Subnets),
+}
+
+/// An `Iterator` that generates IPv4 network addresses.
+///
+/// Generates the subnets between the provided `start` and `end` IP
+/// addresses inclusive of `end`. Each iteration generates the next
+/// network address of the largest valid size it can, while using a
+/// prefix lenth not less than `min_prefix_len`.
+///
+/// # Examples
+///
+/// ```
+/// # use std::net::Ipv4Addr;
+/// # use std::str::FromStr;
+/// # use ipnet::{Ipv4Net, Ipv4Subnets};
+/// let subnets = Ipv4Subnets::new(
+///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
+///     Ipv4Addr::from_str("10.0.0.239").unwrap(),
+///     26,
+/// );
+/// 
+/// assert_eq!(subnets.collect::<Vec<Ipv4Net>>(), vec![
+///     Ipv4Net::from_str("10.0.0.0/26").unwrap(),
+///     Ipv4Net::from_str("10.0.0.64/26").unwrap(),
+///     Ipv4Net::from_str("10.0.0.128/26").unwrap(),
+///     Ipv4Net::from_str("10.0.0.192/27").unwrap(),
+///     Ipv4Net::from_str("10.0.0.224/28").unwrap(),
+/// ]);
+/// ```
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub struct Ipv4Subnets {
+    start: Ipv4Addr,
+    end: Ipv4Addr, // end is inclusive
     min_prefix_len: u8,
 }
 
-impl<T> Subnets<T> {
-    pub fn new(start: T, end: T, min_prefix_len: u8) -> Self {
-        Subnets {
+/// An `Iterator` that generates IPv6 network addresses.
+///
+/// Generates the subnets between the provided `start` and `end` IP
+/// addresses inclusive of `end`. Each iteration generates the next
+/// network address of the largest valid size it can, while using a
+/// prefix lenth not less than `min_prefix_len`.
+///
+/// # Examples
+///
+/// ```
+/// # use std::net::Ipv6Addr;
+/// # use std::str::FromStr;
+/// # use ipnet::{Ipv6Net, Ipv6Subnets};
+/// let subnets = Ipv6Subnets::new(
+///     Ipv6Addr::from_str("fd00::").unwrap(),
+///     Ipv6Addr::from_str("fd00:ef:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
+///     26,
+/// );
+/// 
+/// assert_eq!(subnets.collect::<Vec<Ipv6Net>>(), vec![
+///     Ipv6Net::from_str("fd00::/26").unwrap(),
+///     Ipv6Net::from_str("fd00:40::/26").unwrap(),
+///     Ipv6Net::from_str("fd00:80::/26").unwrap(),
+///     Ipv6Net::from_str("fd00:c0::/27").unwrap(),
+///     Ipv6Net::from_str("fd00:e0::/28").unwrap(),
+/// ]);
+/// ```
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub struct Ipv6Subnets {
+    start: Ipv6Addr,
+    end: Ipv6Addr, // end is inclusive
+    min_prefix_len: u8,
+}
+
+impl Ipv4Subnets {
+    pub fn new(start: Ipv4Addr, end: Ipv4Addr, min_prefix_len: u8) -> Self {
+        Ipv4Subnets {
             start: start,
             end: end,
             min_prefix_len: min_prefix_len,
+        }
+    }
+}
+
+impl Ipv6Subnets {
+    pub fn new(start: Ipv6Addr, end: Ipv6Addr, min_prefix_len: u8) -> Self {
+        Ipv6Subnets {
+            start: start,
+            end: end,
+            min_prefix_len: min_prefix_len,
+        }
+    }
+}
+
+impl From<Ipv4Subnets> for IpSubnets {
+    fn from(i: Ipv4Subnets) -> IpSubnets {
+        IpSubnets::V4(i)
+    }
+}
+
+impl From<Ipv6Subnets> for IpSubnets {
+    fn from(i: Ipv6Subnets) -> IpSubnets {
+        IpSubnets::V6(i)
+    }
+}
+
+impl Iterator for IpSubnets {
+    type Item = IpNet;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match *self {
+            IpSubnets::V4(ref mut a) => a.next().map(IpNet::V4),
+            IpSubnets::V6(ref mut a) => a.next().map(IpNet::V6),
         }
     }
 }
@@ -1203,6 +1312,35 @@ fn next_ipv4_subnet(start: Ipv4Addr, end: Ipv4Addr, min_prefix_len: u8) -> Ipv4N
     Ipv4Net::new(start, next_prefix_len).unwrap()
 }
 
+impl Iterator for Ipv4Subnets {
+    type Item = Ipv4Net;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.start.partial_cmp(&self.end) {
+            Some(Less) => {
+                let next = next_ipv4_subnet(self.start, self.end, self.min_prefix_len);
+                self.start = next.broadcast().saturating_add(1);
+
+                // Stop the iterator if we saturated self.start. This
+                // check worsens performance slightly but overall this
+                // approach of operating on Ipv4Addr types is faster
+                // than what we were doing before using Ipv4Net.
+                if self.start == next.broadcast() {
+                    self.end.replace_zero();
+                }
+                Some(next)
+            },
+            Some(Equal) => {
+                let next = next_ipv4_subnet(self.start, self.end, self.min_prefix_len);
+                self.start = next.broadcast().saturating_add(1);
+                self.end.replace_zero();
+                Some(next)
+            },
+            _ => None,
+        }
+    }
+}
+
 fn next_ipv6_subnet(start: Ipv6Addr, end: Ipv6Addr, min_prefix_len: u8) -> Ipv6Net {
     let range = end.saturating_sub(start);
     let range = range.saturating_add(Emu128::from(1));    
@@ -1214,72 +1352,34 @@ fn next_ipv6_subnet(start: Ipv6Addr, end: Ipv6Addr, min_prefix_len: u8) -> Ipv6N
     Ipv6Net::new(start, next_prefix_len as u8).unwrap()
 }
 
-impl Subnets<IpAddr> {
-    fn forward(&mut self) -> IpNet {
-        match (self.start, self.end) {
-            (IpAddr::V4(start), IpAddr::V4(end)) => {
-                let n = IpNet::from(next_ipv4_subnet(start, end, self.min_prefix_len));
-                self.start = n.broadcast().saturating_add(1);
-                n
-            },
-            (IpAddr::V6(start), IpAddr::V6(end)) => {
-                let n = IpNet::from(next_ipv6_subnet(start, end, self.min_prefix_len));
-                self.start = n.broadcast().saturating_add(1);
-                n
-            },
-            _ => unreachable!(),
-        }
-    }
-}
+impl Iterator for Ipv6Subnets {
+    type Item = Ipv6Net;
 
-impl Subnets<Ipv4Addr> {
-    fn forward(&mut self) -> Ipv4Net {
-        let n = next_ipv4_subnet(self.start, self.end, self.min_prefix_len);
-        self.start = n.broadcast().saturating_add(1);
-        n
-    }
-}
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.start.partial_cmp(&self.end) {
+            Some(Less) => {
+                let next = next_ipv6_subnet(self.start, self.end, self.min_prefix_len);
+                self.start = next.broadcast().saturating_add(1);
 
-impl Subnets<Ipv6Addr> {
-    fn forward(&mut self) -> Ipv6Net {
-        let n = next_ipv6_subnet(self.start, self.end, self.min_prefix_len);
-        self.start = n.broadcast().saturating_add(1);
-        n
-    }
-}
-
-macro_rules! subnets_iter_impl {
-    ($t:ty, $u:ty) => (
-        impl Iterator for Subnets<$t> {
-            type Item = $u;
-
-            fn next(&mut self) -> Option<Self::Item> {
-                match self.start.partial_cmp(&self.end) {
-                    Some(Less) => {
-                        let n = self.forward();
-                        // Stop the iterator if we saturated self.start.
-                        // This check worsens performance slightly but
-                        // overall operating on IpAddr types is faster.
-                        if self.start == n.broadcast() {
-                            self.end.replace_zero();
-                        }
-                        Some(n)
-                    },
-                    Some(Equal) => {
-                        let n = self.forward();
-                        self.end.replace_zero();
-                        Some(n)
-                    },
-                    _ => None,
+                // Stop the iterator if we saturated self.start. This
+                // check worsens performance slightly but overall this
+                // approach of operating on Ipv6Addr types is faster
+                // than what we were doing before using Ipv6Net.
+                if self.start == next.broadcast() {
+                    self.end.replace_zero();
                 }
-            }
+                Some(next)
+            },
+            Some(Equal) => {
+                let next = next_ipv6_subnet(self.start, self.end, self.min_prefix_len);
+                self.start = next.broadcast().saturating_add(1);
+                self.end.replace_zero();
+                Some(next)
+            },
+            _ => None,
         }
-    )
+    }
 }
-
-subnets_iter_impl!(IpAddr, IpNet);
-subnets_iter_impl!(Ipv4Addr, Ipv4Net);
-subnets_iter_impl!(Ipv6Addr, Ipv6Net);
 
 // Generic function for merging a vector of intervals.
 fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
@@ -1343,67 +1443,124 @@ mod tests {
         assert_eq!(merge_intervals(v), v_ok);
         assert_eq!(merge_intervals(vv), vv_ok);
     }
-
+    
     macro_rules! ipnet_vec {
         ($($x:expr),*) => ( vec![$(IpNet::from_str($x).unwrap(),)*] );
         ($($x:expr,)*) => ( ipnet_vec![$($x),*] );
     }
 
-    macro_rules! make_subnets_test {
+    macro_rules! make_ipv4_subnets_test {
         ($name:ident, $start:expr, $end:expr, $min_prefix_len:expr, $($x:expr),*) => (
             #[test]
             fn $name() {
-                let subnets = Subnets::<IpAddr>::new(
-                    IpAddr::from_str($start).unwrap(),
-                    IpAddr::from_str($end).unwrap(),
+                let subnets = IpSubnets::from(Ipv4Subnets::new(
+                    Ipv4Addr::from_str($start).unwrap(),
+                    Ipv4Addr::from_str($end).unwrap(),
                     $min_prefix_len,
-                );
+                ));
                 let results = ipnet_vec![$($x),*];
                 assert_eq!(subnets.collect::<Vec<IpNet>>(), results);
             }
         );
         ($name:ident, $start:expr, $end:expr, $min_prefix_len:expr, $($x:expr,)*) => (
-            make_subnets_test!($name, $start, $end, $min_prefix_len, $($x),*);
+            make_ipv4_subnets_test!($name, $start, $end, $min_prefix_len, $($x),*);
         );
     }
 
-    make_subnets_test!(
-        test_subnets_zero_zero,
+    macro_rules! make_ipv6_subnets_test {
+        ($name:ident, $start:expr, $end:expr, $min_prefix_len:expr, $($x:expr),*) => (
+            #[test]
+            fn $name() {
+                let subnets = IpSubnets::from(Ipv6Subnets::new(
+                    Ipv6Addr::from_str($start).unwrap(),
+                    Ipv6Addr::from_str($end).unwrap(),
+                    $min_prefix_len,
+                ));
+                let results = ipnet_vec![$($x),*];
+                assert_eq!(subnets.collect::<Vec<IpNet>>(), results);
+            }
+        );
+        ($name:ident, $start:expr, $end:expr, $min_prefix_len:expr, $($x:expr,)*) => (
+            make_ipv6_subnets_test!($name, $start, $end, $min_prefix_len, $($x),*);
+        );
+    }
+
+    make_ipv4_subnets_test!(
+        test_ipv4_subnets_zero_zero,
         "0.0.0.0", "0.0.0.0", 0,
         "0.0.0.0/32",
     );
 
-    make_subnets_test!(
-        test_subnets_max_max,
+    make_ipv4_subnets_test!(
+        test_ipv4_subnets_max_max,
         "255.255.255.255", "255.255.255.255", 0,
         "255.255.255.255/32",
     );
     
-    make_subnets_test!(
-        test_subnets_none,
+    make_ipv4_subnets_test!(
+        test_ipv4_subnets_none,
         "0.0.0.1", "0.0.0.0", 0,
     );
     
-    make_subnets_test!(
-        test_subnets_one,
+    make_ipv4_subnets_test!(
+        test_ipv4_subnets_one,
         "0.0.0.0", "0.0.0.1", 0,
         "0.0.0.0/31",
     );
 
-    make_subnets_test!(
-        test_subnets_two,
+    make_ipv4_subnets_test!(
+        test_ipv4_subnets_two,
         "0.0.0.0", "0.0.0.2", 0,
         "0.0.0.0/31",
         "0.0.0.2/32",
     );
     
-    make_subnets_test!(
-        test_subnets_taper,
+    make_ipv4_subnets_test!(
+        test_ipv4_subnets_taper,
         "0.0.0.0", "0.0.0.10", 30,
         "0.0.0.0/30",
         "0.0.0.4/30",
         "0.0.0.8/31",
         "0.0.0.10/32",
+    );
+    
+    make_ipv6_subnets_test!(
+        test_ipv6_subnets_zero_zero,
+        "::", "::", 0,
+        "::/128",
+    );
+
+    make_ipv6_subnets_test!(
+        test_ipv6_subnets_max_max,
+        "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", 0,
+        "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128",
+    );
+    
+    make_ipv6_subnets_test!(
+        test_ipv6_subnets_none,
+        "::1", "::", 0,
+    );
+    
+    make_ipv6_subnets_test!(
+        test_ipv6_subnets_one,
+        "::", "::1", 0,
+        "::/127",
+    );
+
+    make_ipv6_subnets_test!(
+        test_ipv6_subnets_two,
+        "::", "::2", 0,
+        "::/127",
+        "::2/128",
+    );
+
+    make_ipv6_subnets_test!(
+        test_ipv6_subnets_taper,
+        "::", "::a", 126,
+        "::/126",
+        "::4/126",
+        "::8/127",
+        "::a/128",
     );
 
     #[test]

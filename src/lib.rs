@@ -43,7 +43,7 @@
 
 pub use self::emu128::Emu128;
 pub use self::ipext::{IpAdd, IpSub, IpBitAnd, IpBitOr, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
-pub use self::ipnet::{IpNet, Ipv4Net, Ipv6Net, Contains, PrefixLenError, Subnets};
+pub use self::ipnet::{IpNet, Ipv4Net, Ipv6Net, Contains, PrefixLenError, IpSubnets, Ipv4Subnets, Ipv6Subnets};
 pub use self::parser::AddrParseError;
 
 mod emu128;
