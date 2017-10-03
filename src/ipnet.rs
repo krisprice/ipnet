@@ -34,11 +34,11 @@ use ipext::{IpAdd, IpSub, IpStep, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
 /// use std::net::IpAddr;
 /// use ipnet::IpNet;
 ///
-/// let net_v4: IpNet = "10.1.1.0/24".parse().unwrap();
-/// let net_v6: IpNet = "fd00::/32".parse().unwrap();
+/// let net: IpNet = "10.1.1.0/24".parse().unwrap();
+/// assert_eq!(Ok(net.network()), "10.1.1.0".parse());
 ///
-/// assert_eq!(Ok(net_v4.network()), "10.1.1.0".parse());
-/// assert_eq!(Ok(net_v6.network()), "fd00::".parse());
+/// let net: IpNet = "fd00::/32".parse().unwrap();
+/// assert_eq!(Ok(net.network()), "fd00::".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum IpNet {
@@ -67,8 +67,8 @@ pub enum IpNet {
 /// use std::net::Ipv4Addr;
 /// use ipnet::Ipv4Net;
 ///
-/// let net_v4: Ipv4Net = "10.1.1.0/24".parse().unwrap();
-/// assert_eq!(Ok(net_v4.network()), "10.1.1.0".parse());
+/// let net: Ipv4Net = "10.1.1.0/24".parse().unwrap();
+/// assert_eq!(Ok(net.network()), "10.1.1.0".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Ipv4Net {
@@ -97,8 +97,8 @@ pub struct Ipv4Net {
 /// use std::net::Ipv6Addr;
 /// use ipnet::Ipv6Net;
 ///
-/// let net_v6: Ipv6Net = "fd00::/32".parse().unwrap();
-/// assert_eq!(Ok(net_v6.network()), "fd00::".parse());
+/// let net: Ipv6Net = "fd00::/32".parse().unwrap();
+/// assert_eq!(Ok(net.network()), "fd00::".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Ipv6Net {

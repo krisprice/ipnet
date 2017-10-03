@@ -13,6 +13,9 @@
 //! methods for addition, subtraction, bitwise-and, and bitwise-or
 //! operations that are missing in Rust's standard library.
 //!
+//! The module only uses stable features so it is guaranteed to compile
+//! using the stable toolchain.
+//!
 //! # Organization
 //!
 //! * [`IpNet`] represents an IP network address, either IPv4 or IPv6.

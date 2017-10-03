@@ -14,7 +14,7 @@ Read the [documentation] for the full details. And find it on [Crates.io].
 
 ## Examples
 
-Aggregate a list of prefixes.
+Using ipnet to aggregate a list of prefixes:
 
 ```rust
 extern crate ipnet;
@@ -29,17 +29,17 @@ fn main() {
         "fd00::/32", "fd00:1::/32",
     ];
 
-    let ipnets: Vec<IpNet> = strings.iter().filter_map(|p| p.parse().ok()).collect();
+    let nets: Vec<IpNet> = strings.iter().filter_map(|p| p.parse().ok()).collect();
     
     println!("\nInput IP prefix list:");
     
-    for n in &ipnets {
+    for n in &nets {
         println!("{}", n);
     }
     
     println!("\nAggregated IP prefixes:");
     
-    for n in IpNet::aggregate(&ipnets) {
+    for n in IpNet::aggregate(&nets) {
         println!("{}", n);
     }
 }
