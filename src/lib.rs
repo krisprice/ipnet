@@ -9,25 +9,25 @@
 //! consistent.
 //! 
 //! The module also provides types for iterating over IP address ranges,
-//! and useful traits that extend `Ipv4Addr` and `Ipv6Addr` with methods
-//! for addition, subtraction, bitwise-and, and bitwise-or operations
-//! that are missing in Rust's standard library.
+//! and useful traits that extend [`Ipv4Addr`] and [`Ipv6Addr`] with
+//! methods for addition, subtraction, bitwise-and, and bitwise-or
+//! operations that are missing in Rust's standard library.
 //!
 //! # Organization
 //!
-//! * [`IpNet`] represents IP network addresses, either IPv4 or IPv6.
+//! * [`IpNet`] represents an IP network address, either IPv4 or IPv6.
 //! * [`Ipv4Net`] and [`Ipv6Net`] are respectively IPv4 and IPv6 network
 //!   addresses.
 //! * [`IpSubnets`], [`Ipv4Subnets`], and [`Ipv6Subnets`] are iterators
-//!   that generate all valid IP network addresses bound by a given IP
-//!   address range and minimum prefix length. These are returned by the
-//!   [`subnets`] methods, but may also be used directly.
+//!   that generate the smallest set of IP network addresses bound by an
+//!   IP address range and minimum prefix length. These are returned by
+//!   the [`subnets()`] methods and used in the [`aggregate()`] methods.
 //! * [`IpAddrRange`], [`Ipv4AddrRange`], and [`Ipv6AddrRange`] provide
 //!   iteration over ranges of IP addresses. These are returned by the
-//!   `hosts()` methods, but may also be used directly.
+//!   [`hosts()`] methods.
 //! * The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
-//!   the `Ipv4Addr` and `Ipv6Addr` types with methods to perform these
-//!   operations.
+//!   the [`Ipv4Addr`] and [`Ipv6Addr`] types with methods to perform
+//!   these operations.
 //! * [`Emu128`] is an emulated 128 bit unsigned integer implemented in
 //!   this module using a struct of two `u64` types. This is useful for
 //!   operations on IPv6 address, which are 128 bit unsigned integers.
@@ -41,11 +41,12 @@
 //! [`IpSubnets`]: enum.IpSubnets.html
 //! [`Ipv4Subnets`]: struct.Ipv4Subnets.html
 //! [`Ipv6Subnets`]: struct.Ipv6Subnets.html
-//! [`subnets`]: enum.IpNet.html#method.subnets
+//! [`subnets()`]: enum.IpNet.html#method.subnets
+//! [`aggregate()`]: enum.IpNet.html#method.aggregate
 //! [`IpAddrRange`]: enum.IpAddrIter.html
 //! [`Ipv4AddrRange`]: struct.Ipv4AddrIter.html
 //! [`Ipv6AddrRange`]: struct.Ipv6AddrIter.html
-//! [`hosts`]: enum.IpNet.html#method.hosts
+//! [`hosts()`]: enum.IpNet.html#method.hosts
 //! [`IpAdd`]: trait.IpAdd.html
 //! [`IpSub`]: trait.IpSub.html
 //! [`IpBitAnd`]: trait.IpBitAnd.html

@@ -3,15 +3,6 @@
 //! This module provides `Emu128`, a 128 bit unsigned integer that is
 //! emulated using two `u64` types. This is useful for operations on
 //! IPv6 address, which are 128 bit unsigned integers.
-//!
-//! Currently `Emu128` only implements those operations that are useful
-//! for the `Ipv6Net` type. It is not intended to become a full `u128`
-//! implementation.
-//!
-//! Conversion between `Ipv6Addr` and `Emu128` is provided by a `From`
-//! and `Into` implementation on `Emu128`.
-//!
-//! [`Emu128`]: struct.Emu128.html
 
 use std::fmt;
 use std::net::Ipv6Addr;
@@ -36,21 +27,20 @@ use std::ops::{BitAnd, BitOr, Shr, Shl};
 ///
 /// ```
 /// use std::net::Ipv6Addr;
-/// use std::str::FromStr;
 /// use ipnet::Emu128;
 ///
 /// let i1 = Emu128::from(1); // convert from u32
 /// let i2 = Emu128::from([1, 1]); // convert from [u64; 2]
 /// let slice: [u64; 2] = i2.into(); // convert into [u64; 2]
 ///
-/// let a = Ipv6Addr::from_str("fd00::1").unwrap();
-/// let u = Emu128 { hi: 0xfd00_0000_0000_0000, lo: 1 };
-/// let a2: Ipv6Addr = u.into();
-/// let u2: Emu128 = a.into();
+/// let a1: Ipv6Addr = "fd00::1".parse().unwrap();
+/// let u1 = Emu128 { hi: 0xfd00_0000_0000_0000, lo: 1 };
+/// let a2: Ipv6Addr = u1.into();
+/// let u2: Emu128 = a1.into();
 ///
-/// assert_eq!(a, a2);
-/// assert_eq!(u, u2);
-/// assert_eq!(u, Emu128::from(a));
+/// assert_eq!(a1, a2);
+/// assert_eq!(u1, u2);
+/// assert_eq!(u1, Emu128::from(a1));
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub struct Emu128 {

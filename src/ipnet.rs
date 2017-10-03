@@ -12,23 +12,33 @@ use ipext::{IpAdd, IpSub, IpStep, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
 
 /// An IP network address, either IPv4 or IPv6.
 ///
-/// This enum can contain either an [`Ipv4Net`] or an [`Ipv6Net`], see their
-/// respective documentation for more details.
+/// This enum can contain either an [`Ipv4Net`] or an [`Ipv6Net`]. A
+/// [`From`] implementation is provided to convert these into an
+/// `IpNet`.
 ///
-/// [`Ipv4Net`]: struct.Ipv4Addr.html
-/// [`Ipv6Net`]: struct.Ipv6Addr.html
+/// # Textual representation
+///
+/// `IpNet` provides a [`FromStr`] implementation for parsing network
+/// addresses represented in CIDR notation. See [IETF RFC 4632] for the
+/// CIDR notation.
+///
+/// [`Ipv4Net`]: struct.Ipv4Net.html
+/// [`Ipv6Net`]: struct.Ipv6Net.html
+/// [`From`]: https://doc.rust-lang.org/std/convert/trait.From.html
+/// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
+/// [IETF RFC 4632]: https://tools.ietf.org/html/rfc4632
 ///
 /// # Examples
 ///
 /// ```
-/// use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-/// use ipnet::{IpNet, Ipv4Net, Ipv6Net};
+/// use std::net::IpAddr;
+/// use ipnet::IpNet;
 ///
-/// let net_v4 = "10.1.1.0/24".parse::<Ipv4Net>().unwrap();
-/// let net_v6 = "fd00::/32".parse::<Ipv6Net>().unwrap();
+/// let net_v4: IpNet = "10.1.1.0/24".parse().unwrap();
+/// let net_v6: IpNet = "fd00::/32".parse().unwrap();
 ///
-/// assert_eq!("10.1.1.0".parse(), Ok(net_v4.network()));
-/// assert_eq!("fd00::".parse(), Ok(net_v6.network()));
+/// assert_eq!(Ok(net_v4.network()), "10.1.1.0".parse());
+/// assert_eq!(Ok(net_v6.network()), "fd00::".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum IpNet {
@@ -43,14 +53,12 @@ pub enum IpNet {
 ///
 /// # Textual representation
 ///
-/// `Ipv4Net` provides a [`FromStr`] implementation for parsing networks
-/// represented in CIDR notation. This uses the same representation as
-/// [`Ipv4Addr`] followed by the `/` character and the prefix length in
-/// decimal. See [IETF RFC 4632] for the CIDR notation.
+/// `Ipv4Net` provides a [`FromStr`] implementation for parsing network
+/// addresses represented in CIDR notation. See [IETF RFC 4632] for the
+/// CIDR notation.
 ///
 /// [`IpNet`]: enum.IpAddr.html
 /// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
-/// [`Ipv4Addr`]: https://doc.rust-lang.org/std/net/struct.Ipv4Addr.html
 /// [IETF RFC 4632]: https://tools.ietf.org/html/rfc4632
 ///
 /// # Examples
@@ -59,8 +67,8 @@ pub enum IpNet {
 /// use std::net::Ipv4Addr;
 /// use ipnet::Ipv4Net;
 ///
-/// let net_v4 = "10.1.1.0/24".parse::<Ipv4Net>().unwrap();
-/// assert_eq!("10.1.1.0".parse(), Ok(net_v4.network()));
+/// let net_v4: Ipv4Net = "10.1.1.0/24".parse().unwrap();
+/// assert_eq!(Ok(net_v4.network()), "10.1.1.0".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Ipv4Net {
@@ -75,14 +83,12 @@ pub struct Ipv4Net {
 ///
 /// # Textual representation
 ///
-/// `Ipv6Net` provides a [`FromStr`] implementation for parsing networks
-/// represented in CIDR notation. This uses the same representation as
-/// [`Ipv6Addr`] followed by the `/` character and the prefix length in
-/// decimal. See [IETF RFC 4632] for the CIDR notation.
+/// `Ipv6Net` provides a [`FromStr`] implementation for parsing network
+/// addresses represented in CIDR notation. See [IETF RFC 4632] for the
+/// CIDR notation.
 ///
 /// [`IpNet`]: enum.IpAddr.html
 /// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
-/// [`Ipv6Addr`]: https://doc.rust-lang.org/std/net/struct.Ipv6Addr.html
 /// [IETF RFC 4632]: https://tools.ietf.org/html/rfc4632
 ///
 /// # Examples
@@ -91,8 +97,8 @@ pub struct Ipv4Net {
 /// use std::net::Ipv6Addr;
 /// use ipnet::Ipv6Net;
 ///
-/// let net_v6 = "fd00::/32".parse::<Ipv6Net>().unwrap();
-/// assert_eq!("fd00::".parse(), Ok(net_v6.network()));
+/// let net_v6: Ipv6Net = "fd00::/32".parse().unwrap();
+/// assert_eq!(Ok(net_v6.network()), "fd00::".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Ipv6Net {
@@ -100,14 +106,9 @@ pub struct Ipv6Net {
     prefix_len: u8,
 }
 
-/// An error that is returned when the prefix length is invalid. Valid
-/// prefix lengths are 0 to 32 for IPv4 and 0 to 128 for IPv6.
+/// An error which can be returned when the prefix length is invalid.
 ///
-/// This error is used as the error type for the `new()` and `subnets()`
-/// methods on [`Ipv4Net`] and [`Ipv6Net`].
-///
-/// [`Ipv4Net`]: struct.Ipv4Net.html
-/// [`Ipv6Net`]: struct.Ipv6Net.html
+/// Valid prefix lengths are 0 to 32 for IPv4 and 0 to 128 for IPv6.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrefixLenError;
 
@@ -146,16 +147,16 @@ impl IpNet {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::IpNet;
+    /// #
     /// assert_eq!(
-    ///     IpNet::from_str("192.168.12.34/16").unwrap().trunc(),
-    ///     IpNet::from_str("192.168.0.0/16").unwrap()
+    ///     "192.168.12.34/16".parse::<IpNet>().unwrap().trunc(),
+    ///     "192.168.0.0/16".parse().unwrap()
     /// );
     ///
     /// assert_eq!(
-    ///     IpNet::from_str("fd00::1:2:3:4/16").unwrap().trunc(),
-    ///     IpNet::from_str("fd00::/16").unwrap()
+    ///     "fd00::1:2:3:4/16".parse::<IpNet>().unwrap().trunc(),
+    ///     "fd00::/16".parse().unwrap()
     /// );
     /// ```
     pub fn trunc(&self) -> IpNet {
@@ -195,13 +196,13 @@ impl IpNet {
     ///
     /// ```
     /// # use std::net::IpAddr;
-    /// # use std::str::FromStr;
     /// # use ipnet::IpNet;
-    /// let net = IpNet::from_str("10.1.0.0/20").unwrap();
-    /// assert_eq!(net.netmask(), IpAddr::from_str("255.255.240.0").unwrap());
+    /// #
+    /// let net: IpNet = "10.1.0.0/20".parse().unwrap();
+    /// assert_eq!(Ok(net.netmask()), "255.255.240.0".parse());
     ///
-    /// let net = IpNet::from_str("fd00::/24").unwrap();
-    /// assert_eq!(net.netmask(), IpAddr::from_str("ffff:ff00::").unwrap());
+    /// let net: IpNet = "fd00::/24".parse().unwrap();
+    /// assert_eq!(Ok(net.netmask()), "ffff:ff00::".parse());
     /// ```
     pub fn netmask(&self) -> IpAddr {
         match *self {
@@ -216,13 +217,13 @@ impl IpNet {
     ///
     /// ```
     /// # use std::net::IpAddr;
-    /// # use std::str::FromStr;
     /// # use ipnet::IpNet;
-    /// let net = IpNet::from_str("10.1.0.0/20").unwrap();
-    /// assert_eq!(net.hostmask(), IpAddr::from_str("0.0.15.255").unwrap());
+    /// #
+    /// let net: IpNet = "10.1.0.0/20".parse().unwrap();
+    /// assert_eq!(Ok(net.hostmask()), "0.0.15.255".parse());
     ///
-    /// let net = IpNet::from_str("fd00::/24").unwrap();
-    /// assert_eq!(net.hostmask(), IpAddr::from_str("::ff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap());
+    /// let net: IpNet = "fd00::/24".parse().unwrap();
+    /// assert_eq!(Ok(net.hostmask()), "::ff:ffff:ffff:ffff:ffff:ffff:ffff".parse());
     /// ```
     pub fn hostmask(&self) -> IpAddr {
         match *self {
@@ -237,13 +238,13 @@ impl IpNet {
     ///
     /// ```
     /// # use std::net::IpAddr;
-    /// # use std::str::FromStr;
     /// # use ipnet::IpNet;
-    /// let net = IpNet::from_str("172.16.123.123/16").unwrap();
-    /// assert_eq!(net.network(), IpAddr::from_str("172.16.0.0").unwrap());
+    /// #
+    /// let net: IpNet = "172.16.123.123/16".parse().unwrap();
+    /// assert_eq!(Ok(net.network()), "172.16.0.0".parse());
     ///
-    /// let net = IpNet::from_str("fd00:1234:5678::/24").unwrap();
-    /// assert_eq!(net.network(), IpAddr::from_str("fd00:1200::").unwrap());
+    /// let net: IpNet = "fd00:1234:5678::/24".parse().unwrap();
+    /// assert_eq!(Ok(net.network()), "fd00:1200::".parse());
     /// ```
     pub fn network(&self) -> IpAddr {
         match *self {
@@ -258,13 +259,13 @@ impl IpNet {
     ///
     /// ```
     /// # use std::net::IpAddr;
-    /// # use std::str::FromStr;
     /// # use ipnet::IpNet;
-    /// let net = IpNet::from_str("172.16.0.0/22").unwrap();
-    /// assert_eq!(net.broadcast(), IpAddr::from_str("172.16.3.255").unwrap());
+    /// #
+    /// let net: IpNet = "172.16.0.0/22".parse().unwrap();
+    /// assert_eq!(Ok(net.broadcast()), "172.16.3.255".parse());
     ///
-    /// let net = IpNet::from_str("fd00:1234:5678::/24").unwrap();
-    /// assert_eq!(net.broadcast(), IpAddr::from_str("fd00:12ff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap());
+    /// let net: IpNet = "fd00:1234:5678::/24".parse().unwrap();
+    /// assert_eq!(Ok(net.broadcast()), "fd00:12ff:ffff:ffff:ffff:ffff:ffff:ffff".parse());
     /// ```
     pub fn broadcast(&self) -> IpAddr {
         match *self {
@@ -278,18 +279,18 @@ impl IpNet {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::IpNet;
-    /// let n1 = IpNet::from_str("172.16.1.0/24").unwrap();
-    /// let n2 = IpNet::from_str("172.16.0.0/23").unwrap();
-    /// let n3 = IpNet::from_str("172.16.0.0/0").unwrap();
+    /// #
+    /// let n1: IpNet = "172.16.1.0/24".parse().unwrap();
+    /// let n2: IpNet = "172.16.0.0/23".parse().unwrap();
+    /// let n3: IpNet = "172.16.0.0/0".parse().unwrap();
     ///
     /// assert_eq!(n1.supernet().unwrap(), n2);
     /// assert_eq!(n3.supernet(), None);
     ///
-    /// let n1 = IpNet::from_str("fd00:ff00::/24").unwrap();
-    /// let n2 = IpNet::from_str("fd00:fe00::/23").unwrap();
-    /// let n3 = IpNet::from_str("fd00:fe00::/0").unwrap();
+    /// let n1: IpNet = "fd00:ff00::/24".parse().unwrap();
+    /// let n2: IpNet = "fd00:fe00::/23".parse().unwrap();
+    /// let n3: IpNet = "fd00:fe00::/0".parse().unwrap();
     ///
     /// assert_eq!(n1.supernet().unwrap(), n2);
     /// assert_eq!(n3.supernet(), None);
@@ -307,20 +308,20 @@ impl IpNet {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::IpNet;
-    /// let net4_1 = IpNet::from_str("10.1.0.0/24").unwrap();
-    /// let net4_2 = IpNet::from_str("10.1.1.0/24").unwrap();
-    /// let net4_3 = IpNet::from_str("10.1.2.0/24").unwrap();
-    /// let net6_1 = IpNet::from_str("fd00::/18").unwrap();
-    /// let net6_2 = IpNet::from_str("fd00:4000::/18").unwrap();
-    /// let net6_3 = IpNet::from_str("fd00:8000::/18").unwrap();
+    /// #
+    /// let n4_1: IpNet = "10.1.0.0/24".parse().unwrap();
+    /// let n4_2: IpNet = "10.1.1.0/24".parse().unwrap();
+    /// let n4_3: IpNet = "10.1.2.0/24".parse().unwrap();
+    /// let n6_1: IpNet = "fd00::/18".parse().unwrap();
+    /// let n6_2: IpNet = "fd00:4000::/18".parse().unwrap();
+    /// let n6_3: IpNet = "fd00:8000::/18".parse().unwrap();
     ///
-    /// assert!( net4_1.is_sibling(&net4_2));
-    /// assert!(!net4_2.is_sibling(&net4_3));
-    /// assert!( net6_1.is_sibling(&net6_2));
-    /// assert!(!net6_2.is_sibling(&net6_3));
-    /// assert!(!net4_1.is_sibling(&net6_2));
+    /// assert!( n4_1.is_sibling(&n4_2));
+    /// assert!(!n4_2.is_sibling(&n4_3));
+    /// assert!( n6_1.is_sibling(&n6_2));
+    /// assert!(!n6_2.is_sibling(&n6_3));
+    /// assert!(!n4_1.is_sibling(&n6_2));
     /// ```
     pub fn is_sibling(&self, other: &IpNet) -> bool {
         match (*self, *other) {
@@ -336,26 +337,26 @@ impl IpNet {
     ///
     /// ```
     /// # use std::net::IpAddr;
-    /// # use std::str::FromStr;
     /// # use ipnet::IpNet;
-    /// let net = IpNet::from_str("10.0.0.0/30").unwrap();
+    /// #
+    /// let net: IpNet = "10.0.0.0/30".parse().unwrap();
     /// assert_eq!(net.hosts().collect::<Vec<IpAddr>>(), vec![
-    ///     IpAddr::from_str("10.0.0.1").unwrap(),
-    ///     IpAddr::from_str("10.0.0.2").unwrap(),
+    ///     "10.0.0.1".parse::<IpAddr>().unwrap(),
+    ///     "10.0.0.2".parse().unwrap(),
     /// ]);
     ///
-    /// let net = IpNet::from_str("10.0.0.0/31").unwrap();
+    /// let net: IpNet = "10.0.0.0/31".parse().unwrap();
     /// assert_eq!(net.hosts().collect::<Vec<IpAddr>>(), vec![
-    ///     IpAddr::from_str("10.0.0.0").unwrap(),
-    ///     IpAddr::from_str("10.0.0.1").unwrap(),
+    ///     "10.0.0.0".parse::<IpAddr>().unwrap(),
+    ///     "10.0.0.1".parse().unwrap(),
     /// ]);
     ///
-    /// let net = IpNet::from_str("fd00::/126").unwrap();
+    /// let net: IpNet = "fd00::/126".parse().unwrap();
     /// assert_eq!(net.hosts().collect::<Vec<IpAddr>>(), vec![
-    ///     IpAddr::from_str("fd00::").unwrap(),
-    ///     IpAddr::from_str("fd00::1").unwrap(),
-    ///     IpAddr::from_str("fd00::2").unwrap(),
-    ///     IpAddr::from_str("fd00::3").unwrap(),
+    ///     "fd00::".parse::<IpAddr>().unwrap(),
+    ///     "fd00::1".parse().unwrap(),
+    ///     "fd00::2".parse().unwrap(),
+    ///     "fd00::3".parse().unwrap(),
     /// ]);
     /// ```
     pub fn hosts(&self) -> IpAddrRange {
@@ -371,34 +372,34 @@ impl IpNet {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::{IpNet, PrefixLenError};
-    /// let net = IpNet::from_str("10.0.0.0/24").unwrap();
+    /// #
+    /// let net: IpNet = "10.0.0.0/24".parse().unwrap();
     /// assert_eq!(net.subnets(26).unwrap().collect::<Vec<IpNet>>(), vec![
-    ///     IpNet::from_str("10.0.0.0/26").unwrap(),
-    ///     IpNet::from_str("10.0.0.64/26").unwrap(),
-    ///     IpNet::from_str("10.0.0.128/26").unwrap(),
-    ///     IpNet::from_str("10.0.0.192/26").unwrap(),
+    ///     "10.0.0.0/26".parse::<IpNet>().unwrap(),
+    ///     "10.0.0.64/26".parse().unwrap(),
+    ///     "10.0.0.128/26".parse().unwrap(),
+    ///     "10.0.0.192/26".parse().unwrap(),
     /// ]);
     ///
-    /// let net = IpNet::from_str("fd00::/16").unwrap();
+    /// let net: IpNet = "fd00::/16".parse().unwrap();
     /// assert_eq!(net.subnets(18).unwrap().collect::<Vec<IpNet>>(), vec![
-    ///     IpNet::from_str("fd00::/18").unwrap(),
-    ///     IpNet::from_str("fd00:4000::/18").unwrap(),
-    ///     IpNet::from_str("fd00:8000::/18").unwrap(),
-    ///     IpNet::from_str("fd00:c000::/18").unwrap(),
+    ///     "fd00::/18".parse::<IpNet>().unwrap(),
+    ///     "fd00:4000::/18".parse().unwrap(),
+    ///     "fd00:8000::/18".parse().unwrap(),
+    ///     "fd00:c000::/18".parse().unwrap(),
     /// ]);
     ///
-    /// let net = IpNet::from_str("10.0.0.0/24").unwrap();
+    /// let net: IpNet = "10.0.0.0/24".parse().unwrap();
     /// assert_eq!(net.subnets(23), Err(PrefixLenError));
     ///
-    /// let net = IpNet::from_str("10.0.0.0/24").unwrap();
+    /// let net: IpNet = "10.0.0.0/24".parse().unwrap();
     /// assert_eq!(net.subnets(33), Err(PrefixLenError));
     ///
-    /// let net = IpNet::from_str("fd00::/16").unwrap();
+    /// let net: IpNet = "fd00::/16".parse().unwrap();
     /// assert_eq!(net.subnets(15), Err(PrefixLenError));
     ///
-    /// let net = IpNet::from_str("fd00::/16").unwrap();
+    /// let net: IpNet = "fd00::/16".parse().unwrap();
     /// assert_eq!(net.subnets(129), Err(PrefixLenError));
     /// ```
     pub fn subnets(&self, new_prefix_len: u8) -> Result<IpSubnets, PrefixLenError> {
@@ -414,27 +415,28 @@ impl IpNet {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::IpNet;
-    /// let ipnets = vec![
-    ///     IpNet::from_str("10.0.0.0/24").unwrap(),
-    ///     IpNet::from_str("10.0.1.0/24").unwrap(),
-    ///     IpNet::from_str("10.0.2.0/24").unwrap(),
-    ///     IpNet::from_str("fd00::/18").unwrap(),
-    ///     IpNet::from_str("fd00:4000::/18").unwrap(),
-    ///     IpNet::from_str("fd00:8000::/18").unwrap(),
+    /// #
+    /// let nets = vec![
+    ///     "10.0.0.0/24".parse::<IpNet>().unwrap(),
+    ///     "10.0.1.0/24".parse().unwrap(),
+    ///     "10.0.2.0/24".parse().unwrap(),
+    ///     "fd00::/18".parse().unwrap(),
+    ///     "fd00:4000::/18".parse().unwrap(),
+    ///     "fd00:8000::/18".parse().unwrap(),
     /// ];
-    /// assert_eq!(IpNet::aggregate(&ipnets), vec![
-    ///     IpNet::from_str("10.0.0.0/23").unwrap(),
-    ///     IpNet::from_str("10.0.2.0/24").unwrap(),
-    ///     IpNet::from_str("fd00::/17").unwrap(),
-    ///     IpNet::from_str("fd00:8000::/18").unwrap(),
+    ///
+    /// assert_eq!(IpNet::aggregate(&nets), vec![
+    ///     "10.0.0.0/23".parse::<IpNet>().unwrap(),
+    ///     "10.0.2.0/24".parse().unwrap(),
+    ///     "fd00::/17".parse().unwrap(),
+    ///     "fd00:8000::/18".parse().unwrap(),
     /// ]);
     /// ```
     pub fn aggregate(networks: &Vec<IpNet>) -> Vec<IpNet> {
         // It's 2.5x faster to split the input up and run them using the
-        // specific IPv4 and IPV6 implementations. The comparisons and
-        // merge_intervals are much faster running over integers.
+        // specific IPv4 and IPV6 implementations. merge_intervals() and
+        // the comparisons are much faster running over integers.
         let mut ipv4nets: Vec<Ipv4Net> = Vec::new();
         let mut ipv6nets: Vec<Ipv6Net> = Vec::new();
 
@@ -510,11 +512,11 @@ impl Ipv4Net {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv4Net;
+    /// #
     /// assert_eq!(
-    ///     Ipv4Net::from_str("192.168.12.34/16").unwrap().trunc(),
-    ///     Ipv4Net::from_str("192.168.0.0/16").unwrap()
+    ///     "192.168.12.34/16".parse::<Ipv4Net>().unwrap().trunc(),
+    ///     "192.168.0.0/16".parse().unwrap()
     /// );
     /// ```
     pub fn trunc(&self) -> Ipv4Net {
@@ -542,10 +544,10 @@ impl Ipv4Net {
     ///
     /// ```
     /// # use std::net::Ipv4Addr;
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv4Net;
-    /// let net = Ipv4Net::from_str("10.1.0.0/20").unwrap();
-    /// assert_eq!(net.netmask(), Ipv4Addr::from_str("255.255.240.0").unwrap());
+    /// #
+    /// let net: Ipv4Net = "10.1.0.0/20".parse().unwrap();
+    /// assert_eq!(Ok(net.netmask()), "255.255.240.0".parse());
     /// ```
     pub fn netmask(&self) -> Ipv4Addr {
         Ipv4Addr::from(self.netmask_u32())
@@ -561,10 +563,10 @@ impl Ipv4Net {
     ///
     /// ```
     /// # use std::net::Ipv4Addr;
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv4Net;
-    /// let net = Ipv4Net::from_str("10.1.0.0/20").unwrap();
-    /// assert_eq!(net.hostmask(), Ipv4Addr::from_str("0.0.15.255").unwrap());
+    /// #
+    /// let net: Ipv4Net = "10.1.0.0/20".parse().unwrap();
+    /// assert_eq!(Ok(net.hostmask()), "0.0.15.255".parse());
     /// ```
     pub fn hostmask(&self) -> Ipv4Addr {
         Ipv4Addr::from(self.hostmask_u32())
@@ -580,10 +582,10 @@ impl Ipv4Net {
     ///
     /// ```
     /// # use std::net::Ipv4Addr;
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv4Net;
-    /// let net = Ipv4Net::from_str("172.16.123.123/16").unwrap();
-    /// assert_eq!(net.network(), Ipv4Addr::from_str("172.16.0.0").unwrap());
+    /// #
+    /// let net: Ipv4Net = "172.16.123.123/16".parse().unwrap();
+    /// assert_eq!(Ok(net.network()), "172.16.0.0".parse());
     /// ```
     pub fn network(&self) -> Ipv4Addr {
         Ipv4Addr::from(u32::from(self.addr) & self.netmask_u32())
@@ -595,10 +597,10 @@ impl Ipv4Net {
     ///
     /// ```
     /// # use std::net::Ipv4Addr;
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv4Net;
-    /// let net = Ipv4Net::from_str("172.16.0.0/22").unwrap();
-    /// assert_eq!(net.broadcast(), Ipv4Addr::from_str("172.16.3.255").unwrap());
+    /// #
+    /// let net: Ipv4Net = "172.16.0.0/22".parse().unwrap();
+    /// assert_eq!(Ok(net.broadcast()), "172.16.3.255".parse());
     /// ```
     pub fn broadcast(&self) -> Ipv4Addr {
         Ipv4Addr::from(u32::from(self.addr) | self.hostmask_u32())
@@ -609,11 +611,11 @@ impl Ipv4Net {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv4Net;
-    /// let n1 = Ipv4Net::from_str("172.16.1.0/24").unwrap();
-    /// let n2 = Ipv4Net::from_str("172.16.0.0/23").unwrap();
-    /// let n3 = Ipv4Net::from_str("172.16.0.0/0").unwrap();
+    /// #
+    /// let n1: Ipv4Net = "172.16.1.0/24".parse().unwrap();
+    /// let n2: Ipv4Net = "172.16.0.0/23".parse().unwrap();
+    /// let n3: Ipv4Net = "172.16.0.0/0".parse().unwrap();
     ///
     /// assert_eq!(n1.supernet().unwrap(), n2);
     /// assert_eq!(n3.supernet(), None);
@@ -628,13 +630,14 @@ impl Ipv4Net {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv4Net;
-    /// let net1 = Ipv4Net::from_str("10.1.0.0/24").unwrap();
-    /// let net2 = Ipv4Net::from_str("10.1.1.0/24").unwrap();
-    /// let net3 = Ipv4Net::from_str("10.1.2.0/24").unwrap();
-    /// assert!(net1.is_sibling(&net2));
-    /// assert!(!net2.is_sibling(&net3));
+    /// #
+    /// let n1: Ipv4Net = "10.1.0.0/24".parse().unwrap();
+    /// let n2: Ipv4Net = "10.1.1.0/24".parse().unwrap();
+    /// let n3: Ipv4Net = "10.1.2.0/24".parse().unwrap();
+    ///
+    /// assert!(n1.is_sibling(&n2));
+    /// assert!(!n2.is_sibling(&n3));
     /// ```
     pub fn is_sibling(&self, other: &Ipv4Net) -> bool {
         self.prefix_len > 0 &&
@@ -652,18 +655,18 @@ impl Ipv4Net {
     ///
     /// ```
     /// # use std::net::Ipv4Addr;
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv4Net;
-    /// let net = Ipv4Net::from_str("10.0.0.0/30").unwrap();
+    /// #
+    /// let net: Ipv4Net = "10.0.0.0/30".parse().unwrap();
     /// assert_eq!(net.hosts().collect::<Vec<Ipv4Addr>>(), vec![
-    ///     Ipv4Addr::from_str("10.0.0.1").unwrap(),
-    ///     Ipv4Addr::from_str("10.0.0.2").unwrap(),
+    ///     "10.0.0.1".parse::<Ipv4Addr>().unwrap(),
+    ///     "10.0.0.2".parse().unwrap(),
     /// ]);
     ///
-    /// let net = Ipv4Net::from_str("10.0.0.0/31").unwrap();
+    /// let net: Ipv4Net = "10.0.0.0/31".parse().unwrap();
     /// assert_eq!(net.hosts().collect::<Vec<Ipv4Addr>>(), vec![
-    ///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
-    ///     Ipv4Addr::from_str("10.0.0.1").unwrap(),
+    ///     "10.0.0.0".parse::<Ipv4Addr>().unwrap(),
+    ///     "10.0.0.1".parse().unwrap(),
     /// ]);
     /// ```
     pub fn hosts(&self) -> Ipv4AddrRange {
@@ -684,28 +687,28 @@ impl Ipv4Net {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::{Ipv4Net, PrefixLenError};
-    /// let net = Ipv4Net::from_str("10.0.0.0/24").unwrap();
+    /// #
+    /// let net: Ipv4Net = "10.0.0.0/24".parse().unwrap();
     /// assert_eq!(net.subnets(26).unwrap().collect::<Vec<Ipv4Net>>(), vec![
-    ///     Ipv4Net::from_str("10.0.0.0/26").unwrap(),
-    ///     Ipv4Net::from_str("10.0.0.64/26").unwrap(),
-    ///     Ipv4Net::from_str("10.0.0.128/26").unwrap(),
-    ///     Ipv4Net::from_str("10.0.0.192/26").unwrap(),
+    ///     "10.0.0.0/26".parse::<Ipv4Net>().unwrap(),
+    ///     "10.0.0.64/26".parse().unwrap(),
+    ///     "10.0.0.128/26".parse().unwrap(),
+    ///     "10.0.0.192/26".parse().unwrap(),
     /// ]);
     ///
-    /// let net = Ipv4Net::from_str("10.0.0.0/30").unwrap();
+    /// let net: Ipv4Net = "10.0.0.0/30".parse().unwrap();
     /// assert_eq!(net.subnets(32).unwrap().collect::<Vec<Ipv4Net>>(), vec![
-    ///     Ipv4Net::from_str("10.0.0.0/32").unwrap(),
-    ///     Ipv4Net::from_str("10.0.0.1/32").unwrap(),
-    ///     Ipv4Net::from_str("10.0.0.2/32").unwrap(),
-    ///     Ipv4Net::from_str("10.0.0.3/32").unwrap(),
+    ///     "10.0.0.0/32".parse::<Ipv4Net>().unwrap(),
+    ///     "10.0.0.1/32".parse().unwrap(),
+    ///     "10.0.0.2/32".parse().unwrap(),
+    ///     "10.0.0.3/32".parse().unwrap(),
     /// ]);
     ///
-    /// let net = Ipv4Net::from_str("10.0.0.0/24").unwrap();
+    /// let net: Ipv4Net = "10.0.0.0/24".parse().unwrap();
     /// assert_eq!(net.subnets(23), Err(PrefixLenError));
     ///
-    /// let net = Ipv4Net::from_str("10.0.0.0/24").unwrap();
+    /// let net: Ipv4Net = "10.0.0.0/24".parse().unwrap();
     /// assert_eq!(net.subnets(33), Err(PrefixLenError));
     /// ```
     pub fn subnets(&self, new_prefix_len: u8) -> Result<Ipv4Subnets, PrefixLenError> {
@@ -730,6 +733,22 @@ impl Ipv4Net {
 
     /// Aggregate a `Vec` of `Ipv4Net`s and return the result as a new
     /// `Vec`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ipnet::Ipv4Net;
+    /// #
+    /// let nets = vec![
+    ///     "10.0.0.0/24".parse::<Ipv4Net>().unwrap(),
+    ///     "10.0.1.0/24".parse().unwrap(),
+    ///     "10.0.2.0/24".parse().unwrap(),
+    /// ];
+    ///
+    /// assert_eq!(Ipv4Net::aggregate(&nets), vec![
+    ///     "10.0.0.0/23".parse::<Ipv4Net>().unwrap(),
+    ///     "10.0.2.0/24".parse().unwrap(),
+    /// ]);
     pub fn aggregate(networks: &Vec<Ipv4Net>) -> Vec<Ipv4Net> {
         let mut intervals: Vec<(_, _)> = networks.iter().map(|n| n.interval()).collect();
         intervals = merge_intervals(intervals);
@@ -787,11 +806,11 @@ impl Ipv6Net {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv6Net;
+    /// #
     /// assert_eq!(
-    ///     Ipv6Net::from_str("fd00::1:2:3:4/16").unwrap().trunc(),
-    ///     Ipv6Net::from_str("fd00::/16").unwrap()
+    ///     "fd00::1:2:3:4/16".parse::<Ipv6Net>().unwrap().trunc(),
+    ///     "fd00::/16".parse().unwrap()
     /// );
     /// ```
     pub fn trunc(&self) -> Ipv6Net {
@@ -819,12 +838,10 @@ impl Ipv6Net {
     ///
     /// ```
     /// # use std::net::Ipv6Addr;
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv6Net;
-    /// assert_eq!(
-    ///     Ipv6Net::from_str("fd00::/24").unwrap().netmask(),
-    ///     Ipv6Addr::from_str("ffff:ff00::").unwrap()
-    /// );
+    /// #
+    /// let net: Ipv6Net = "fd00::/24".parse().unwrap();
+    /// assert_eq!(Ok(net.netmask()), "ffff:ff00::".parse());
     /// ```
     pub fn netmask(&self) -> Ipv6Addr {
         self.netmask_emu128().into()
@@ -840,12 +857,10 @@ impl Ipv6Net {
     ///
     /// ```
     /// # use std::net::Ipv6Addr;
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv6Net;
-    /// assert_eq!(
-    ///     Ipv6Net::from_str("fd00::/24").unwrap().hostmask(),
-    ///     Ipv6Addr::from_str("::ff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap()
-    /// );
+    /// #
+    /// let net: Ipv6Net = "fd00::/24".parse().unwrap();
+    /// assert_eq!(Ok(net.hostmask()), "::ff:ffff:ffff:ffff:ffff:ffff:ffff".parse());
     /// ```
     pub fn hostmask(&self) -> Ipv6Addr {
         self.hostmask_emu128().into()
@@ -861,12 +876,10 @@ impl Ipv6Net {
     ///
     /// ```
     /// # use std::net::Ipv6Addr;
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv6Net;
-    /// assert_eq!(
-    ///     Ipv6Net::from_str("fd00:1234:5678::/24").unwrap().network(),
-    ///     Ipv6Addr::from_str("fd00:1200::").unwrap()
-    /// );
+    /// #
+    /// let net: Ipv6Net = "fd00:1234:5678::/24".parse().unwrap();
+    /// assert_eq!(Ok(net.network()), "fd00:1200::".parse());
     /// ```
     pub fn network(&self) -> Ipv6Addr {
         (Emu128::from(self.addr) & self.netmask_emu128()).into()
@@ -881,12 +894,10 @@ impl Ipv6Net {
     ///
     /// ```
     /// # use std::net::Ipv6Addr;
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv6Net;
-    /// assert_eq!(
-    ///     Ipv6Net::from_str("fd00:1234:5678::/24").unwrap().broadcast(),
-    ///     Ipv6Addr::from_str("fd00:12ff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap()
-    /// );
+    /// #
+    /// let net: Ipv6Net = "fd00:1234:5678::/24".parse().unwrap();
+    /// assert_eq!(Ok(net.broadcast()), "fd00:12ff:ffff:ffff:ffff:ffff:ffff:ffff".parse());
     /// ```
     pub fn broadcast(&self) -> Ipv6Addr {
         (Emu128::from(self.addr) | self.hostmask_emu128()).into()
@@ -899,9 +910,10 @@ impl Ipv6Net {
     /// ```
     /// # use std::str::FromStr;
     /// # use ipnet::Ipv6Net;
-    /// let n1 = Ipv6Net::from_str("fd00:ff00::/24").unwrap();
-    /// let n2 = Ipv6Net::from_str("fd00:fe00::/23").unwrap();
-    /// let n3 = Ipv6Net::from_str("fd00:fe00::/0").unwrap();
+    /// #
+    /// let n1: Ipv6Net = "fd00:ff00::/24".parse().unwrap();
+    /// let n2: Ipv6Net = "fd00:fe00::/23".parse().unwrap();
+    /// let n3: Ipv6Net = "fd00:fe00::/0".parse().unwrap();
     ///
     /// assert_eq!(n1.supernet().unwrap(), n2);
     /// assert_eq!(n3.supernet(), None);
@@ -916,13 +928,14 @@ impl Ipv6Net {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv6Net;
-    /// let net1 = Ipv6Net::from_str("fd00::/18").unwrap();
-    /// let net2 = Ipv6Net::from_str("fd00:4000::/18").unwrap();
-    /// let net3 = Ipv6Net::from_str("fd00:8000::/18").unwrap();
-    /// assert!(net1.is_sibling(&net2));
-    /// assert!(!net2.is_sibling(&net3));
+    /// #
+    /// let n1: Ipv6Net = "fd00::/18".parse().unwrap();
+    /// let n2: Ipv6Net = "fd00:4000::/18".parse().unwrap();
+    /// let n3: Ipv6Net = "fd00:8000::/18".parse().unwrap();
+    ///
+    /// assert!(n1.is_sibling(&n2));
+    /// assert!(!n2.is_sibling(&n3));
     /// ```
     pub fn is_sibling(&self, other: &Ipv6Net) -> bool {
         self.prefix_len > 0 &&
@@ -936,14 +949,14 @@ impl Ipv6Net {
     ///
     /// ```
     /// # use std::net::Ipv6Addr;
-    /// # use std::str::FromStr;
     /// # use ipnet::Ipv6Net;
-    /// let net = Ipv6Net::from_str("fd00::/126").unwrap();
+    /// #
+    /// let net: Ipv6Net = "fd00::/126".parse().unwrap();
     /// assert_eq!(net.hosts().collect::<Vec<Ipv6Addr>>(), vec![
-    ///     Ipv6Addr::from_str("fd00::").unwrap(),
-    ///     Ipv6Addr::from_str("fd00::1").unwrap(),
-    ///     Ipv6Addr::from_str("fd00::2").unwrap(),
-    ///     Ipv6Addr::from_str("fd00::3").unwrap(),
+    ///     "fd00::".parse::<Ipv6Addr>().unwrap(),
+    ///     "fd00::1".parse().unwrap(),
+    ///     "fd00::2".parse().unwrap(),
+    ///     "fd00::3".parse().unwrap(),
     /// ]);
     /// ```
     pub fn hosts(&self) -> Ipv6AddrRange {
@@ -956,28 +969,28 @@ impl Ipv6Net {
     /// # Examples
     ///
     /// ```
-    /// # use std::str::FromStr;
     /// # use ipnet::{Ipv6Net, PrefixLenError};
-    /// let net = Ipv6Net::from_str("fd00::/16").unwrap();
+    /// #
+    /// let net: Ipv6Net = "fd00::/16".parse().unwrap();
     /// assert_eq!(net.subnets(18).unwrap().collect::<Vec<Ipv6Net>>(), vec![
-    ///     Ipv6Net::from_str("fd00::/18").unwrap(),
-    ///     Ipv6Net::from_str("fd00:4000::/18").unwrap(),
-    ///     Ipv6Net::from_str("fd00:8000::/18").unwrap(),
-    ///     Ipv6Net::from_str("fd00:c000::/18").unwrap(),
+    ///     "fd00::/18".parse::<Ipv6Net>().unwrap(),
+    ///     "fd00:4000::/18".parse().unwrap(),
+    ///     "fd00:8000::/18".parse().unwrap(),
+    ///     "fd00:c000::/18".parse().unwrap(),
     /// ]);
     ///
-    /// let net = Ipv6Net::from_str("fd00::/126").unwrap();
+    /// let net: Ipv6Net = "fd00::/126".parse().unwrap();
     /// assert_eq!(net.subnets(128).unwrap().collect::<Vec<Ipv6Net>>(), vec![
-    ///     Ipv6Net::from_str("fd00::/128").unwrap(),
-    ///     Ipv6Net::from_str("fd00::1/128").unwrap(),
-    ///     Ipv6Net::from_str("fd00::2/128").unwrap(),
-    ///     Ipv6Net::from_str("fd00::3/128").unwrap(),
+    ///     "fd00::/128".parse::<Ipv6Net>().unwrap(),
+    ///     "fd00::1/128".parse().unwrap(),
+    ///     "fd00::2/128".parse().unwrap(),
+    ///     "fd00::3/128".parse().unwrap(),
     /// ]);
     ///
-    /// let net = Ipv6Net::from_str("fd00::/16").unwrap();
+    /// let net: Ipv6Net = "fd00::/16".parse().unwrap();
     /// assert_eq!(net.subnets(15), Err(PrefixLenError));
     ///
-    /// let net = Ipv6Net::from_str("fd00::/16").unwrap();
+    /// let net: Ipv6Net = "fd00::/16".parse().unwrap();
     /// assert_eq!(net.subnets(129), Err(PrefixLenError));
     /// ```
     pub fn subnets(&self, new_prefix_len: u8) -> Result<Ipv6Subnets, PrefixLenError> {
@@ -1002,6 +1015,22 @@ impl Ipv6Net {
 
     /// Aggregate a `Vec` of `Ipv6Net`s and return the result as a new
     /// `Vec`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ipnet::Ipv6Net;
+    /// #
+    /// let nets = vec![
+    ///     "fd00::/18".parse::<Ipv6Net>().unwrap(),
+    ///     "fd00:4000::/18".parse().unwrap(),
+    ///     "fd00:8000::/18".parse().unwrap(),
+    /// ];
+    /// assert_eq!(Ipv6Net::aggregate(&nets), vec![
+    ///     "fd00::/17".parse::<Ipv6Net>().unwrap(),
+    ///     "fd00:8000::/18".parse().unwrap(),
+    /// ]);
+    /// ```
     pub fn aggregate(networks: &Vec<Ipv6Net>) -> Vec<Ipv6Net> {
         let mut intervals: Vec<(_, _)> = networks.iter().map(|n| n.interval()).collect();
         intervals = merge_intervals(intervals);
@@ -1034,67 +1063,41 @@ impl fmt::Display for Ipv6Net {
     }
 }
 
-/// Provides a `contains()` method to test if a network contains another network or
-/// address.
+/// Provides a method to test if a network address contains either
+/// another network address or another IP address.
+///
+/// # Examples
+///
+/// ```
+/// use std::net::IpAddr;
+/// use ipnet::{IpNet, Contains};
+/// 
+/// let n4_1: IpNet = "10.1.1.0/24".parse().unwrap();
+/// let n4_2: IpNet = "10.1.1.0/26".parse().unwrap();
+/// let n4_3: IpNet = "10.1.2.0/26".parse().unwrap();
+/// let ip4_1: IpAddr = "10.1.1.1".parse().unwrap();
+/// let ip4_2: IpAddr = "10.1.2.1".parse().unwrap();
+///
+/// let n6_1: IpNet = "fd00::/16".parse().unwrap();
+/// let n6_2: IpNet = "fd00::/17".parse().unwrap();
+/// let n6_3: IpNet = "fd01::/17".parse().unwrap();
+/// let ip6_1: IpAddr = "fd00::1".parse().unwrap();
+/// let ip6_2: IpAddr = "fd01::1".parse().unwrap();
+///
+/// assert!(n4_1.contains(&n4_2));
+/// assert!(!n4_1.contains(&n4_3));
+/// assert!(n4_1.contains(&ip4_1));
+/// assert!(!n4_1.contains(&ip4_2));
+///
+/// assert!(n6_1.contains(&n6_2));
+/// assert!(!n6_1.contains(&n6_3));
+/// assert!(n6_1.contains(&ip6_1));
+/// assert!(!n6_1.contains(&ip6_2));
+///
+/// assert!(!n4_1.contains(&n6_1) && !n6_1.contains(&n4_1));
+/// assert!(!n4_1.contains(&ip6_1) && !n6_1.contains(&ip4_1));
+/// ```
 pub trait Contains<T> {
-    /// Returns `true` if this network contains the given network or
-    /// address.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::net::IpAddr;
-    /// use std::str::FromStr;
-    /// use ipnet::{IpNet, Contains};
-    /// ```
-    ///
-    /// `Ipv4Net` can contain `Ipv4Net` and `Ipv4Addr`.
-    ///
-    /// ```
-    /// # use std::net::IpAddr;
-    /// # use std::str::FromStr;
-    /// # use ipnet::{IpNet, Contains};
-    /// let n1 = IpNet::from_str("10.1.1.0/24").unwrap();
-    /// let n2 = IpNet::from_str("10.1.1.0/26").unwrap();
-    /// let n3 = IpNet::from_str("10.1.2.0/26").unwrap();
-    /// let ip1 = IpAddr::from_str("10.1.1.1").unwrap();
-    /// let ip2 = IpAddr::from_str("10.1.2.1").unwrap();
-    /// assert!(n1.contains(&n2));
-    /// assert!(n1.contains(&ip1));
-    /// assert!(!n1.contains(&n3));
-    /// assert!(!n1.contains(&ip2));
-    /// ```
-    ///
-    /// `Ipv6Net` can contain `Ipv6Net` and `Ipv6Addr`.
-    ///
-    /// ```
-    /// # use std::net::IpAddr;
-    /// # use std::str::FromStr;
-    /// # use ipnet::{IpNet, Contains};
-    /// let n6_1 = IpNet::from_str("fd00::/16").unwrap();
-    /// let n6_2 = IpNet::from_str("fd00::/17").unwrap();
-    /// let n6_3 = IpNet::from_str("fd01::/17").unwrap();
-    /// let ip6_1 = IpAddr::from_str("fd00::1").unwrap();
-    /// let ip6_2 = IpAddr::from_str("fd01::1").unwrap();
-    /// assert!(n6_1.contains(&n6_2));
-    /// assert!(n6_1.contains(&ip6_1));
-    /// assert!(!n6_1.contains(&n6_3));
-    /// assert!(!n6_1.contains(&ip6_2));
-    /// ```
-    ///
-    /// `Ipv4Net` and `Ipv6Net` types cannot contain each other.
-    ///
-    /// ```
-    /// # use std::net::IpAddr;
-    /// # use std::str::FromStr;
-    /// # use ipnet::{IpNet, Contains};
-    /// # let n1 = IpNet::from_str("10.1.1.0/24").unwrap();
-    /// # let ip1 = IpAddr::from_str("10.1.1.1").unwrap();
-    /// # let n6_1 = IpNet::from_str("fd00::/16").unwrap();
-    /// # let ip6_1 = IpAddr::from_str("fd00::1").unwrap();
-    /// assert!(!n1.contains(&n6_1) && !n6_1.contains(&n1));
-    /// assert!(!n1.contains(&ip6_1) && !n6_1.contains(&ip1));
-    /// ```
     fn contains(&self, other: T) -> bool;
 }
 
@@ -1157,31 +1160,31 @@ impl<'a> Contains<&'a Ipv6Addr> for Ipv6Net {
 /// # use std::str::FromStr;
 /// # use ipnet::{IpNet, IpSubnets, Ipv4Subnets, Ipv6Subnets};
 /// let subnets = IpSubnets::from(Ipv4Subnets::new(
-///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
-///     Ipv4Addr::from_str("10.0.0.239").unwrap(),
+///     "10.0.0.0".parse().unwrap(),
+///     "10.0.0.239".parse().unwrap(),
 ///     26,
 /// ));
 /// 
 /// assert_eq!(subnets.collect::<Vec<IpNet>>(), vec![
-///     IpNet::from_str("10.0.0.0/26").unwrap(),
-///     IpNet::from_str("10.0.0.64/26").unwrap(),
-///     IpNet::from_str("10.0.0.128/26").unwrap(),
-///     IpNet::from_str("10.0.0.192/27").unwrap(),
-///     IpNet::from_str("10.0.0.224/28").unwrap(),
+///     "10.0.0.0/26".parse().unwrap(),
+///     "10.0.0.64/26".parse().unwrap(),
+///     "10.0.0.128/26".parse().unwrap(),
+///     "10.0.0.192/27".parse().unwrap(),
+///     "10.0.0.224/28".parse().unwrap(),
 /// ]);
 ///
 /// let subnets = IpSubnets::from(Ipv6Subnets::new(
-///     Ipv6Addr::from_str("fd00::").unwrap(),
-///     Ipv6Addr::from_str("fd00:ef:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
+///     "fd00::".parse().unwrap(),
+///     "fd00:ef:ffff:ffff:ffff:ffff:ffff:ffff".parse().unwrap(),
 ///     26,
 /// ));
 /// 
 /// assert_eq!(subnets.collect::<Vec<IpNet>>(), vec![
-///     IpNet::from_str("fd00::/26").unwrap(),
-///     IpNet::from_str("fd00:40::/26").unwrap(),
-///     IpNet::from_str("fd00:80::/26").unwrap(),
-///     IpNet::from_str("fd00:c0::/27").unwrap(),
-///     IpNet::from_str("fd00:e0::/28").unwrap(),
+///     "fd00::/26".parse().unwrap(),
+///     "fd00:40::/26".parse().unwrap(),
+///     "fd00:80::/26".parse().unwrap(),
+///     "fd00:c0::/27".parse().unwrap(),
+///     "fd00:e0::/28".parse().unwrap(),
 /// ]);
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -1204,17 +1207,17 @@ pub enum IpSubnets {
 /// # use std::str::FromStr;
 /// # use ipnet::{Ipv4Net, Ipv4Subnets};
 /// let subnets = Ipv4Subnets::new(
-///     Ipv4Addr::from_str("10.0.0.0").unwrap(),
-///     Ipv4Addr::from_str("10.0.0.239").unwrap(),
+///     "10.0.0.0".parse().unwrap(),
+///     "10.0.0.239".parse().unwrap(),
 ///     26,
 /// );
 /// 
 /// assert_eq!(subnets.collect::<Vec<Ipv4Net>>(), vec![
-///     Ipv4Net::from_str("10.0.0.0/26").unwrap(),
-///     Ipv4Net::from_str("10.0.0.64/26").unwrap(),
-///     Ipv4Net::from_str("10.0.0.128/26").unwrap(),
-///     Ipv4Net::from_str("10.0.0.192/27").unwrap(),
-///     Ipv4Net::from_str("10.0.0.224/28").unwrap(),
+///     "10.0.0.0/26".parse().unwrap(),
+///     "10.0.0.64/26".parse().unwrap(),
+///     "10.0.0.128/26".parse().unwrap(),
+///     "10.0.0.192/27".parse().unwrap(),
+///     "10.0.0.224/28".parse().unwrap(),
 /// ]);
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -1238,17 +1241,17 @@ pub struct Ipv4Subnets {
 /// # use std::str::FromStr;
 /// # use ipnet::{Ipv6Net, Ipv6Subnets};
 /// let subnets = Ipv6Subnets::new(
-///     Ipv6Addr::from_str("fd00::").unwrap(),
-///     Ipv6Addr::from_str("fd00:ef:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
+///     "fd00::".parse().unwrap(),
+///     "fd00:ef:ffff:ffff:ffff:ffff:ffff:ffff".parse().unwrap(),
 ///     26,
 /// );
 /// 
 /// assert_eq!(subnets.collect::<Vec<Ipv6Net>>(), vec![
-///     Ipv6Net::from_str("fd00::/26").unwrap(),
-///     Ipv6Net::from_str("fd00:40::/26").unwrap(),
-///     Ipv6Net::from_str("fd00:80::/26").unwrap(),
-///     Ipv6Net::from_str("fd00:c0::/27").unwrap(),
-///     Ipv6Net::from_str("fd00:e0::/28").unwrap(),
+///     "fd00::/26".parse().unwrap(),
+///     "fd00:40::/26".parse().unwrap(),
+///     "fd00:80::/26".parse().unwrap(),
+///     "fd00:c0::/27".parse().unwrap(),
+///     "fd00:e0::/28".parse().unwrap(),
 /// ]);
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -1411,10 +1414,33 @@ fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
     res
 }
 
+
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
     use super::*;
+
+    macro_rules! make_ipnet_vec {
+        ($($x:expr),*) => ( vec![$($x.parse::<IpNet>().unwrap(),)*] );
+        ($($x:expr,)*) => ( make_ipnet_vec![$($x),*] );
+    }
+
+    #[test]
+    fn test_make_ipnet_vec() {
+        assert_eq!(
+            make_ipnet_vec![
+                "10.1.1.1/32", "10.2.2.2/24", "10.3.3.3/16",
+                "fd00::1/128", "fd00::2/127", "fd00::3/126",
+            ],
+            vec![
+                "10.1.1.1/32".parse().unwrap(),
+                "10.2.2.2/24".parse().unwrap(),
+                "10.3.3.3/16".parse().unwrap(),
+                "fd00::1/128".parse().unwrap(),
+                "fd00::2/127".parse().unwrap(),
+                "fd00::3/126".parse().unwrap(),
+            ]
+        );
+    }
 
     #[test]
     fn test_merge_intervals() {
@@ -1443,22 +1469,17 @@ mod tests {
         assert_eq!(merge_intervals(v), v_ok);
         assert_eq!(merge_intervals(vv), vv_ok);
     }
-    
-    macro_rules! ipnet_vec {
-        ($($x:expr),*) => ( vec![$(IpNet::from_str($x).unwrap(),)*] );
-        ($($x:expr,)*) => ( ipnet_vec![$($x),*] );
-    }
 
     macro_rules! make_ipv4_subnets_test {
         ($name:ident, $start:expr, $end:expr, $min_prefix_len:expr, $($x:expr),*) => (
             #[test]
             fn $name() {
                 let subnets = IpSubnets::from(Ipv4Subnets::new(
-                    Ipv4Addr::from_str($start).unwrap(),
-                    Ipv4Addr::from_str($end).unwrap(),
+                    $start.parse().unwrap(),
+                    $end.parse().unwrap(),
                     $min_prefix_len,
                 ));
-                let results = ipnet_vec![$($x),*];
+                let results = make_ipnet_vec![$($x),*];
                 assert_eq!(subnets.collect::<Vec<IpNet>>(), results);
             }
         );
@@ -1472,11 +1493,11 @@ mod tests {
             #[test]
             fn $name() {
                 let subnets = IpSubnets::from(Ipv6Subnets::new(
-                    Ipv6Addr::from_str($start).unwrap(),
-                    Ipv6Addr::from_str($end).unwrap(),
+                    $start.parse().unwrap(),
+                    $end.parse().unwrap(),
                     $min_prefix_len,
                 ));
-                let results = ipnet_vec![$($x),*];
+                let results = make_ipnet_vec![$($x),*];
                 assert_eq!(subnets.collect::<Vec<IpNet>>(), results);
             }
         );
@@ -1565,7 +1586,7 @@ mod tests {
 
     #[test]
     fn test_aggregate() {
-        let ip_nets = ipnet_vec![
+        let ip_nets = make_ipnet_vec![
             "10.0.0.0/24", "10.0.1.0/24", "10.0.1.1/24", "10.0.1.2/24",
             "10.0.2.0/24",
             "10.1.0.0/24", "10.1.1.0/24",
@@ -1574,7 +1595,7 @@ mod tests {
             "fd00:2::/32",
         ];
 
-        let ip_aggs = ipnet_vec![
+        let ip_aggs = make_ipnet_vec![
             "10.0.0.0/23",
             "10.0.2.0/24",
             "10.1.0.0/23",
