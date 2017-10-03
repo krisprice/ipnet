@@ -14,7 +14,7 @@ Read the [documentation] for the full details. And find it on [Crates.io].
 
 ## Examples
 
-Using ipnet to aggregate a list of prefixes:
+Aggregate a list of IP prefixes:
 
 ```rust
 extern crate ipnet;
