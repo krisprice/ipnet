@@ -755,11 +755,8 @@ impl Ipv4Net {
         let mut res: Vec<Ipv4Net> = Vec::new();
         
         for (start, end) in intervals {
-            let iter = Ipv4Subnets::new(Ipv4Addr::from(start), Ipv4Addr::from(end.saturating_sub(1)), 0);
-
-            for n in iter {
-                res.push(n);
-            }
+            let iter = Ipv4Subnets::new(start.into(), end.saturating_sub(1).into(), 0);
+            res.extend(iter);
         }
         res
     }
@@ -1037,15 +1034,8 @@ impl Ipv6Net {
         let mut res: Vec<Ipv6Net> = Vec::new();
 
         for (start, end) in intervals {
-            let iter = Ipv6Subnets::new(
-                start.into(),
-                end.saturating_sub(Emu128::from(1)).into(),
-                0,
-            );
-
-            for n in iter {
-                res.push(n);
-            }
+            let iter = Ipv6Subnets::new(start.into(), end.saturating_sub(Emu128::from(1)).into(), 0);
+            res.extend(iter);
         }
         res
     }
@@ -1305,14 +1295,21 @@ impl Iterator for IpSubnets {
 }
 
 fn next_ipv4_subnet(start: Ipv4Addr, end: Ipv4Addr, min_prefix_len: u8) -> Ipv4Net {
-    let range = end.saturating_sub(start);
-    let range = range.saturating_add(1);
+    let range = end.saturating_sub(start).saturating_add(1);
     let range_bits = 32u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
     let start_tz = u32::from(start).trailing_zeros();
-    let num_bits = min(range_bits, start_tz);
-    let new_prefix_len = 32 - num_bits;
+    let new_prefix_len = 32 - min(range_bits, start_tz);
     let next_prefix_len = max(new_prefix_len as u8, min_prefix_len);
     Ipv4Net::new(start, next_prefix_len).unwrap()
+}
+
+fn next_ipv6_subnet(start: Ipv6Addr, end: Ipv6Addr, min_prefix_len: u8) -> Ipv6Net {
+    let range = end.saturating_sub(start).saturating_add(Emu128::from(1));
+    let range_bits = 128u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
+    let start_tz = Emu128::from(start).trailing_zeros();
+    let new_prefix_len = 128 - min(range_bits, start_tz);
+    let next_prefix_len = max(new_prefix_len as u8, min_prefix_len);
+    Ipv6Net::new(start, next_prefix_len).unwrap()
 }
 
 impl Iterator for Ipv4Subnets {
@@ -1342,17 +1339,6 @@ impl Iterator for Ipv4Subnets {
             _ => None,
         }
     }
-}
-
-fn next_ipv6_subnet(start: Ipv6Addr, end: Ipv6Addr, min_prefix_len: u8) -> Ipv6Net {
-    let range = end.saturating_sub(start);
-    let range = range.saturating_add(Emu128::from(1));    
-    let range_bits = 128u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
-    let start_tz = Emu128::from(start).trailing_zeros();
-    let num_bits = min(range_bits, start_tz);
-    let new_prefix_len = 128 - num_bits;
-    let next_prefix_len = max(new_prefix_len as u8, min_prefix_len);
-    Ipv6Net::new(start, next_prefix_len as u8).unwrap()
 }
 
 impl Iterator for Ipv6Subnets {
