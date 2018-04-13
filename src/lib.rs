@@ -55,6 +55,19 @@
 //! [`IpBitAnd`]: trait.IpBitAnd.html
 //! [`IpBitOr`]: trait.IpBitOr.html
 //! [`Emu128`]: struct.Emu128.html
+//!
+//! # Serde support
+//!
+//! This library comes with support for [serde](https://serde.rs) but it's
+//! not enabled by default. Use the `with-serde` [feature] to enable.
+//!
+//! [feature]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
+
+#[cfg(feature = "with-serde")]
+extern crate serde;
+#[cfg(feature = "with-serde")]
+#[macro_use]
+extern crate serde_derive;
 
 pub use self::emu128::Emu128;
 pub use self::ipext::{IpAdd, IpSub, IpBitAnd, IpBitOr, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
@@ -65,3 +78,5 @@ mod emu128;
 mod ipext;
 mod ipnet;
 mod parser;
+#[cfg(feature = "with-serde")]
+mod with_serde;
