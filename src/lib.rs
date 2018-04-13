@@ -46,9 +46,9 @@
 //! [`Ipv6Subnets`]: struct.Ipv6Subnets.html
 //! [`subnets()`]: enum.IpNet.html#method.subnets
 //! [`aggregate()`]: enum.IpNet.html#method.aggregate
-//! [`IpAddrRange`]: enum.IpAddrIter.html
-//! [`Ipv4AddrRange`]: struct.Ipv4AddrIter.html
-//! [`Ipv6AddrRange`]: struct.Ipv6AddrIter.html
+//! [`IpAddrRange`]: enum.IpAddrRange.html
+//! [`Ipv4AddrRange`]: struct.Ipv4AddrRange.html
+//! [`Ipv6AddrRange`]: struct.Ipv6AddrRange.html
 //! [`hosts()`]: enum.IpNet.html#method.hosts
 //! [`IpAdd`]: trait.IpAdd.html
 //! [`IpSub`]: trait.IpSub.html
