@@ -11,12 +11,10 @@ readme = "README.md"
 documentation = "https://docs.rs/ipnet"
 
 [dependencies]
-serde = { version = "1", optional = true }
-serde_derive = { version = "1", optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
 
 [dev-dependencies]
 serde_test = "1"
 
 [features]
-default = []
-with-serde = ["serde", "serde_derive"]
+with-serde = ["serde"] # Compatibility shim for 1.1.0. Use `serde` instead.
