@@ -15,6 +15,3 @@ serde = { version = "1", features = ["derive"], optional = true }
 
 [dev-dependencies]
 serde_test = "1"
-
-[features]
-with-serde = ["serde"] # Compatibility shim for 1.1.0. Use `serde` instead.
