@@ -13,9 +13,16 @@ impl<'de> Deserialize<'de> for Ipv4Net {
 
 impl Serialize for Ipv4Net {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+        where S: Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        if serializer.is_human_readable() {
+            serializer.serialize_str(&self.to_string())
+        } else {
+            let mut v: Vec<u8> = vec![];
+            v.extend_from_slice(&self.octets());
+            v.push(self.prefix_len());
+            v.serialize(serializer)
+        }
     }
 }
 
@@ -33,7 +40,14 @@ impl Serialize for Ipv6Net {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        serializer.serialize_str(&self.to_string())
+        if serializer.is_human_readable() {
+            serializer.serialize_str(&self.to_string())
+        } else {
+            let mut v: Vec<u8> = vec![];
+            v.extend_from_slice(&self.octets());
+            v.push(self.prefix_len());
+            v.serialize(serializer)
+        }
     }
 }
 
