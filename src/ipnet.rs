@@ -40,7 +40,8 @@ use ipext::{IpAdd, IpSub, IpStep, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
 /// let net: IpNet = "fd00::/32".parse().unwrap();
 /// assert_eq!(Ok(net.network()), "fd00::".parse());
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+//#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum IpNet {
