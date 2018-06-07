@@ -40,9 +40,6 @@ use ipext::{IpAdd, IpSub, IpStep, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
 /// let net: IpNet = "fd00::/32".parse().unwrap();
 /// assert_eq!(Ok(net.network()), "fd00::".parse());
 /// ```
-//#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", derive(Serialize))]
-#[cfg_attr(feature = "serde", serde(untagged))]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum IpNet {
     V4(Ipv4Net),
@@ -73,7 +70,6 @@ pub enum IpNet {
 /// let net: Ipv4Net = "10.1.1.0/24".parse().unwrap();
 /// assert_eq!(Ok(net.network()), "10.1.1.0".parse());
 /// ```
-//#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Ipv4Net {
     addr: Ipv4Addr,
@@ -104,7 +100,6 @@ pub struct Ipv4Net {
 /// let net: Ipv6Net = "fd00::/32".parse().unwrap();
 /// assert_eq!(Ok(net.network()), "fd00::".parse());
 /// ```
-//#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Ipv6Net {
     addr: Ipv6Addr,
