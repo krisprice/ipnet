@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/ipnet/1.2.0")]
+#![doc(html_root_url = "https://docs.rs/ipnet/1.2.1")]
 //! Types for IPv4 and IPv6 network addresses.
 //!
 //! This module provides types and useful methods for working with IPv4
@@ -60,6 +60,18 @@
 //!
 //! This library comes with support for [serde](https://serde.rs) but it's
 //! not enabled by default. Use the `serde` [feature] to enable.
+//! 
+//! IpNet, Ipv4Net, and Ipv6Net will serialize to their `Display` strings
+//! for human readable formats (e.g. JSON).
+//! 
+//! Ipv4Net and Ipv6Net will serialize to a string of 5 and 17 bytes
+//! respectively for compact (binary) formats (e.g. Bincode). These are
+//! the octets of the address followed by the prefix length. In the
+//! case of IpNet it will serialize to an Enum with the variant index
+//! prepending the string of bytes.
+//! 
+//! Serde support for compact formats should be considered semi-unstable
+//! at this time.
 //!
 //! [feature]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
 
