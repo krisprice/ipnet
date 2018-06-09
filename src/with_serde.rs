@@ -2,6 +2,7 @@ use {IpNet, Ipv4Net, Ipv6Net};
 use std::fmt;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::ser::{SerializeTuple};
 use serde::de::{EnumAccess, Error, VariantAccess, Visitor};
 
 impl Serialize for IpNet {
@@ -82,10 +83,12 @@ impl Serialize for Ipv4Net {
         if serializer.is_human_readable() {
             serializer.serialize_str(&self.to_string())
         } else {
-            let mut v: [u8; 5] = [0; 5];
-            v[0..4].copy_from_slice(&self.octets());
-            v[4] = self.prefix_len();
-            v.serialize(serializer)
+            let mut seq = serializer.serialize_tuple(5)?;
+            for octet in &self.octets() {
+                seq.serialize_element(octet)?;
+            }
+            seq.serialize_element(&self.prefix_len())?;
+            seq.end()
         }
     }
 }
@@ -126,10 +129,12 @@ impl Serialize for Ipv6Net {
         if serializer.is_human_readable() {
             serializer.serialize_str(&self.to_string())
         } else {
-            let mut v: [u8; 17] = [0; 17];
-            v[0..16].copy_from_slice(&self.octets());
-            v[16] = self.prefix_len();
-            v.serialize(serializer)
+            let mut seq = serializer.serialize_tuple(17)?;
+            for octet in &self.octets() {
+                seq.serialize_element(octet)?;
+            }
+            seq.serialize_element(&self.prefix_len())?;
+            seq.end()
         }
     }
 }
