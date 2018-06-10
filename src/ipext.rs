@@ -7,19 +7,18 @@
 use std::cmp::Ordering::{Less, Equal};
 use std::mem;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use emu128::Emu128;
 
 /// Provides a `saturating_add()` method for `Ipv4Addr` and `Ipv6Addr`.
 ///
 /// Adding an integer to an IP address returns the modified IP address.
-/// A `u32` may added to both an IPv4 and IPv6 address. An `Emu128` may
+/// A `u32` may added to both an IPv4 and IPv6 address. A `u128` may
 /// only be added to an IPv6 address.
 ///
 /// # Examples
 ///
 /// ```
 /// use std::net::{Ipv4Addr, Ipv6Addr};
-/// use ipnet::{IpAdd, Emu128};
+/// use ipnet::IpAdd;
 ///
 /// let ip0: Ipv4Addr = "192.168.0.0".parse().unwrap();
 /// let ip1: Ipv4Addr = "192.168.0.5".parse().unwrap();
@@ -35,13 +34,13 @@ use emu128::Emu128;
 /// let ip2: Ipv6Addr = "ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe".parse().unwrap();
 /// let max: Ipv6Addr = "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff".parse().unwrap();
 ///
-/// assert_eq!(ip0.saturating_add(5), ip1);
-/// assert_eq!(ip2.saturating_add(1), max);
-/// assert_eq!(ip2.saturating_add(5), max);
+/// assert_eq!(ip0.saturating_add(5u32), ip1);
+/// assert_eq!(ip2.saturating_add(1u32), max);
+/// assert_eq!(ip2.saturating_add(5u32), max);
 ///
-/// assert_eq!(ip0.saturating_add(Emu128::from(5)), ip1);
-/// assert_eq!(ip2.saturating_add(Emu128::from(1)), max);
-/// assert_eq!(ip2.saturating_add(Emu128::from(5)), max);
+/// assert_eq!(ip0.saturating_add(5u128), ip1);
+/// assert_eq!(ip2.saturating_add(1u128), max);
+/// assert_eq!(ip2.saturating_add(5u128), max);
 /// ```
 pub trait IpAdd<RHS = Self> {
     type Output;
@@ -52,18 +51,18 @@ pub trait IpAdd<RHS = Self> {
 ///
 /// Subtracting an integer from an IP address returns the modified IP
 /// address. A `u32` may be subtracted from both an IPv4 and IPv6
-/// address. An `Emu128` may only be subtracted from an IPv6 address.
+/// address. A `u128` may only be subtracted from an IPv6 address.
 ///
 /// Subtracting an IP address from another IP address of the same type
-/// returns an integer of the relevant width. A `u32` for IPv4 and an
-/// `Emu128` for IPv6. Subtracting IP addresses is useful for getting
+/// returns an integer of the relevant width. A `u32` for IPv4 and a
+/// `u128` for IPv6. Subtracting IP addresses is useful for getting
 /// the range between two IP addresses.
 ///
 /// # Examples
 ///
 /// ```
 /// use std::net::{Ipv4Addr, Ipv6Addr};
-/// use ipnet::{IpSub, Emu128};
+/// use ipnet::IpSub;
 ///
 /// let min: Ipv4Addr = "0.0.0.0".parse().unwrap();
 /// let ip1: Ipv4Addr = "192.168.1.5".parse().unwrap();
@@ -78,12 +77,12 @@ pub trait IpAdd<RHS = Self> {
 /// let ip1: Ipv6Addr = "fd00::5".parse().unwrap();
 /// let ip2: Ipv6Addr = "fd00::64".parse().unwrap();
 ///
-/// assert_eq!(min.saturating_sub(ip1), Emu128::from(0));
-/// assert_eq!(ip2.saturating_sub(ip1), Emu128::from(95));
-/// assert_eq!(min.saturating_sub(5), min);
-/// assert_eq!(ip2.saturating_sub(95), ip1);
-/// assert_eq!(min.saturating_sub(Emu128::from(5)), min);
-/// assert_eq!(ip2.saturating_sub(Emu128::from(95)), ip1);
+/// assert_eq!(min.saturating_sub(ip1), 0u128);
+/// assert_eq!(ip2.saturating_sub(ip1), 95u128);
+/// assert_eq!(min.saturating_sub(5u32), min);
+/// assert_eq!(ip2.saturating_sub(95u32), ip1);
+/// assert_eq!(min.saturating_sub(5u128), min);
+/// assert_eq!(ip2.saturating_sub(95u128), ip1);
 /// ```
 pub trait IpSub<RHS = Self> {
     type Output;
@@ -96,7 +95,7 @@ pub trait IpSub<RHS = Self> {
 ///
 /// ```
 /// use std::net::{Ipv4Addr, Ipv6Addr};
-/// use ipnet::{IpBitAnd, Emu128};
+/// use ipnet::IpBitAnd;
 ///
 /// let ip: Ipv4Addr = "192.168.1.1".parse().unwrap();
 /// let mask: Ipv4Addr = "255.255.0.0".parse().unwrap();
@@ -110,7 +109,7 @@ pub trait IpSub<RHS = Self> {
 /// let res: Ipv6Addr = "fd00::".parse().unwrap();
 ///
 /// assert_eq!(ip.bitand(mask), res);
-/// assert_eq!(ip.bitand(Emu128::from([0xffff_0000_0000_0000, 0])), res);
+/// assert_eq!(ip.bitand(0xffff_0000_0000_0000_0000_0000_0000_0000u128), res);
 /// ```
 pub trait IpBitAnd<RHS = Self> {
     type Output;
@@ -123,7 +122,7 @@ pub trait IpBitAnd<RHS = Self> {
 ///
 /// ```
 /// use std::net::{Ipv4Addr, Ipv6Addr};
-/// use ipnet::{IpBitOr, Emu128};
+/// use ipnet::IpBitOr;
 ///
 /// let ip: Ipv4Addr = "10.1.1.1".parse().unwrap();
 /// let mask: Ipv4Addr = "0.0.0.255".parse().unwrap();
@@ -137,7 +136,7 @@ pub trait IpBitAnd<RHS = Self> {
 /// let res: Ipv6Addr = "fd00::ffff:ffff".parse().unwrap();
 ///
 /// assert_eq!(ip.bitor(mask), res);
-/// assert_eq!(ip.bitor(Emu128::from([0, 0x0000_0000_ffff_ffff])), res);
+/// assert_eq!(ip.bitor(u128::from(0xffffffffu32)), res);
 /// ```
 pub trait IpBitOr<RHS = Self> {
     type Output;
@@ -195,14 +194,14 @@ macro_rules! ip_sub_impl {
 }
 
 ip_add_impl!(Ipv4Addr, u32, Ipv4Addr, u32);
-ip_add_impl!(Ipv6Addr, Emu128, Ipv6Addr, Emu128);
-ip_add_impl!(Ipv6Addr, u32, Ipv6Addr, Emu128);
+ip_add_impl!(Ipv6Addr, u32, Ipv6Addr, u128);
+ip_add_impl!(Ipv6Addr, u128, Ipv6Addr, u128);
 
 ip_sub_impl!(Ipv4Addr, Ipv4Addr, u32, u32);
 ip_sub_impl!(Ipv4Addr, u32, Ipv4Addr, u32);
-ip_sub_impl!(Ipv6Addr, Ipv6Addr, Emu128, Emu128);
-ip_sub_impl!(Ipv6Addr, Emu128, Ipv6Addr, Emu128);
-ip_sub_impl!(Ipv6Addr, u32, Ipv6Addr, Emu128);
+ip_sub_impl!(Ipv6Addr, Ipv6Addr, u128, u128);
+ip_sub_impl!(Ipv6Addr, u32, Ipv6Addr, u128);
+ip_sub_impl!(Ipv6Addr, u128, Ipv6Addr, u128);
 
 macro_rules! ip_bitops_impl {
     ($(($lhs:ty, $rhs:ty, $t:ty),)*) => {
@@ -233,8 +232,8 @@ macro_rules! ip_bitops_impl {
 ip_bitops_impl! {
     (Ipv4Addr, Ipv4Addr, u32),
     (Ipv4Addr, u32, u32),
-    (Ipv6Addr, Ipv6Addr, Emu128),
-    (Ipv6Addr, Emu128, Emu128),
+    (Ipv6Addr, Ipv6Addr, u128),
+    (Ipv6Addr, u128, u128),
 }
 
 // A barebones copy of the current unstable Step trait used by the
@@ -271,7 +270,7 @@ impl IpStep for Ipv6Addr {
         mem::replace(self, Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0))
     }
     fn add_one(&self) -> Self {
-        self.saturating_add(1)
+        self.saturating_add(1u32)
     }
 }
 

@@ -7,7 +7,6 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ops::Deref;
 use std::option::Option::{Some, None};
 
-use emu128::Emu128;
 use ipext::{IpAdd, IpSub, IpStep, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
 
 /// An IP network address, either IPv4 or IPv6.
@@ -841,11 +840,11 @@ impl Ipv6Net {
     /// assert_eq!(Ok(net.netmask()), "ffff:ff00::".parse());
     /// ```
     pub fn netmask(&self) -> Ipv6Addr {
-        self.netmask_emu128().into()
+        self.netmask_u128().into()
     }
 
-    fn netmask_emu128(&self) -> Emu128 {
-        Emu128::max_value().checked_shl(128 - self.prefix_len).unwrap_or(Emu128::min_value())
+    fn netmask_u128(&self) -> u128 {
+        u128::max_value().checked_shl((128 - self.prefix_len) as u32).unwrap_or(u128::min_value())
     }
 
     /// Returns the host mask.
@@ -860,11 +859,11 @@ impl Ipv6Net {
     /// assert_eq!(Ok(net.hostmask()), "::ff:ffff:ffff:ffff:ffff:ffff:ffff".parse());
     /// ```
     pub fn hostmask(&self) -> Ipv6Addr {
-        self.hostmask_emu128().into()
+        self.hostmask_u128().into()
     }
 
-    fn hostmask_emu128(&self) -> Emu128 {
-        Emu128::max_value().checked_shr(self.prefix_len).unwrap_or(Emu128::min_value())
+    fn hostmask_u128(&self) -> u128 {
+        u128::max_value().checked_shr(self.prefix_len as u32).unwrap_or(u128::min_value())
     }
 
     /// Returns the network address.
@@ -879,7 +878,7 @@ impl Ipv6Net {
     /// assert_eq!(Ok(net.network()), "fd00:1200::".parse());
     /// ```
     pub fn network(&self) -> Ipv6Addr {
-        (Emu128::from(self.addr) & self.netmask_emu128()).into()
+        (u128::from(self.addr) & self.netmask_u128()).into()
     }
     
     /// Returns the last address.
@@ -897,7 +896,7 @@ impl Ipv6Net {
     /// assert_eq!(Ok(net.broadcast()), "fd00:12ff:ffff:ffff:ffff:ffff:ffff:ffff".parse());
     /// ```
     pub fn broadcast(&self) -> Ipv6Addr {
-        (Emu128::from(self.addr) | self.hostmask_emu128()).into()
+        (u128::from(self.addr) | self.hostmask_u128()).into()
     }
 
     /// Returns the `Ipv6Net` that contains this one.
@@ -1002,11 +1001,11 @@ impl Ipv6Net {
         ))
     }
 
-    // It is significantly faster to work on Emu128 that Ipv6Addr.
-    fn interval(&self) -> (Emu128, Emu128) {
+    // It is significantly faster to work on u128 that Ipv6Addr.
+    fn interval(&self) -> (u128, u128) {
         (
-            Emu128::from(self.network()),
-            Emu128::from(self.broadcast()).saturating_add(Emu128::from(1)),
+            u128::from(self.network()),
+            u128::from(self.broadcast()).saturating_add(1u128),
         )
     }
 
@@ -1034,7 +1033,7 @@ impl Ipv6Net {
         let mut res: Vec<Ipv6Net> = Vec::new();
 
         for (start, end) in intervals {
-            let iter = Ipv6Subnets::new(start.into(), end.saturating_sub(Emu128::from(1)).into(), 0);
+            let iter = Ipv6Subnets::new(start.into(), end.saturating_sub(1u128).into(), 0);
             res.extend(iter);
         }
         res
@@ -1304,9 +1303,9 @@ fn next_ipv4_subnet(start: Ipv4Addr, end: Ipv4Addr, min_prefix_len: u8) -> Ipv4N
 }
 
 fn next_ipv6_subnet(start: Ipv6Addr, end: Ipv6Addr, min_prefix_len: u8) -> Ipv6Net {
-    let range = end.saturating_sub(start).saturating_add(Emu128::from(1));
+    let range = end.saturating_sub(start).saturating_add(1u128);
     let range_bits = 128u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
-    let start_tz = Emu128::from(start).trailing_zeros();
+    let start_tz = u128::from(start).trailing_zeros();
     let new_prefix_len = 128 - min(range_bits, start_tz);
     let next_prefix_len = max(new_prefix_len as u8, min_prefix_len);
     Ipv6Net::new(start, next_prefix_len).unwrap()
@@ -1348,7 +1347,7 @@ impl Iterator for Ipv6Subnets {
         match self.start.partial_cmp(&self.end) {
             Some(Less) => {
                 let next = next_ipv6_subnet(self.start, self.end, self.min_prefix_len);
-                self.start = next.broadcast().saturating_add(1);
+                self.start = next.broadcast().saturating_add(1u32);
 
                 // Stop the iterator if we saturated self.start. This
                 // check worsens performance slightly but overall this
@@ -1361,7 +1360,7 @@ impl Iterator for Ipv6Subnets {
             },
             Some(Equal) => {
                 let next = next_ipv6_subnet(self.start, self.end, self.min_prefix_len);
-                self.start = next.broadcast().saturating_add(1);
+                self.start = next.broadcast().saturating_add(1u32);
                 self.end.replace_zero();
                 Some(next)
             },
