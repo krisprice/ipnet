@@ -87,4 +87,4 @@ mod ipext;
 mod ipnet;
 mod parser;
 #[cfg(feature = "serde")]
-mod with_serde;
+mod ipnet_serde;
