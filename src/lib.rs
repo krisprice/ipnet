@@ -31,9 +31,6 @@
 //! * The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
 //!   the [`Ipv4Addr`] and [`Ipv6Addr`] types with methods to perform
 //!   these operations.
-//! * [`Emu128`] is an emulated 128 bit unsigned integer implemented in
-//!   this module using a struct of two `u64` types. This is useful for
-//!   operations on IPv6 address, which are 128 bit unsigned integers.
 //!
 //! [`IpNet`]: enum.IpNet.html
 //! [`Ipv4Net`]: struct.Ipv4Net.html
@@ -71,7 +68,7 @@
 //! prepending the string of bytes.
 //! 
 //! Serde support for compact formats should be considered semi-unstable
-//! at this time.
+//! at this time, feedback from users of this feature is welcomed.
 //!
 //! [feature]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
 
