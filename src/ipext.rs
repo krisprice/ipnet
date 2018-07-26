@@ -244,18 +244,6 @@ pub trait IpStep {
     fn add_one(&self) -> Self;
 }
 
-impl IpStep for IpAddr {
-    fn replace_zero(&mut self) -> Self {
-        match *self {
-            IpAddr::V4(ref mut a) => IpAddr::V4(a.replace_zero()),
-            IpAddr::V6(ref mut a) => IpAddr::V6(a.replace_zero()),
-        }
-    }
-    fn add_one(&self) -> Self {
-        self.saturating_add(1)   
-    }
-}
-
 impl IpStep for Ipv4Addr {
     fn replace_zero(&mut self) -> Self {
         mem::replace(self, Ipv4Addr::new(0, 0, 0, 0))
