@@ -14,7 +14,7 @@ Read the [documentation] for the full details. And find it on [Crates.io].
 
 ## Release 2.0 requirements
 
-Release 2.0 requires Rust version 1.26 or later. The prior release of this library provided an emulated 128 bit integer module to support IPv6 addresses. This has been replaced with Rust's built-in 128 bit integer support now that it is stable. There may be issues with Rust's 128 bit integer support on some targets (e.g. Emscripten). Please continue to use the prior release if you have any issues with Rust's 128 bit integer support on your chosen target.
+Release 2.0 requires Rust version 1.26 or later. The prior release of this library provided an emulated 128 bit integer module to support IPv6 addresses. This has been replaced with Rust's built-in 128 bit integer support now that it is stable. There may be issues with Rust's new 128 bit integer support on some targets (e.g. Emscripten). Please continue to use the prior release if you have any issues with Rust's 128 bit integer support on your chosen target.
 
 ## Examples
 
