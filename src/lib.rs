@@ -8,11 +8,17 @@
 //! Rust's standard library and align to their design to stay
 //! consistent.
 //! 
-//! The module also provides types for iterating over IP address ranges,
-//! and useful traits that extend [`Ipv4Addr`] and [`Ipv6Addr`] with
-//! methods for addition, subtraction, bitwise-and, and bitwise-or
-//! operations that are missing in Rust's standard library.
+//! The module also provides the [`IpSubnets`], [`Ipv4Subnets`], and
+//! [`Ipv6Subnets`] types for interating over the subnets contained in
+//! an IP address range. The [`IpAddrRange`], [`Ipv4AddrRange`], and
+//! [`Ipv6AddrRange`] types for iterating over IP addresses in a range.
+//! And traits that extend `Ipv4Addr` and `Ipv6Addr` with methods for
+//! addition, subtraction, bitwise-and, and bitwise-or operations that
+//! are missing in Rust's standard library.
 //!
+//! Use the [`Contains`] trait to access the methods for testing if one
+//! network address contains another, or if it contains an IP address.
+//! 
 //! The module only uses stable features so it is guaranteed to compile
 //! using the stable toolchain.
 //!
@@ -23,14 +29,18 @@
 //!   addresses.
 //! * [`IpSubnets`], [`Ipv4Subnets`], and [`Ipv6Subnets`] are iterators
 //!   that generate the smallest set of IP network addresses bound by an
-//!   IP address range and minimum prefix length. These are returned by
-//!   the [`subnets()`] methods and used in the [`aggregate()`] methods.
-//! * [`IpAddrRange`], [`Ipv4AddrRange`], and [`Ipv6AddrRange`] provide
-//!   iteration over ranges of IP addresses. These are returned by the
-//!   [`hosts()`] methods.
+//!   IP address range and minimum prefix length. These can be created
+//!   using their constructors. They are also returned by the
+//!   [`subnets()`] methods and used within the [`aggregate()`] methods.
+//! * [`IpAddrRange`], [`Ipv4AddrRange`], and [`Ipv6AddrRange`] are
+//!   iterators that generate IP addresses. These can be created using
+//!   their constructors. They are also returned by the [`hosts()`]
+//!   methods.
 //! * The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
 //!   the [`Ipv4Addr`] and [`Ipv6Addr`] types with methods to perform
 //!   these operations.
+//! * The [`Contains`] trait provides a method to test if a network
+//!   address contains either another network address or an IP address.
 //!
 //! [`IpNet`]: enum.IpNet.html
 //! [`Ipv4Net`]: struct.Ipv4Net.html
@@ -51,24 +61,26 @@
 //! [`IpSub`]: trait.IpSub.html
 //! [`IpBitAnd`]: trait.IpBitAnd.html
 //! [`IpBitOr`]: trait.IpBitOr.html
-//! [`Emu128`]: struct.Emu128.html
+//! [`Contains`]: trait.Contains.html
 //!
 //! # Serde support
 //!
-//! This library comes with support for [serde](https://serde.rs) but it's
-//! not enabled by default. Use the `serde` [feature] to enable.
+//! This library comes with support for [serde](https://serde.rs) but
+//! it's not enabled by default. Use the `serde` [feature] to enable.
 //! 
-//! IpNet, Ipv4Net, and Ipv6Net will serialize to their `Display` strings
-//! for human readable formats (e.g. JSON).
+//! ```toml
+//! [dependencies]
+//! ipnet = { version = "2", features = ["serde"] }
+//! ```
+//!
+//! For human readable formats (e.g. JSON) the `IpNet`, `Ipv4Net`, and
+//! `Ipv6Net` types will serialize to their `Display` strings.
 //! 
-//! Ipv4Net and Ipv6Net will serialize to a string of 5 and 17 bytes
-//! respectively for compact (binary) formats (e.g. Bincode). These are
-//! the octets of the address followed by the prefix length. In the
-//! case of IpNet it will serialize to an Enum with the variant index
-//! prepending the string of bytes.
-//! 
-//! Serde support for compact formats should be considered semi-unstable
-//! at this time, feedback from users of this feature is welcomed.
+//! For compact binary formats (e.g. Bincode) the `Ipv4Net` and
+//! `Ipv6Net` types will serialize to a string of 5 and 17 bytes that
+//! consist of the network address octects followed by the prefix
+//! length. The `IpNet` type will serialize to an Enum with the V4 or V6
+//! variant index prepending the above string of 5 or 17 bytes.
 //!
 //! [feature]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
 

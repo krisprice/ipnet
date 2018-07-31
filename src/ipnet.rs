@@ -1053,7 +1053,7 @@ impl fmt::Display for Ipv6Net {
 }
 
 /// Provides a method to test if a network address contains either
-/// another network address or another IP address.
+/// another network address or an IP address.
 ///
 /// # Examples
 ///
