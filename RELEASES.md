@@ -6,6 +6,10 @@
 
 * The `with-serde` feature name shim has been removed. The `serde` feature should now be used using the bare `serde` feature name per the Rust API Guidelines.
 
+* The `Deref` on `Ipv4Net` and `Ipv6Net` has been removed. This dereferenced to the `Ipv4Addr` and `Ipv6Addr` contained in the type. To use these methods call them directly on the contained IP address of interest, which may be accessed using the `addr()` or `network()` methods.
+
+* In prior versions it was necessary to use the `Contains` trait to access the `contains()` methods. These are now inherited in public methods on the `IpNet`, `Ipv4Net`, and `Ipv6Net` types so are always available.
+
 ## Version 1.2.1 (2018-06-06)
 
 * Fix to resolve an issue with the optional serde support, where compact binary formats were not properly supported. See issue #10.

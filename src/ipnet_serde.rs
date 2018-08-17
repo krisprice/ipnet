@@ -84,7 +84,7 @@ impl Serialize for Ipv4Net {
             serializer.serialize_str(&self.to_string())
         } else {
             let mut seq = serializer.serialize_tuple(5)?;
-            for octet in &self.octets() {
+            for octet in &self.addr().octets() {
                 seq.serialize_element(octet)?;
             }
             seq.serialize_element(&self.prefix_len())?;
@@ -130,7 +130,7 @@ impl Serialize for Ipv6Net {
             serializer.serialize_str(&self.to_string())
         } else {
             let mut seq = serializer.serialize_tuple(17)?;
-            for octet in &self.octets() {
+            for octet in &self.addr().octets() {
                 seq.serialize_element(octet)?;
             }
             seq.serialize_element(&self.prefix_len())?;

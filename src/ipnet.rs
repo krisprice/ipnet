@@ -4,7 +4,6 @@ use std::convert::From;
 use std::error::Error;
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use std::ops::Deref;
 use std::option::Option::{Some, None};
 
 use ipext::{IpAdd, IpSub, IpStep, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
@@ -120,22 +119,6 @@ impl fmt::Display for PrefixLenError {
 impl Error for PrefixLenError {
     fn description(&self) -> &str {
         "invalid IP prefix length"
-    }
-}
-
-// For the time being deref method calls to the Ipv4Addr and Ipv6Addr
-// implemenations. We can't do this for the IpNet enum unfortunately.
-impl Deref for Ipv4Net {
-    type Target = Ipv4Addr;
-    fn deref(&self) -> &Self::Target {
-        &self.addr
-    }
-}
-
-impl Deref for Ipv6Net {
-    type Target = Ipv6Addr;
-    fn deref(&self) -> &Self::Target {
-        &self.addr
     }
 }
 
@@ -1008,7 +991,7 @@ impl Ipv6Net {
             new_prefix_len,
         ))
     }
-    
+
     pub fn contains<T>(&self, other: T) -> bool where Self: Contains<T> {
          Contains::contains(self, other)
     }
