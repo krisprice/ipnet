@@ -408,6 +408,10 @@ impl IpNet {
         }
     }
 
+    pub fn contains<T>(&self, other: T) -> bool where Self: Contains<T> {
+         Contains::contains(self, other)
+    }
+
     /// Aggregate a `Vec` of `IpNet`s and return the result as a new
     /// `Vec`.
     ///
@@ -722,6 +726,10 @@ impl Ipv4Net {
         ))
     }
 
+    pub fn contains<T>(&self, other: T) -> bool where Self: Contains<T> {
+         Contains::contains(self, other)
+    }
+
     // It is significantly faster to work on u32 than Ipv4Addr.
     fn interval(&self) -> (u32, u32) {
         (
@@ -1000,6 +1008,10 @@ impl Ipv6Net {
             new_prefix_len,
         ))
     }
+    
+    pub fn contains<T>(&self, other: T) -> bool where Self: Contains<T> {
+         Contains::contains(self, other)
+    }
 
     // It is significantly faster to work on u128 that Ipv6Addr.
     fn interval(&self) -> (u128, u128) {
@@ -1059,7 +1071,7 @@ impl fmt::Display for Ipv6Net {
 ///
 /// ```
 /// use std::net::IpAddr;
-/// use ipnet::{IpNet, Contains};
+/// use ipnet::IpNet;
 /// 
 /// let n4_1: IpNet = "10.1.1.0/24".parse().unwrap();
 /// let n4_2: IpNet = "10.1.1.0/26".parse().unwrap();
