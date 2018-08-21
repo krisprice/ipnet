@@ -16,9 +16,6 @@
 //! addition, subtraction, bitwise-and, and bitwise-or operations that
 //! are missing in Rust's standard library.
 //!
-//! Use the [`Contains`] trait to access the methods for testing if one
-//! network address contains another, or if it contains an IP address.
-//! 
 //! The module only uses stable features so it is guaranteed to compile
 //! using the stable toolchain.
 //!

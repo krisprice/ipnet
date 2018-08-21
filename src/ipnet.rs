@@ -391,6 +391,45 @@ impl IpNet {
         }
     }
 
+    /// Test if a network address contains either another network
+    /// address or an IP address.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::net::IpAddr;
+    /// # use ipnet::IpNet;
+    /// #
+    /// let net4: IpNet = "192.168.0.0/24".parse().unwrap();
+    /// let net4_yes: IpNet = "192.168.0.0/25".parse().unwrap();
+    /// let net4_no: IpNet = "192.168.0.0/23".parse().unwrap();
+    /// let ip4_yes: IpAddr = "192.168.0.1".parse().unwrap();
+    /// let ip4_no: IpAddr = "192.168.1.0".parse().unwrap();
+    ///
+    /// assert!(net4.contains(&net4));
+    /// assert!(net4.contains(&net4_yes));
+    /// assert!(!net4.contains(&net4_no));
+    /// assert!(net4.contains(&ip4_yes));
+    /// assert!(!net4.contains(&ip4_no));
+    ///
+    ///
+    /// let net6: IpNet = "fd00::/16".parse().unwrap();
+    /// let net6_yes: IpNet = "fd00::/17".parse().unwrap();
+    /// let net6_no: IpNet = "fd00::/15".parse().unwrap();
+    /// let ip6_yes: IpAddr = "fd00::1".parse().unwrap();
+    /// let ip6_no: IpAddr = "fd01::".parse().unwrap();
+    ///
+    /// assert!(net6.contains(&net6));
+    /// assert!(net6.contains(&net6_yes));
+    /// assert!(!net6.contains(&net6_no));
+    /// assert!(net6.contains(&ip6_yes));
+    /// assert!(!net6.contains(&ip6_no));
+    ///
+    /// assert!(!net4.contains(&net6));
+    /// assert!(!net6.contains(&net4));
+    /// assert!(!net4.contains(&ip6_no));
+    /// assert!(!net6.contains(&ip4_no));
+    /// ```
     pub fn contains<T>(&self, other: T) -> bool where Self: Contains<T> {
          Contains::contains(self, other)
     }
@@ -709,6 +748,27 @@ impl Ipv4Net {
         ))
     }
 
+    /// Test if a network address contains either another network
+    /// address or an IP address.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::net::Ipv4Addr;
+    /// # use ipnet::Ipv4Net;
+    /// #
+    /// let net: Ipv4Net = "192.168.0.0/24".parse().unwrap();
+    /// let net_yes: Ipv4Net = "192.168.0.0/25".parse().unwrap();
+    /// let net_no: Ipv4Net = "192.168.0.0/23".parse().unwrap();
+    /// let ip_yes: Ipv4Addr = "192.168.0.1".parse().unwrap();
+    /// let ip_no: Ipv4Addr = "192.168.1.0".parse().unwrap();
+    ///
+    /// assert!(net.contains(&net));
+    /// assert!(net.contains(&net_yes));
+    /// assert!(!net.contains(&net_no));
+    /// assert!(net.contains(&ip_yes));
+    /// assert!(!net.contains(&ip_no));
+    /// ```
     pub fn contains<T>(&self, other: T) -> bool where Self: Contains<T> {
          Contains::contains(self, other)
     }
@@ -992,6 +1052,27 @@ impl Ipv6Net {
         ))
     }
 
+    /// Test if a network address contains either another network
+    /// address or an IP address.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use std::net::Ipv6Addr;
+    /// # use ipnet::Ipv6Net;
+    /// #
+    /// let net: Ipv6Net = "fd00::/16".parse().unwrap();
+    /// let net_yes: Ipv6Net = "fd00::/17".parse().unwrap();
+    /// let net_no: Ipv6Net = "fd00::/15".parse().unwrap();
+    /// let ip_yes: Ipv6Addr = "fd00::1".parse().unwrap();
+    /// let ip_no: Ipv6Addr = "fd01::".parse().unwrap();
+    ///
+    /// assert!(net.contains(&net));
+    /// assert!(net.contains(&net_yes));
+    /// assert!(!net.contains(&net_no));
+    /// assert!(net.contains(&ip_yes));
+    /// assert!(!net.contains(&ip_no));
+    /// ```
     pub fn contains<T>(&self, other: T) -> bool where Self: Contains<T> {
          Contains::contains(self, other)
     }
@@ -1000,7 +1081,7 @@ impl Ipv6Net {
     fn interval(&self) -> (u128, u128) {
         (
             u128::from(self.network()),
-            u128::from(self.broadcast()).saturating_add(1u128),
+            u128::from(self.broadcast()).saturating_add(1),
         )
     }
 
@@ -1028,7 +1109,7 @@ impl Ipv6Net {
         let mut res: Vec<Ipv6Net> = Vec::new();
 
         for (start, end) in intervals {
-            let iter = Ipv6Subnets::new(start.into(), end.saturating_sub(1u128).into(), 0);
+            let iter = Ipv6Subnets::new(start.into(), end.saturating_sub(1).into(), 0);
             res.extend(iter);
         }
         res
@@ -1053,9 +1134,9 @@ impl fmt::Display for Ipv6Net {
 /// # Examples
 ///
 /// ```
-/// use std::net::IpAddr;
-/// use ipnet::IpNet;
-/// 
+/// # use std::net::IpAddr;
+/// # use ipnet::IpNet;
+/// #
 /// let n4_1: IpNet = "10.1.1.0/24".parse().unwrap();
 /// let n4_2: IpNet = "10.1.1.0/26".parse().unwrap();
 /// let n4_3: IpNet = "10.1.2.0/26".parse().unwrap();
@@ -1298,7 +1379,7 @@ fn next_ipv4_subnet(start: Ipv4Addr, end: Ipv4Addr, min_prefix_len: u8) -> Ipv4N
 }
 
 fn next_ipv6_subnet(start: Ipv6Addr, end: Ipv6Addr, min_prefix_len: u8) -> Ipv6Net {
-    let range = end.saturating_sub(start).saturating_add(1u128);
+    let range = end.saturating_sub(start).saturating_add(1);
     let range_bits = 128u32.saturating_sub(range.leading_zeros()).saturating_sub(1);
     let start_tz = u128::from(start).trailing_zeros();
     let new_prefix_len = 128 - min(range_bits, start_tz);
@@ -1342,7 +1423,7 @@ impl Iterator for Ipv6Subnets {
         match self.start.partial_cmp(&self.end) {
             Some(Less) => {
                 let next = next_ipv6_subnet(self.start, self.end, self.min_prefix_len);
-                self.start = next.broadcast().saturating_add(1u32);
+                self.start = next.broadcast().saturating_add(1);
 
                 // Stop the iterator if we saturated self.start. This
                 // check worsens performance slightly but overall this
@@ -1355,7 +1436,7 @@ impl Iterator for Ipv6Subnets {
             },
             Some(Equal) => {
                 let next = next_ipv6_subnet(self.start, self.end, self.min_prefix_len);
-                self.start = next.broadcast().saturating_add(1u32);
+                self.start = next.broadcast().saturating_add(1);
                 self.end.replace_zero();
                 Some(next)
             },
@@ -1393,7 +1474,6 @@ fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
     res.push((start, end));
     res
 }
-
 
 #[cfg(test)]
 mod tests {

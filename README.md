@@ -4,8 +4,6 @@ This module provides types and useful methods for working with IPv4 and IPv6 net
 
 The module also provides the `IpSubnets`, `Ipv4Subnets`, and `Ipv6Subnets` types for interating over the subnets contained in an IP address range. The `IpAddrRange`, `Ipv4AddrRange`, and `Ipv6AddrRange` types for iterating over IP addresses in a range. And traits that extend `Ipv4Addr` and `Ipv6Addr` with methods for addition, subtraction, bitwise-and, and bitwise-or operations that are missing in Rust's standard library.
 
-Use the `Contains` trait to access the methods for testing if one network address contains another, or if it contains an IP address. 
-
 The module only uses stable features so it is guaranteed to compile using the stable toolchain. Tests aim for thorough coverage and can be found in both the test modules and doctests. Please file an [issue on GitHub] if you have any problems, requests, or suggested improvements.
 
 Read the [documentation] for the full details. And find it on [Crates.io].
