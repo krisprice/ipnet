@@ -10,6 +10,10 @@
 
 * In prior versions it was necessary to use the `Contains` trait to access the `contains()` methods. These are now inherited in public methods on the `IpNet`, `Ipv4Net`, and `Ipv6Net` types so are always available.
 
+* The implementations of `IpAdd<u32>` and `IpSub<u32>` for IpAddr have been removed.
+
+* The implementations of `IpAdd<u32>` and `IpSub<u32>` for `Ipv6Addr` have been removed.
+
 ## Version 1.2.1 (2018-06-06)
 
 * Fix to resolve an issue with the optional serde support, where compact binary formats were not properly supported. See issue #10.
