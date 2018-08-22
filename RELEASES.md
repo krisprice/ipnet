@@ -1,6 +1,6 @@
 # Releases
 
-## Version 2.0.0 (2018-xx-xx)
+## Version 2.0.0 (2018-08-21)
 
 * The `Emu128` module has been removed. This provided an emulated 128-bit integer for supporting IPv6 addresses. As of Rust 1.26 the built-in 128-bit integers have been marked stable and this library has been updated to use these instead of `Emu128`.
 

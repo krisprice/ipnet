@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/ipnet/2.0.0-rc1")]
+#![doc(html_root_url = "https://docs.rs/ipnet/2.0.0")]
 //! Types for IPv4 and IPv6 network addresses.
 //!
 //! This module provides types and useful methods for working with IPv4
@@ -57,8 +57,7 @@
 //! [`IpAdd`]: trait.IpAdd.html
 //! [`IpSub`]: trait.IpSub.html
 //! [`IpBitAnd`]: trait.IpBitAnd.html
-//! [`IpBitOr`]: trait.IpBitOr.html
-//! [`Contains`]: trait.Contains.html
+//! [`IpBitOr`]: trait.IpBitOr.htmll
 //!
 //! # Serde support
 //!

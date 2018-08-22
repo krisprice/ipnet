@@ -431,7 +431,7 @@ impl IpNet {
     /// assert!(!net6.contains(&ip4_no));
     /// ```
     pub fn contains<T>(&self, other: T) -> bool where Self: Contains<T> {
-         Contains::contains(self, other)
+        Contains::contains(self, other)
     }
 
     /// Aggregate a `Vec` of `IpNet`s and return the result as a new
@@ -770,7 +770,7 @@ impl Ipv4Net {
     /// assert!(!net.contains(&ip_no));
     /// ```
     pub fn contains<T>(&self, other: T) -> bool where Self: Contains<T> {
-         Contains::contains(self, other)
+        Contains::contains(self, other)
     }
 
     // It is significantly faster to work on u32 than Ipv4Addr.
@@ -1074,7 +1074,7 @@ impl Ipv6Net {
     /// assert!(!net.contains(&ip_no));
     /// ```
     pub fn contains<T>(&self, other: T) -> bool where Self: Contains<T> {
-         Contains::contains(self, other)
+        Contains::contains(self, other)
     }
 
     // It is significantly faster to work on u128 that Ipv6Addr.
