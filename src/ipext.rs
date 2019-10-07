@@ -486,7 +486,11 @@ impl Iterator for Ipv4AddrRange {
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         let n = n as u64;
         let count = self.count_u64();
-        if n >= count { None }
+        if n >= count {
+            self.end.replace_zero();
+            self.start = Ipv4Addr::new(0, 0, 0, 1);
+            None
+        }
         else if n == count - 1 {
             let end = self.end.replace_zero();
             self.start = Ipv4Addr::new(0, 0, 0, 1);
@@ -555,7 +559,11 @@ impl Iterator for Ipv6AddrRange {
         let n = n as u128;
         if self.can_count() {
             let count = self.count_u128();
-            if n >= count { None }
+            if n >= count {
+                self.end.replace_zero();
+                self.start = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
+                None
+            }
             else if n == count - 1 {
                 let end = self.end.replace_zero();
                 self.start = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
@@ -753,10 +761,13 @@ mod tests {
         assert_eq!(i.clone().nth(3), Some(Ipv4Addr::from_str("10.0.0.3").unwrap()));
         assert_eq!(i.clone().nth(4), None);
         assert_eq!(i.clone().nth(99), None);
-        let mut i = i.clone();
-        assert_eq!(i.nth(1), Some(Ipv4Addr::from_str("10.0.0.1").unwrap()));
-        assert_eq!(i.nth(1), Some(Ipv4Addr::from_str("10.0.0.3").unwrap()));
-        assert_eq!(i.nth(0), None);
+        let mut i2 = i.clone();
+        assert_eq!(i2.nth(1), Some(Ipv4Addr::from_str("10.0.0.1").unwrap()));
+        assert_eq!(i2.nth(1), Some(Ipv4Addr::from_str("10.0.0.3").unwrap()));
+        assert_eq!(i2.nth(0), None);
+        let mut i3 = i.clone();
+        assert_eq!(i3.nth(99), None);
+        assert_eq!(i3.next(), None);
 
         let i = Ipv6AddrRange::new(
             Ipv6Addr::from_str("fd00::").unwrap(),
@@ -766,9 +777,12 @@ mod tests {
         assert_eq!(i.clone().nth(3), Some(Ipv6Addr::from_str("fd00::3").unwrap()));
         assert_eq!(i.clone().nth(4), None);
         assert_eq!(i.clone().nth(99), None);
-        let mut i = i.clone();
-        assert_eq!(i.nth(1), Some(Ipv6Addr::from_str("fd00::1").unwrap()));
-        assert_eq!(i.nth(1), Some(Ipv6Addr::from_str("fd00::3").unwrap()));
-        assert_eq!(i.nth(0), None);
+        let mut i2 = i.clone();
+        assert_eq!(i2.nth(1), Some(Ipv6Addr::from_str("fd00::1").unwrap()));
+        assert_eq!(i2.nth(1), Some(Ipv6Addr::from_str("fd00::3").unwrap()));
+        assert_eq!(i2.nth(0), None);
+        let mut i3 = i.clone();
+        assert_eq!(i3.nth(99), None);
+        assert_eq!(i3.next(), None);
     }
 }
