@@ -355,17 +355,6 @@ impl Ipv4AddrRange {
             _ => 0,
         }
     }
-
-    // fn try_count(&self) -> Option<u32> {
-    //     match self.start.partial_cmp(&self.end) {
-    //         Some(Less) => {
-    //             let count = self.end.saturating_sub(self.start);
-    //             count.checked_add(1)
-    //         },
-    //         Some(Equal) => Some(1),
-    //         _ => Some(0)
-    //     }
-    // }
 }
 
 impl Ipv6AddrRange {
@@ -394,17 +383,6 @@ impl Ipv6AddrRange {
         self.start != Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)
         || self.end != Ipv6Addr::new(0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff)
     }
-
-    // fn try_count_u128(&self) -> Option<u128> {
-    //     match self.start.partial_cmp(&self.end) {
-    //         Some(Less) => {
-    //             let count = self.end.saturating_sub(self.start);
-    //             count.checked_add(1)
-    //         },
-    //         Some(Equal) => Some(1),
-    //         _ => Some(0)
-    //     }
-    // }
 }
 
 impl Iterator for IpAddrRange {
