@@ -374,7 +374,7 @@ impl Iterator for Ipv4AddrRange {
             },
             Some(Equal) => {
                 self.end.replace_zero();
-                Some(self.start)
+                Some(mem::replace(&mut self.start, Ipv4Addr::new(0, 0, 0, 1)))
             },
             _ => None,
         }
@@ -392,7 +392,7 @@ impl Iterator for Ipv6AddrRange {
             },
             Some(Equal) => {
                 self.end.replace_zero();
-                Some(self.start)
+                Some(mem::replace(&mut self.start, Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)))
             },
             _ => None,
         }
@@ -494,5 +494,16 @@ mod tests {
             IpAddr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe").unwrap(),
             IpAddr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
         ]);
+
+        let zero4 = Ipv4Addr::from_str("0.0.0.0").unwrap();
+        let zero6 = Ipv6Addr::from_str("::").unwrap();
+
+        let mut i = Ipv4AddrRange::new(zero4, zero4);
+        assert_eq!(Some(zero4), i.next());
+        assert_eq!(None, i.next());
+
+        let mut i = Ipv6AddrRange::new(zero6, zero6);
+        assert_eq!(Some(zero6), i.next());
+        assert_eq!(None, i.next());
     }
 }
