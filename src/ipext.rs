@@ -211,25 +211,39 @@ ip_bitops_impl! {
 // IpAddrRange, Ipv4AddrRange, and Ipv6AddrRange types below, and the
 // Subnets types in ipnet.
 pub trait IpStep {
+    fn replace_one(&mut self) -> Self;
     fn replace_zero(&mut self) -> Self;
     fn add_one(&self) -> Self;
+    fn sub_one(&self) -> Self;
 }
 
 impl IpStep for Ipv4Addr {
+    fn replace_one(&mut self) -> Self {
+        mem::replace(self, Ipv4Addr::new(0, 0, 0, 1))
+    }
     fn replace_zero(&mut self) -> Self {
         mem::replace(self, Ipv4Addr::new(0, 0, 0, 0))
     }
     fn add_one(&self) -> Self {
         self.saturating_add(1)
     }
+    fn sub_one(&self) -> Self {
+        self.saturating_sub(1)
+    }
 }
 
 impl IpStep for Ipv6Addr {
+    fn replace_one(&mut self) -> Self {
+        mem::replace(self, Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1))
+    }
     fn replace_zero(&mut self) -> Self {
         mem::replace(self, Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0))
     }
     fn add_one(&self) -> Self {
         self.saturating_add(1)
+    }
+    fn sub_one(&self) -> Self {
+        self.saturating_sub(1)
     }
 }
 
@@ -449,7 +463,7 @@ impl Iterator for Ipv4AddrRange {
             },
             Some(Equal) => {
                 self.end.replace_zero();
-                Some(mem::replace(&mut self.start, Ipv4Addr::new(0, 0, 0, 1)))
+                Some(self.start.replace_one())
             },
             _ => None,
         }
@@ -490,12 +504,12 @@ impl Iterator for Ipv4AddrRange {
         let count = self.count_u64();
         if n >= count {
             self.end.replace_zero();
-            self.start = Ipv4Addr::new(0, 0, 0, 1);
+            self.start.replace_one();
             None
         }
         else if n == count - 1 {
             let end = self.end.replace_zero();
-            self.start = Ipv4Addr::new(0, 0, 0, 1);
+            self.start.replace_one();
             Some(end)
         } else {
             let nth = self.start.saturating_add(n as u32);
@@ -526,7 +540,7 @@ impl Iterator for Ipv6AddrRange {
             },
             Some(Equal) => {
                 self.end.replace_zero();
-                Some(mem::replace(&mut self.start, Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)))
+                Some(self.start.replace_one())
             },
             _ => None,
         }
@@ -563,12 +577,12 @@ impl Iterator for Ipv6AddrRange {
             let count = self.count_u128();
             if n >= count {
                 self.end.replace_zero();
-                self.start = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
+                self.start.replace_one();
                 None
             }
             else if n == count - 1 {
                 let end = self.end.replace_zero();
-                self.start = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
+                self.start.replace_one();
                 Some(end)
             } else {
                 let nth = self.start.saturating_add(n);
@@ -616,12 +630,12 @@ impl DoubleEndedIterator for Ipv4AddrRange {
     fn next_back(&mut self) -> Option<Self::Item> {
         match self.start.partial_cmp(&self.end) {
             Some(Less) => {
-                let next_back = self.end.saturating_sub(1);
+                let next_back = self.end.sub_one();
                 Some(mem::replace(&mut self.end, next_back))
             },
             Some(Equal) => {
                 self.end.replace_zero();
-                Some(mem::replace(&mut self.start, Ipv4Addr::new(0, 0, 0, 1)))
+                Some(self.start.replace_one())
             },
             _ => None
         }
@@ -631,17 +645,17 @@ impl DoubleEndedIterator for Ipv4AddrRange {
         let count = self.count_u64();
         if n >= count {
             self.end.replace_zero();
-            self.start = Ipv4Addr::new(0, 0, 0, 1);
+            self.start.replace_one();
             None
         }
         else if n == count - 1 {
             let start = self.start;
             self.end.replace_zero();
-            self.start = Ipv4Addr::new(0, 0, 0, 1);
+            self.start.replace_one();
             Some(start)
         } else {
             let nth = self.end.saturating_sub(n as u32);
-            self.end = nth.saturating_sub(1);
+            self.end = nth.sub_one();
             Some(nth)
         }
     }
@@ -651,12 +665,12 @@ impl DoubleEndedIterator for Ipv6AddrRange {
     fn next_back(&mut self) -> Option<Self::Item> {
         match self.start.partial_cmp(&self.end) {
             Some(Less) => {
-                let next_back = self.end.saturating_sub(1);
+                let next_back = self.end.sub_one();
                 Some(mem::replace(&mut self.end, next_back))
             },
             Some(Equal) => {
                 self.end.replace_zero();
-                Some(mem::replace(&mut self.start, Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)))
+                Some(self.start.replace_one())
             },
             _ => None
         }
@@ -667,22 +681,22 @@ impl DoubleEndedIterator for Ipv6AddrRange {
             let count = self.count_u128();
             if n >= count {
                 self.end.replace_zero();
-                self.start = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
+                self.start.replace_one();
                 None
             }
             else if n == count - 1 {
                 let start = self.start;
                 self.end.replace_zero();
-                self.start = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1);
+                self.start.replace_one();
                 Some(start)
             } else {
                 let nth = self.end.saturating_sub(n);
-                self.end = nth.saturating_sub(1);
+                self.end = nth.sub_one();
                 Some(nth)
             }
         } else {
             let nth = self.end.saturating_sub(n);
-            self.end = nth.saturating_sub(1);
+            self.end = nth.sub_one();
             Some(nth)
         }
     }
