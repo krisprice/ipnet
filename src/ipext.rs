@@ -361,7 +361,7 @@ impl Ipv4AddrRange {
     fn count_u64(&self) -> u64 {
         match self.start.partial_cmp(&self.end) {
             Some(Less) => {
-                let count = self.end.saturating_sub(self.start);
+                let count: u32 = self.end.saturating_sub(self.start);
                 let count = count as u64 + 1; // Never overflows
                 count
             },
@@ -469,12 +469,25 @@ impl Iterator for Ipv4AddrRange {
         }
     }
 
+    #[allow(const_err)]
     fn count(self) -> usize {
         match self.start.partial_cmp(&self.end) {
             Some(Less) => {
-                let count = self.end.saturating_sub(self.start);
-                let count = count as usize + 1; // Might overflow
-                count
+                // Adding one here might overflow u32.
+                // Instead, wait until after converted to usize
+                let count: u32 = self.end.saturating_sub(self.start);
+
+                // usize might only be 16 bits,
+                // so need to explicitely check for overflow.
+                // 'usize::MAX as u32' is okay here - if usize is 64 bits,
+                // value truncates to u32::MAX
+                if count <= std::usize::MAX as u32 {
+                    count as usize + 1
+                // count overflows usize
+                } else {
+                    // emulate standard overflow/panic behavior
+                    std::usize::MAX + 2 + count as usize
+                }
             },
             Some(Equal) => 1,
             _ => 0
@@ -506,11 +519,9 @@ impl Iterator for Ipv4AddrRange {
             self.end.replace_zero();
             self.start.replace_one();
             None
-        }
-        else if n == count - 1 {
-            let end = self.end.replace_zero();
+        } else if n == count - 1 {
             self.start.replace_one();
-            Some(end)
+            Some(self.end.replace_zero())
         } else {
             let nth = self.start.saturating_add(n as u32);
             self.start = nth.add_one();
@@ -546,11 +557,17 @@ impl Iterator for Ipv6AddrRange {
         }
     }
 
+    #[allow(const_err)]
     fn count(self) -> usize {
         let count = self.count_u128();
-        // Mimics normal iterator behavior (panic in debug, overflow in release)
-        debug_assert!(count <= std::usize::MAX as u128, "attempt to add with overflow");
-        count as usize
+        // count fits in usize
+        if count <= std::usize::MAX as u128 {
+            count as usize
+        // count does not fit in usize
+        } else {
+            // emulate standard overflow/panic behavior
+            std::usize::MAX + 1 + count as usize
+        }
     }
 
     fn last(self) -> Option<Self::Item> {
@@ -579,16 +596,16 @@ impl Iterator for Ipv6AddrRange {
                 self.end.replace_zero();
                 self.start.replace_one();
                 None
-            }
-            else if n == count - 1 {
-                let end = self.end.replace_zero();
+            } else if n == count - 1 {
                 self.start.replace_one();
-                Some(end)
+                Some(self.end.replace_zero())
             } else {
                 let nth = self.start.saturating_add(n);
                 self.start = nth.add_one();
                 Some(nth)
             }
+        // count overflows u128; n is 64-bits at most.
+        // therefore, n can never exceed count
         } else {
             let nth = self.start.saturating_add(n);
             self.start = nth.add_one();
@@ -647,16 +664,13 @@ impl DoubleEndedIterator for Ipv4AddrRange {
             self.end.replace_zero();
             self.start.replace_one();
             None
-        }
-        else if n == count - 1 {
-            let start = self.start;
+        } else if n == count - 1 {
             self.end.replace_zero();
-            self.start.replace_one();
-            Some(start)
+            Some(self.start.replace_one())
         } else {
-            let nth = self.end.saturating_sub(n as u32);
-            self.end = nth.sub_one();
-            Some(nth)
+            let nth_back = self.end.saturating_sub(n as u32);
+            self.end = nth_back.sub_one();
+            Some(nth_back)
         }
     }
 }
@@ -685,19 +699,19 @@ impl DoubleEndedIterator for Ipv6AddrRange {
                 None
             }
             else if n == count - 1 {
-                let start = self.start;
                 self.end.replace_zero();
-                self.start.replace_one();
-                Some(start)
+                Some(self.start.replace_one())
             } else {
-                let nth = self.end.saturating_sub(n);
-                self.end = nth.sub_one();
-                Some(nth)
+                let nth_back = self.end.saturating_sub(n);
+                self.end = nth_back.sub_one();
+                Some(nth_back)
             }
+        // count overflows u128; n is 64-bits at most.
+        // therefore, n can never exceed count
         } else {
-            let nth = self.end.saturating_sub(n);
-            self.end = nth.sub_one();
-            Some(nth)
+            let nth_back = self.end.saturating_sub(n);
+            self.end = nth_back.sub_one();
+            Some(nth_back)
         }
     }
 }
