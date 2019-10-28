@@ -3,6 +3,7 @@ use std::cmp::Ordering::{Less, Equal};
 use std::convert::From;
 use std::error::Error;
 use std::fmt;
+use std::iter::FusedIterator;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::option::Option::{Some, None};
 
@@ -1444,6 +1445,10 @@ impl Iterator for Ipv6Subnets {
         }
     }
 }
+
+impl FusedIterator for IpSubnets {}
+impl FusedIterator for Ipv4Subnets {}
+impl FusedIterator for Ipv6Subnets {}
 
 // Generic function for merging a vector of intervals.
 fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
