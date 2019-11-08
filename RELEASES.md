@@ -1,5 +1,13 @@
 # Releases
 
+## Version 2.1.0 (2019-11-08)
+
+* Implement `FusedIterator` for `IpAddrRange`, `Ipv4AddrRange`, `Ipv6AddrRange`, `IpSubnets`, `Ipv4Subnets`, and `Ipv6Subnets`.
+
+* Implement `DoubleEndedIterator` for `IpAddrRange`, `Ipv4AddrRange`, `Ipv6AddrRange`.
+
+* Implement custom `count()`, `last()`, `max()`, `min()`, `nth()`, and `size_hint()` for `IpAddrRange`, `Ipv4AddrRange`, `Ipv6AddrRange`.
+
 ## Version 2.0.1 (2019-10-12)
 
 * Fix bug where IpAddrRange never ends when start and end are both 0 #11
