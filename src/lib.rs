@@ -36,8 +36,6 @@
 //! * The [`IpAdd`], [`IpSub`], [`IpBitAnd`], [`IpBitOr`] traits extend
 //!   the [`Ipv4Addr`] and [`Ipv6Addr`] types with methods to perform
 //!   these operations.
-//! * The [`Contains`] trait provides a method to test if a network
-//!   address contains either another network address or an IP address.
 //!
 //! [`IpNet`]: enum.IpNet.html
 //! [`Ipv4Net`]: struct.Ipv4Net.html
