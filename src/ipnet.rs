@@ -509,6 +509,15 @@ impl From<Ipv6Net> for IpNet {
     }
 }
 
+impl From<IpAddr> for IpNet {
+    fn from(addr: IpAddr) -> IpNet {
+        match addr {
+            IpAddr::V4(a) => IpNet::V4(a.into()),
+            IpAddr::V6(a) => IpNet::V6(a.into()),
+        }
+    }
+}
+
 impl Ipv4Net {
     /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
     /// length.
@@ -825,6 +834,12 @@ impl fmt::Display for Ipv4Net {
     }
 }
 
+impl From<Ipv4Addr> for Ipv4Net {
+    fn from(addr: Ipv4Addr) -> Ipv4Net {
+        Ipv4Net { addr, prefix_len: 32 }
+    }
+}
+
 impl Ipv6Net {    
     /// Creates a new IPv6 network address from an `Ipv6Addr` and prefix
     /// length.
@@ -1126,6 +1141,12 @@ impl fmt::Debug for Ipv6Net {
 impl fmt::Display for Ipv6Net {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{}/{}", self.addr, self.prefix_len)
+    }
+}
+
+impl From<Ipv6Addr> for Ipv6Net {
+    fn from(addr: Ipv6Addr) -> Ipv6Net {
+        Ipv6Net { addr, prefix_len: 128 }
     }
 }
 
