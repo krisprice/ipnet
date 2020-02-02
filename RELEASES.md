@@ -1,5 +1,9 @@
 # Releases
 
+## Version 2.2.0 (2020-02-02)
+
+* Implement `From<IpAddr>`, `From<Ipv4Addr>`, and `From<Ipv6Addr>` for `IpNet`, `Ipv4Net`, and `Ipv6Net` respectively.
+
 ## Version 2.1.0 (2019-11-08)
 
 * Implement `FusedIterator` for `IpAddrRange`, `Ipv4AddrRange`, `Ipv6AddrRange`, `IpSubnets`, `Ipv4Subnets`, and `Ipv6Subnets`.
