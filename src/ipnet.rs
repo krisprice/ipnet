@@ -482,6 +482,12 @@ impl IpNet {
     }
 }
 
+impl Default for IpNet {
+    fn default() -> Self {
+        Self::V4(Ipv4Net::default())
+    }
+}
+
 impl fmt::Debug for IpNet {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, fmt)
@@ -822,6 +828,15 @@ impl Ipv4Net {
     }
 }
 
+impl Default for Ipv4Net {
+    fn default() -> Self {
+        Self {
+            addr: Ipv4Addr::from(0),
+            prefix_len: 0,
+        }
+    }
+}
+
 impl fmt::Debug for Ipv4Net {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, fmt)
@@ -1129,6 +1144,15 @@ impl Ipv6Net {
             res.extend(iter);
         }
         res
+    }
+}
+
+impl Default for Ipv6Net {
+    fn default() -> Self {
+        Self {
+            addr: Ipv6Addr::from(0),
+            prefix_len: 0,
+        }
     }
 }
 
