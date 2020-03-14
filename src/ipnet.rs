@@ -1723,4 +1723,22 @@ mod tests {
         assert_eq!(Ipv4Net::aggregate(&ipv4_nets), ipv4_aggs);
         assert_eq!(Ipv6Net::aggregate(&ipv6_nets), ipv6_aggs);
     }
+
+    #[test]
+    fn ipnet_default() {
+        let ipnet: IpNet = "0.0.0.0/0".parse().unwrap();
+        assert_eq!(ipnet, IpNet::default());
+    }
+
+    #[test]
+    fn ipv4net_default() {
+        let ipnet: Ipv4Net = "0.0.0.0/0".parse().unwrap();
+        assert_eq!(ipnet, Ipv4Net::default());
+    }
+
+    #[test]
+    fn ipv6net_default() {
+        let ipnet: Ipv6Net = "::/0".parse().unwrap();
+        assert_eq!(ipnet, Ipv6Net::default());
+    }
 }
