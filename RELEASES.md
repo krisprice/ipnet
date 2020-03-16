@@ -1,5 +1,11 @@
 # Releases
 
+## Version 2.3.0 (2020-03-15)
+
+* Merge @imp's `Default` implementation. See #18. `Ipv4Net` and `Ipv6Net` now default to 0.0.0.0/0 and ::/0 respectively. `IpNet` defaults to the 0/0 `Ipv4Net`.
+
+* Add `#[allow(arithmetic_overflow)]` for `Ipv4AddrRange::count()` and `Ipv6AddrRange::count()`. Since 1.43.0-nightly it gives a build error but this panic behavior is desired. In future it may be replaced with explicit use of `panic!`. See #21.
+
 ## Version 2.2.0 (2020-02-02)
 
 * Implement `From<IpAddr>`, `From<Ipv4Addr>`, and `From<Ipv6Addr>` for `IpNet`, `Ipv4Net`, and `Ipv6Net` respectively.
