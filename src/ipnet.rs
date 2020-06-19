@@ -348,6 +348,28 @@ impl IpNet {
             IpNet::V6(ref a) => IpAddrRange::V6(a.hosts()),
         }
     }
+
+    /// Returns the amount of host addesses in this network.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use ipnet::IpNet;
+    /// let addr : IpNet = "10.0.0.0/32".parse().unwrap();
+    /// assert_eq!(addr.host_count(), 1u128);
+    ///
+    /// let v4s24 : IpNet = "10.0.0.0/24".parse().unwrap();
+    /// assert_eq!(v4s24.host_count(), 256u128);
+    ///
+    /// let v6s48 : IpNet = "dead:beef::/48".parse().unwrap();
+    /// assert_eq!(v6s48.host_count(), 1208925819614629174706176u128);
+    /// ```
+    pub fn host_count(&self) -> u128 {
+        match *self {
+            IpNet::V4(ref a) => a.host_count() as u128,
+            IpNet::V6(ref a) => a.host_count(),
+        }
+    }
     
     /// Returns an `Iterator` over the subnets of this network with the
     /// given prefix length.
@@ -722,6 +744,11 @@ impl Ipv4Net {
         Ipv4AddrRange::new(start, end)
     }
 
+    /// Returns the amount of host addesses in this network.
+    pub fn host_count(&self) -> u32 {
+        2u32.pow((self.max_prefix_len() as u8 - self.prefix_len()).into())
+    }
+
     /// Returns an `Iterator` over the subnets of this network with the
     /// given prefix length.
     ///
@@ -1039,6 +1066,11 @@ impl Ipv6Net {
     /// ```
     pub fn hosts(&self) -> Ipv6AddrRange {
         Ipv6AddrRange::new(self.network(), self.broadcast())
+    }
+
+    /// Returns the amount of host addesses in this network.
+    pub fn host_count(&self) -> u128 {
+        2u128.pow((self.max_prefix_len() as u8 - self.prefix_len()).into())
     }
 
     /// Returns an `Iterator` over the subnets of this network with the
