@@ -1371,6 +1371,41 @@ pub struct Ipv6Subnets {
     end: Ipv6Addr, // end is inclusive
     min_prefix_len: u8,
 }
+/// An `Iterator` that generates IP network addresses up to a given
+/// prefix length.
+///
+/// Generates the supernets between the provided `start` IP network
+/// address to the prefix length provided.  Each iteration generates the
+/// next network address of the largest valid size it can, while using a
+/// prefix length not less than `min_prefix_len`.
+///
+/// # Examples
+///
+/// ```
+/// use ipnet::IpNet;
+/// use ipnet::IpSupernets;
+///
+/// fn main() {
+///     let ip6_start = "2001:db8:cafe::/48".parse::<IpNet>().unwrap();
+///     let ip6_supernets = IpSupernets::new(ip6_start, 32);
+///
+///     let ip4_start = "192.0.2.248/29".parse::<IpNet>().unwrap();
+///     let ip4_supernets = IpSupernets::new(ip4_start, 24);
+///
+///     for net in ip6_supernets {
+///         println!("{:?}", net);
+///     }
+///
+///     for net in ip4_supernets {
+///         println!("{:?}", net);
+///     }
+/// }
+/// ```
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub struct IpSupernets {
+    network: IpNet,
+    min_prefix_len: u8,
+}
 
 impl Ipv4Subnets {
     pub fn new(start: Ipv4Addr, end: Ipv4Addr, min_prefix_len: u8) -> Self {
@@ -1387,6 +1422,15 @@ impl Ipv6Subnets {
         Ipv6Subnets {
             start: start,
             end: end,
+            min_prefix_len: min_prefix_len,
+        }
+    }
+}
+
+impl IpSupernets {
+    pub fn new(network: IpNet, min_prefix_len: u8) -> Self {
+        IpSupernets {
+            network: network,
             min_prefix_len: min_prefix_len,
         }
     }
@@ -1411,6 +1455,26 @@ impl Iterator for IpSubnets {
         match *self {
             IpSubnets::V4(ref mut a) => a.next().map(IpNet::V4),
             IpSubnets::V6(ref mut a) => a.next().map(IpNet::V6),
+        }
+    }
+}
+
+impl Iterator for IpSupernets {
+    type Item = IpNet;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.network.prefix_len().partial_cmp(&self.min_prefix_len) {
+            Some(Less) => { 
+                // handle end condition
+                None
+            }
+            _ => {
+                // calc next, return current
+                let current = self.network;
+                self.network = current.supernet().unwrap();
+
+                Some(current)
+            }
         }
     }
 }
