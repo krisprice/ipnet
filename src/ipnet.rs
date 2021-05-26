@@ -113,15 +113,11 @@ pub struct PrefixLenError;
 
 impl fmt::Display for PrefixLenError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.write_str(self.description())
+        fmt.write_str("invalid IP prefix length")
     }
 }
 
-impl Error for PrefixLenError {
-    fn description(&self) -> &str {
-        "invalid IP prefix length"
-    }
-}
+impl Error for PrefixLenError {}
 
 impl IpNet {
     /// Returns a copy of the network with the address truncated to the
