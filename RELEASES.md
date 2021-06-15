@@ -1,5 +1,9 @@
 # Releases
 
+## Version 2.3.1 (2020-06-15)
+
+* Merge Fix Error::description() deprecation warning #28.
+
 ## Version 2.3.0 (2020-03-15)
 
 * Merge @imp's `Default` implementation. See #18. `Ipv4Net` and `Ipv6Net` now default to 0.0.0.0/0 and ::/0 respectively. `IpNet` defaults to the 0/0 `Ipv4Net`.
