@@ -1258,7 +1258,7 @@ impl<'a> Contains<&'a Ipv6Addr> for Ipv6Net {
 /// Generates the subnets between the provided `start` and `end` IP
 /// addresses inclusive of `end`. Each iteration generates the next
 /// network address of the largest valid size it can, while using a
-/// prefix lenth not less than `min_prefix_len`.
+/// prefix length not less than `min_prefix_len`.
 ///
 /// # Examples
 ///
@@ -1305,7 +1305,7 @@ pub enum IpSubnets {
 /// Generates the subnets between the provided `start` and `end` IP
 /// addresses inclusive of `end`. Each iteration generates the next
 /// network address of the largest valid size it can, while using a
-/// prefix lenth not less than `min_prefix_len`.
+/// prefix length not less than `min_prefix_len`.
 ///
 /// # Examples
 ///
@@ -1339,7 +1339,7 @@ pub struct Ipv4Subnets {
 /// Generates the subnets between the provided `start` and `end` IP
 /// addresses inclusive of `end`. Each iteration generates the next
 /// network address of the largest valid size it can, while using a
-/// prefix lenth not less than `min_prefix_len`.
+/// prefix length not less than `min_prefix_len`.
 ///
 /// # Examples
 ///
