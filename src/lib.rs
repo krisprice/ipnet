@@ -9,7 +9,7 @@
 //! consistent.
 //! 
 //! The module also provides the [`IpSubnets`], [`Ipv4Subnets`], and
-//! [`Ipv6Subnets`] types for interating over the subnets contained in
+//! [`Ipv6Subnets`] types for iterating over the subnets contained in
 //! an IP address range. The [`IpAddrRange`], [`Ipv4AddrRange`], and
 //! [`Ipv6AddrRange`] types for iterating over IP addresses in a range.
 //! And traits that extend `Ipv4Addr` and `Ipv6Addr` with methods for
