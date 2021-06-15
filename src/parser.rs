@@ -338,12 +338,8 @@ pub struct AddrParseError(());
 
 impl fmt::Display for AddrParseError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.write_str(self.description())
+        fmt.write_str("invalid IP address syntax")
     }
 }
 
-impl Error for AddrParseError {
-    fn description(&self) -> &str {
-        "invalid IP address syntax"
-    }
-}
+impl Error for AddrParseError {}
