@@ -56,7 +56,7 @@ pub enum IpNet {
 /// addresses represented in CIDR notation. See [IETF RFC 4632] for the
 /// CIDR notation.
 ///
-/// [`IpNet`]: enum.IpAddr.html
+/// [`IpNet`]: enum.IpNet.html
 /// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
 /// [IETF RFC 4632]: https://tools.ietf.org/html/rfc4632
 ///
@@ -86,7 +86,7 @@ pub struct Ipv4Net {
 /// addresses represented in CIDR notation. See [IETF RFC 4632] for the
 /// CIDR notation.
 ///
-/// [`IpNet`]: enum.IpAddr.html
+/// [`IpNet`]: enum.IpNet.html
 /// [`FromStr`]: https://doc.rust-lang.org/std/str/trait.FromStr.html
 /// [IETF RFC 4632]: https://tools.ietf.org/html/rfc4632
 ///
