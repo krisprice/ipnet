@@ -79,7 +79,7 @@
 //! [feature]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
 
 #[cfg(feature = "serde")]
-extern crate serde_crate;
+extern crate serde;
 
 pub use self::ipext::{IpAdd, IpSub, IpBitAnd, IpBitOr, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
 pub use self::ipnet::{IpNet, Ipv4Net, Ipv6Net, PrefixLenError, IpSubnets, Ipv4Subnets, Ipv6Subnets};

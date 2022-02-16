@@ -12,16 +12,11 @@ documentation = "https://docs.rs/ipnet"
 
 [features]
 default = []
-# Implements "serde::Serialize" and "serde::Deserialize".
-serde = ["serde_crate"]
 # Implements "schemars::JsonSchema". Also implies "serde".
 json = ["serde", "schemars"]
 
 [dependencies]
-# "serde" is renamed to "serde_crate" to avoid a feature vs dependency
-# name conflict. For more context:
-# https://github.com/rust-lang/api-guidelines/discussions/180
-serde_crate = { package = "serde", version = "1", features = ["derive"], optional = true }
+serde = { package = "serde", version = "1", features = ["derive"], optional = true }
 schemars = { version = "0.8", optional = true }
 
 [dev-dependencies]

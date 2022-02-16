@@ -1,9 +1,9 @@
 use {IpNet, Ipv4Net, Ipv6Net};
 use std::fmt;
 use std::net::{Ipv4Addr, Ipv6Addr};
-use serde_crate::{self, Serialize, Deserialize, Serializer, Deserializer};
-use serde_crate::ser::SerializeTuple;
-use serde_crate::de::{EnumAccess, Error, VariantAccess, Visitor};
+use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
+use serde::ser::SerializeTuple;
+use serde::de::{EnumAccess, Error, VariantAccess, Visitor};
 
 impl Serialize for IpNet {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -49,7 +49,6 @@ impl<'de> Deserialize<'de> for IpNet {
             struct EnumVisitor;
 
             #[derive(Serialize, Deserialize)]
-            #[serde(crate = "serde_crate")]
             enum IpNetKind {
                 V4,
                 V6,
@@ -118,7 +117,7 @@ impl<'de> Deserialize<'de> for Ipv4Net {
             deserializer.deserialize_str(IpAddrVisitor)
         } else {
             let b = <[u8; 5]>::deserialize(deserializer)?;
-            Ipv4Net::new(Ipv4Addr::new(b[0], b[1], b[2], b[3]), b[4]).map_err(serde_crate::de::Error::custom)
+            Ipv4Net::new(Ipv4Addr::new(b[0], b[1], b[2], b[3]), b[4]).map_err(serde::de::Error::custom)
         }
     }
 }
