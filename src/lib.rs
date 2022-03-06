@@ -79,7 +79,6 @@
 //! [feature]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
 
 #[cfg(feature = "serde")]
-#[macro_use]
 extern crate serde;
 
 pub use self::ipext::{IpAdd, IpSub, IpBitAnd, IpBitOr, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};

@@ -10,8 +10,14 @@ categories = ["network-programming"]
 readme = "README.md"
 documentation = "https://docs.rs/ipnet"
 
+[features]
+default = []
+# Implements "schemars::JsonSchema". Also implies "serde".
+json = ["serde", "schemars"]
+
 [dependencies]
-serde = { version = "1", features = ["derive"], optional = true }
+serde = { package = "serde", version = "1", features = ["derive"], optional = true }
+schemars = { version = "0.8", optional = true }
 
 [dev-dependencies]
 serde_test = "1"
