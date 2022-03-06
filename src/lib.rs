@@ -55,7 +55,7 @@
 //! [`IpAdd`]: trait.IpAdd.html
 //! [`IpSub`]: trait.IpSub.html
 //! [`IpBitAnd`]: trait.IpBitAnd.html
-//! [`IpBitOr`]: trait.IpBitOr.htmll
+//! [`IpBitOr`]: trait.IpBitOr.html
 //!
 //! # Serde support
 //!
