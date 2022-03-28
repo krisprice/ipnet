@@ -40,7 +40,6 @@ use ipext::{IpAdd, IpSub, IpStep, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
 /// assert_eq!(Ok(net.network()), "fd00::".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[cfg_attr(feature = "json", derive(schemars::JsonSchema))]
 pub enum IpNet {
     V4(Ipv4Net),
     V6(Ipv6Net),
@@ -71,7 +70,6 @@ pub enum IpNet {
 /// assert_eq!(Ok(net.network()), "10.1.1.0".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[cfg_attr(feature = "json", derive(schemars::JsonSchema))]
 pub struct Ipv4Net {
     addr: Ipv4Addr,
     prefix_len: u8,
@@ -102,7 +100,6 @@ pub struct Ipv4Net {
 /// assert_eq!(Ok(net.network()), "fd00::".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[cfg_attr(feature = "json", derive(schemars::JsonSchema))]
 pub struct Ipv6Net {
     addr: Ipv6Addr,
     prefix_len: u8,
