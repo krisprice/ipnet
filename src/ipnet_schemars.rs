@@ -13,13 +13,13 @@ impl JsonSchema for Ipv4Net {
         Schema::Object(SchemaObject {
             metadata: Some(Box::new(Metadata {
                 title: Some("Ipv4 Network".to_string()),
-                description: Some("Ipv6 address with prefix".to_string()),
+                description: Some("Ipv4 address with subnet mask".to_string()),
                 examples: vec![schemars::_serde_json::Value::String("0.0.0.0/0".to_string())],
                 ..Default::default()
             })),
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::String))),
             string: Some(Box::new(StringValidation {
-                pattern: Some(r#"^([01]?\d\d?|2[0-4]\d|25[0-5])(?:\.(?:[01]?\d\d?|2[0-4]\d|25[0-5])){3}(?:/[0-2]\d|/3[0-2])?$"#.to_string()),
+                pattern: Some(r#"\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])\.){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\/(?:(?:3([0-2])|[0-2]?[0-9]))\b$"#),
                 ..Default::default()
             })),
             ..Default::default()
