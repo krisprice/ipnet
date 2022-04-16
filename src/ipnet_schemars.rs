@@ -12,14 +12,19 @@ impl JsonSchema for Ipv4Net {
     fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
         Schema::Object(SchemaObject {
             metadata: Some(Box::new(Metadata {
-                title: Some("Ipv4 Network".to_string()),
-                description: Some("Ipv4 address with subnet mask".to_string()),
-                examples: vec![schemars::_serde_json::Value::String("0.0.0.0/0".to_string())],
+                title: Some("IPv4 network".to_string()),
+                description: Some("An IPv4 address with prefix length".to_string()),
+                examples: vec![
+                    schemars::_serde_json::Value::String("0.0.0.0/0".to_string()),
+                    schemars::_serde_json::Value::String("192.168.0.0/24".to_string()),
+                ],
                 ..Default::default()
             })),
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::String))),
             string: Some(Box::new(StringValidation {
-                pattern: Some(r#"\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])\.){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\/(?:(?:3([0-2])|[0-2]?[0-9]))\b$"#.to_string()),
+                max_length: Some(18),
+                min_length: None,
+                pattern: Some(r#"^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/(?:3[0-2]|[1-2][0-9]|[0-9])$"#.to_string()),
                 ..Default::default()
             })),
             ..Default::default()
@@ -34,14 +39,19 @@ impl JsonSchema for Ipv6Net {
     fn json_schema(_gen: &mut SchemaGenerator) -> Schema {
         Schema::Object(SchemaObject {
             metadata: Some(Box::new(Metadata {
-                title: Some("Ipv6 Network".to_string()),
-                description: Some("Ipv6 address with prefix".to_string()),
-                examples: vec![schemars::_serde_json::Value::String("::/0".to_string())],
+                title: Some("IPv6 network".to_string()),
+                description: Some("An IPv6 address with prefix length".to_string()),
+                examples: vec![
+                    schemars::_serde_json::Value::String("::/0".to_string()),
+                    schemars::_serde_json::Value::String("fd00::/32".to_string()),
+                ],
                 ..Default::default()
             })),
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::String))),
             string: Some(Box::new(StringValidation {
-                pattern: Some(r#"^s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]d|1dd|[1-9]?d)(.(25[0-5]|2[0-4]d|1dd|[1-9]?d)){3}))|:)))(%.+)?s*(\/([0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8]))$"#.to_string()),
+                max_length: Some(43),
+                min_length: None,
+                pattern: Some(r#"^[0-9A-Fa-f:\.]+\/(?:[0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8])$"#.to_string()),
                 ..Default::default()
             })),
             ..Default::default()
@@ -56,8 +66,12 @@ impl JsonSchema for IpNet {
     fn json_schema(gen: &mut SchemaGenerator) -> Schema {
         Schema::Object(SchemaObject {
             metadata: Some(Box::new(Metadata {
-                title: Some("Ip Network".to_string()),
-                description: Some("Ip address (v4 or v6) with Prefix".to_string()),
+                title: Some("IP network".to_string()),
+                description: Some("An IPv4 or IPv6 address with prefix length".to_string()),
+                examples: vec![
+                    schemars::_serde_json::Value::String("192.168.0.0/24".to_string()),
+                    schemars::_serde_json::Value::String("fd00::/32".to_string()),
+                ],
                 ..Default::default()
             })),
             subschemas: Some(Box::new(
