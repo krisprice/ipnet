@@ -7,7 +7,7 @@ use std::iter::FusedIterator;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::option::Option::{Some, None};
 
-use ipext::{IpAdd, IpSub, IpStep, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
+use crate::ipext::{IpAdd, IpSub, IpStep, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
 
 /// An IP network address, either IPv4 or IPv6.
 ///

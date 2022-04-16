@@ -9,6 +9,7 @@ keywords = ["IP", "CIDR", "network", "prefix", "subnet"]
 categories = ["network-programming"]
 readme = "README.md"
 documentation = "https://docs.rs/ipnet"
+edition = "2018"
 
 [features]
 default = []
