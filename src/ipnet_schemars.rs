@@ -19,7 +19,7 @@ impl JsonSchema for Ipv4Net {
             })),
             instance_type: Some(SingleOrVec::Single(Box::new(InstanceType::String))),
             string: Some(Box::new(StringValidation {
-                pattern: Some(r#"\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])\.){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\/(?:(?:3([0-2])|[0-2]?[0-9]))\b$"#),
+                pattern: Some(r#"\b(?:(?:2(?:[0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9])\.){3}(?:(?:2([0-4][0-9]|5[0-5])|[0-1]?[0-9]?[0-9]))\/(?:(?:3([0-2])|[0-2]?[0-9]))\b$"#.to_string()),
                 ..Default::default()
             })),
             ..Default::default()
