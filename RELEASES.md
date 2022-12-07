@@ -1,5 +1,9 @@
 # Releases
 
+## Version 2.6.0
+
+* Add IP netmask to prefix conversion functions and new `with_netmask()` constructors.
+
 ## Version 2.5.0
 
 * Manually implement JsonSchema for IpNet, Ipv4Net, Ipv6Net #41 because default derived JsonSchema does not correspond to Serde representation #40
