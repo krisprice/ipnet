@@ -4,9 +4,12 @@
 //! the `Ipv4Addr` and `Ipv6Addr` types with methods to perform these
 //! operations.
 
-use std::cmp::Ordering::{Less, Equal};
-use std::iter::{FusedIterator, DoubleEndedIterator};
-use std::mem;
+use core::cmp::Ordering::{Equal, Less};
+use core::iter::{DoubleEndedIterator, FusedIterator};
+use core::mem;
+#[cfg(not(feature = "std"))]
+use core::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+#[cfg(feature = "std")]
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 /// Provides a `saturating_add()` method for `Ipv4Addr` and `Ipv6Addr`.
@@ -18,7 +21,11 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 /// # Examples
 ///
 /// ```
+/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
+/// # #[cfg(feature = "std")]
 /// use std::net::{Ipv4Addr, Ipv6Addr};
+/// # #[cfg(not(feature = "std"))]
+/// # use core::net::{Ipv4Addr, Ipv6Addr};
 /// use ipnet::IpAdd;
 ///
 /// let ip0: Ipv4Addr = "192.168.0.0".parse().unwrap();
@@ -58,7 +65,11 @@ pub trait IpAdd<RHS = Self> {
 /// # Examples
 ///
 /// ```
+/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
+/// # #[cfg(feature = "std")]
 /// use std::net::{Ipv4Addr, Ipv6Addr};
+/// # #[cfg(not(feature = "std"))]
+/// # use core::net::{Ipv4Addr, Ipv6Addr};
 /// use ipnet::IpSub;
 ///
 /// let min: Ipv4Addr = "0.0.0.0".parse().unwrap();
@@ -69,7 +80,7 @@ pub trait IpAdd<RHS = Self> {
 /// assert_eq!(ip2.saturating_sub(ip1), 95);
 /// assert_eq!(min.saturating_sub(5), min);
 /// assert_eq!(ip2.saturating_sub(95), ip1);
-/// 
+///
 /// let min: Ipv6Addr = "::".parse().unwrap();
 /// let ip1: Ipv6Addr = "fd00::5".parse().unwrap();
 /// let ip2: Ipv6Addr = "fd00::64".parse().unwrap();
@@ -89,7 +100,11 @@ pub trait IpSub<RHS = Self> {
 /// # Examples
 ///
 /// ```
+/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
+/// # #[cfg(feature = "std")]
 /// use std::net::{Ipv4Addr, Ipv6Addr};
+/// # #[cfg(not(feature = "std"))]
+/// # use core::net::{Ipv4Addr, Ipv6Addr};
 /// use ipnet::IpBitAnd;
 ///
 /// let ip: Ipv4Addr = "192.168.1.1".parse().unwrap();
@@ -98,7 +113,7 @@ pub trait IpSub<RHS = Self> {
 ///
 /// assert_eq!(ip.bitand(mask), res);
 /// assert_eq!(ip.bitand(0xffff0000), res);
-/// 
+///
 /// let ip: Ipv6Addr = "fd00:1234::1".parse().unwrap();
 /// let mask: Ipv6Addr = "ffff::".parse().unwrap();
 /// let res: Ipv6Addr = "fd00::".parse().unwrap();
@@ -116,7 +131,11 @@ pub trait IpBitAnd<RHS = Self> {
 /// # Examples
 ///
 /// ```
+/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
+/// # #[cfg(feature = "std")]
 /// use std::net::{Ipv4Addr, Ipv6Addr};
+/// # #[cfg(not(feature = "std"))]
+/// # use core::net::{Ipv4Addr, Ipv6Addr};
 /// use ipnet::IpBitOr;
 ///
 /// let ip: Ipv4Addr = "10.1.1.1".parse().unwrap();
@@ -125,7 +144,7 @@ pub trait IpBitAnd<RHS = Self> {
 ///
 /// assert_eq!(ip.bitor(mask), res);
 /// assert_eq!(ip.bitor(0x000000ff), res);
-/// 
+///
 /// let ip: Ipv6Addr = "fd00::1".parse().unwrap();
 /// let mask: Ipv6Addr = "::ffff:ffff".parse().unwrap();
 /// let res: Ipv6Addr = "fd00::ffff:ffff".parse().unwrap();
@@ -139,7 +158,7 @@ pub trait IpBitOr<RHS = Self> {
 }
 
 macro_rules! ip_add_impl {
-    ($lhs:ty, $rhs:ty, $output:ty, $inner:ty) => (
+    ($lhs:ty, $rhs:ty, $output:ty, $inner:ty) => {
         impl IpAdd<$rhs> for $lhs {
             type Output = $output;
 
@@ -149,11 +168,11 @@ macro_rules! ip_add_impl {
                 (lhs.saturating_add(rhs.into())).into()
             }
         }
-    )
+    };
 }
 
 macro_rules! ip_sub_impl {
-    ($lhs:ty, $rhs:ty, $output:ty, $inner:ty) => (
+    ($lhs:ty, $rhs:ty, $output:ty, $inner:ty) => {
         impl IpSub<$rhs> for $lhs {
             type Output = $output;
 
@@ -163,7 +182,7 @@ macro_rules! ip_sub_impl {
                 (lhs.saturating_sub(rhs.into())).into()
             }
         }
-    )
+    };
 }
 
 ip_add_impl!(Ipv4Addr, u32, Ipv4Addr, u32);
@@ -252,7 +271,11 @@ impl IpStep for Ipv6Addr {
 /// # Examples
 ///
 /// ```
+/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
+/// # #[cfg(feature = "std")]
 /// use std::net::IpAddr;
+/// # #[cfg(not(feature = "std"))]
+/// # use core::net::IpAddr;
 /// use ipnet::{IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
 ///
 /// let hosts = IpAddrRange::from(Ipv4AddrRange::new(
@@ -290,7 +313,11 @@ pub enum IpAddrRange {
 /// # Examples
 ///
 /// ```
+/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
+/// # #[cfg(feature = "std")]
 /// use std::net::Ipv4Addr;
+/// # #[cfg(not(feature = "std"))]
+/// # use core::net::Ipv4Addr;
 /// use ipnet::Ipv4AddrRange;
 ///
 /// let hosts = Ipv4AddrRange::new(
@@ -316,7 +343,11 @@ pub struct Ipv4AddrRange {
 /// # Examples
 ///
 /// ```
+/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
+/// # #[cfg(feature = "std")]
 /// use std::net::Ipv6Addr;
+/// # #[cfg(not(feature = "std"))]
+/// # use core::net::Ipv6Addr;
 /// use ipnet::Ipv6AddrRange;
 ///
 /// let hosts = Ipv6AddrRange::new(
@@ -364,7 +395,7 @@ impl Ipv4AddrRange {
                 let count: u32 = self.end.saturating_sub(self.start);
                 let count = count as u64 + 1; // Never overflows
                 count
-            },
+            }
             Some(Equal) => 1,
             _ => 0,
         }
@@ -387,7 +418,7 @@ impl Ipv6AddrRange {
                 let count = self.end.saturating_sub(self.start);
                 // May overflow or panic
                 count + 1
-            },
+            }
             Some(Equal) => 1,
             _ => 0,
         }
@@ -395,7 +426,10 @@ impl Ipv6AddrRange {
     /// True only if count_u128 does not overflow
     fn can_count_u128(&self) -> bool {
         self.start != Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)
-        || self.end != Ipv6Addr::new(0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff)
+            || self.end
+                != Ipv6Addr::new(
+                    0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff,
+                )
     }
 }
 
@@ -460,11 +494,11 @@ impl Iterator for Ipv4AddrRange {
             Some(Less) => {
                 let next = self.start.add_one();
                 Some(mem::replace(&mut self.start, next))
-            },
+            }
             Some(Equal) => {
                 self.end.replace_zero();
                 Some(self.start.replace_one())
-            },
+            }
             _ => None,
         }
     }
@@ -481,16 +515,16 @@ impl Iterator for Ipv4AddrRange {
                 // so need to explicitly check for overflow.
                 // 'usize::MAX as u32' is okay here - if usize is 64 bits,
                 // value truncates to u32::MAX
-                if count <= std::usize::MAX as u32 {
+                if count <= core::usize::MAX as u32 {
                     count as usize + 1
                 // count overflows usize
                 } else {
                     // emulate standard overflow/panic behavior
-                    std::usize::MAX + 2 + count as usize
+                    core::usize::MAX + 2 + count as usize
                 }
-            },
+            }
             Some(Equal) => 1,
-            _ => 0
+            _ => 0,
         }
     }
 
@@ -508,7 +542,7 @@ impl Iterator for Ipv4AddrRange {
     fn min(self) -> Option<Self::Item> {
         match self.start.partial_cmp(&self.end) {
             Some(Less) | Some(Equal) => Some(self.start),
-            _ => None
+            _ => None,
         }
     }
 
@@ -531,8 +565,8 @@ impl Iterator for Ipv4AddrRange {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let count = self.count_u64();
-        if count > std::usize::MAX as u64 {
-            (std::usize::MAX, None)
+        if count > core::usize::MAX as u64 {
+            (core::usize::MAX, None)
         } else {
             let count = count as usize;
             (count, Some(count))
@@ -548,11 +582,11 @@ impl Iterator for Ipv6AddrRange {
             Some(Less) => {
                 let next = self.start.add_one();
                 Some(mem::replace(&mut self.start, next))
-            },
+            }
             Some(Equal) => {
                 self.end.replace_zero();
                 Some(self.start.replace_one())
-            },
+            }
             _ => None,
         }
     }
@@ -561,12 +595,12 @@ impl Iterator for Ipv6AddrRange {
     fn count(self) -> usize {
         let count = self.count_u128();
         // count fits in usize
-        if count <= std::usize::MAX as u128 {
+        if count <= core::usize::MAX as u128 {
             count as usize
         // count does not fit in usize
         } else {
             // emulate standard overflow/panic behavior
-            std::usize::MAX + 1 + count as usize
+            core::usize::MAX + 1 + count as usize
         }
     }
 
@@ -584,7 +618,7 @@ impl Iterator for Ipv6AddrRange {
     fn min(self) -> Option<Self::Item> {
         match self.start.partial_cmp(&self.end) {
             Some(Less) | Some(Equal) => Some(self.start),
-            _ => None
+            _ => None,
         }
     }
 
@@ -616,14 +650,14 @@ impl Iterator for Ipv6AddrRange {
     fn size_hint(&self) -> (usize, Option<usize>) {
         if self.can_count_u128() {
             let count = self.count_u128();
-            if count > std::usize::MAX as u128 {
-                (std::usize::MAX, None)
+            if count > core::usize::MAX as u128 {
+                (core::usize::MAX, None)
             } else {
                 let count = count as usize;
                 (count, Some(count))
             }
         } else {
-            (std::usize::MAX, None)
+            (core::usize::MAX, None)
         }
     }
 }
@@ -649,12 +683,12 @@ impl DoubleEndedIterator for Ipv4AddrRange {
             Some(Less) => {
                 let next_back = self.end.sub_one();
                 Some(mem::replace(&mut self.end, next_back))
-            },
+            }
             Some(Equal) => {
                 self.end.replace_zero();
                 Some(self.start.replace_one())
-            },
-            _ => None
+            }
+            _ => None,
         }
     }
     fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
@@ -681,12 +715,12 @@ impl DoubleEndedIterator for Ipv6AddrRange {
             Some(Less) => {
                 let next_back = self.end.sub_one();
                 Some(mem::replace(&mut self.end, next_back))
-            },
+            }
             Some(Equal) => {
                 self.end.replace_zero();
                 Some(self.start.replace_one())
-            },
-            _ => None
+            }
+            _ => None,
         }
     }
     fn nth_back(&mut self, n: usize) -> Option<Self::Item> {
@@ -697,8 +731,7 @@ impl DoubleEndedIterator for Ipv6AddrRange {
                 self.end.replace_zero();
                 self.start.replace_one();
                 None
-            }
-            else if n == count - 1 {
+            } else if n == count - 1 {
                 self.end.replace_zero();
                 Some(self.start.replace_one())
             } else {
@@ -722,24 +755,30 @@ impl FusedIterator for Ipv6AddrRange {}
 
 #[cfg(test)]
 mod tests {
-    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-    use std::str::FromStr;
     use super::*;
+    #[cfg(feature = "std")]
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+    #[cfg(not(feature = "std"))]
+    use core::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+    use alloc::{str::FromStr, vec::Vec};
 
     #[test]
     fn test_ipaddrrange() {
         // Next, Next-Back
         let i = Ipv4AddrRange::new(
             Ipv4Addr::from_str("10.0.0.0").unwrap(),
-            Ipv4Addr::from_str("10.0.0.3").unwrap()
+            Ipv4Addr::from_str("10.0.0.3").unwrap(),
         );
 
-        assert_eq!(i.collect::<Vec<Ipv4Addr>>(), vec![
-            Ipv4Addr::from_str("10.0.0.0").unwrap(),
-            Ipv4Addr::from_str("10.0.0.1").unwrap(),
-            Ipv4Addr::from_str("10.0.0.2").unwrap(),
-            Ipv4Addr::from_str("10.0.0.3").unwrap(),
-        ]);
+        assert_eq!(
+            i.collect::<Vec<Ipv4Addr>>(),
+            vec![
+                Ipv4Addr::from_str("10.0.0.0").unwrap(),
+                Ipv4Addr::from_str("10.0.0.1").unwrap(),
+                Ipv4Addr::from_str("10.0.0.2").unwrap(),
+                Ipv4Addr::from_str("10.0.0.3").unwrap(),
+            ]
+        );
 
         let mut v = i.collect::<Vec<_>>();
         v.reverse();
@@ -747,25 +786,31 @@ mod tests {
 
         let i = Ipv4AddrRange::new(
             Ipv4Addr::from_str("255.255.255.254").unwrap(),
-            Ipv4Addr::from_str("255.255.255.255").unwrap()
+            Ipv4Addr::from_str("255.255.255.255").unwrap(),
         );
 
-        assert_eq!(i.collect::<Vec<Ipv4Addr>>(), vec![
-            Ipv4Addr::from_str("255.255.255.254").unwrap(),
-            Ipv4Addr::from_str("255.255.255.255").unwrap(),
-        ]);
+        assert_eq!(
+            i.collect::<Vec<Ipv4Addr>>(),
+            vec![
+                Ipv4Addr::from_str("255.255.255.254").unwrap(),
+                Ipv4Addr::from_str("255.255.255.255").unwrap(),
+            ]
+        );
 
         let i = Ipv6AddrRange::new(
             Ipv6Addr::from_str("fd00::").unwrap(),
             Ipv6Addr::from_str("fd00::3").unwrap(),
         );
 
-        assert_eq!(i.collect::<Vec<Ipv6Addr>>(), vec![
-            Ipv6Addr::from_str("fd00::").unwrap(),
-            Ipv6Addr::from_str("fd00::1").unwrap(),
-            Ipv6Addr::from_str("fd00::2").unwrap(),
-            Ipv6Addr::from_str("fd00::3").unwrap(),
-        ]);
+        assert_eq!(
+            i.collect::<Vec<Ipv6Addr>>(),
+            vec![
+                Ipv6Addr::from_str("fd00::").unwrap(),
+                Ipv6Addr::from_str("fd00::1").unwrap(),
+                Ipv6Addr::from_str("fd00::2").unwrap(),
+                Ipv6Addr::from_str("fd00::3").unwrap(),
+            ]
+        );
 
         let mut v = i.collect::<Vec<_>>();
         v.reverse();
@@ -776,48 +821,60 @@ mod tests {
             Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
         );
 
-        assert_eq!(i.collect::<Vec<Ipv6Addr>>(), vec![
-            Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe").unwrap(),
-            Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
-        ]);
-        
+        assert_eq!(
+            i.collect::<Vec<Ipv6Addr>>(),
+            vec![
+                Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe").unwrap(),
+                Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
+            ]
+        );
+
         let i = IpAddrRange::from(Ipv4AddrRange::new(
             Ipv4Addr::from_str("10.0.0.0").unwrap(),
             Ipv4Addr::from_str("10.0.0.3").unwrap(),
         ));
 
-        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
-            IpAddr::from_str("10.0.0.0").unwrap(),
-            IpAddr::from_str("10.0.0.1").unwrap(),
-            IpAddr::from_str("10.0.0.2").unwrap(),
-            IpAddr::from_str("10.0.0.3").unwrap(),
-        ]);
+        assert_eq!(
+            i.collect::<Vec<IpAddr>>(),
+            vec![
+                IpAddr::from_str("10.0.0.0").unwrap(),
+                IpAddr::from_str("10.0.0.1").unwrap(),
+                IpAddr::from_str("10.0.0.2").unwrap(),
+                IpAddr::from_str("10.0.0.3").unwrap(),
+            ]
+        );
 
         let mut v = i.collect::<Vec<_>>();
         v.reverse();
         assert_eq!(v, i.rev().collect::<Vec<_>>());
-        
+
         let i = IpAddrRange::from(Ipv4AddrRange::new(
             Ipv4Addr::from_str("255.255.255.254").unwrap(),
-            Ipv4Addr::from_str("255.255.255.255").unwrap()
+            Ipv4Addr::from_str("255.255.255.255").unwrap(),
         ));
 
-        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
-            IpAddr::from_str("255.255.255.254").unwrap(),
-            IpAddr::from_str("255.255.255.255").unwrap(),
-        ]);
+        assert_eq!(
+            i.collect::<Vec<IpAddr>>(),
+            vec![
+                IpAddr::from_str("255.255.255.254").unwrap(),
+                IpAddr::from_str("255.255.255.255").unwrap(),
+            ]
+        );
 
         let i = IpAddrRange::from(Ipv6AddrRange::new(
             Ipv6Addr::from_str("fd00::").unwrap(),
             Ipv6Addr::from_str("fd00::3").unwrap(),
         ));
 
-        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
-            IpAddr::from_str("fd00::").unwrap(),
-            IpAddr::from_str("fd00::1").unwrap(),
-            IpAddr::from_str("fd00::2").unwrap(),
-            IpAddr::from_str("fd00::3").unwrap(),
-        ]);
+        assert_eq!(
+            i.collect::<Vec<IpAddr>>(),
+            vec![
+                IpAddr::from_str("fd00::").unwrap(),
+                IpAddr::from_str("fd00::1").unwrap(),
+                IpAddr::from_str("fd00::2").unwrap(),
+                IpAddr::from_str("fd00::3").unwrap(),
+            ]
+        );
 
         let mut v = i.collect::<Vec<_>>();
         v.reverse();
@@ -828,10 +885,13 @@ mod tests {
             Ipv6Addr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
         ));
 
-        assert_eq!(i.collect::<Vec<IpAddr>>(), vec![
-            IpAddr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe").unwrap(),
-            IpAddr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
-        ]);
+        assert_eq!(
+            i.collect::<Vec<IpAddr>>(),
+            vec![
+                IpAddr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe").unwrap(),
+                IpAddr::from_str("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff").unwrap(),
+            ]
+        );
 
         // #11 (infinite iterator when start and stop are 0)
         let zero4 = Ipv4Addr::from_str("0.0.0.0").unwrap();
@@ -848,7 +908,7 @@ mod tests {
         // Count
         let i = Ipv4AddrRange::new(
             Ipv4Addr::from_str("10.0.0.0").unwrap(),
-            Ipv4Addr::from_str("10.0.0.3").unwrap()
+            Ipv4Addr::from_str("10.0.0.3").unwrap(),
         );
         assert_eq!(i.count(), 4);
 
@@ -861,7 +921,7 @@ mod tests {
         // Size Hint
         let i = Ipv4AddrRange::new(
             Ipv4Addr::from_str("10.0.0.0").unwrap(),
-            Ipv4Addr::from_str("10.0.0.3").unwrap()
+            Ipv4Addr::from_str("10.0.0.3").unwrap(),
         );
         assert_eq!(i.size_hint(), (4, Some(4)));
 
@@ -876,32 +936,50 @@ mod tests {
             Ipv6Addr::from_str("::").unwrap(),
             Ipv6Addr::from_str("8000::").unwrap(),
         );
-        assert_eq!(i.size_hint(), (std::usize::MAX, None));
+        assert_eq!(i.size_hint(), (core::usize::MAX, None));
 
         // Min, Max, Last
         let i = Ipv4AddrRange::new(
             Ipv4Addr::from_str("10.0.0.0").unwrap(),
-            Ipv4Addr::from_str("10.0.0.3").unwrap()
+            Ipv4Addr::from_str("10.0.0.3").unwrap(),
         );
-        assert_eq!(Iterator::min(i), Some(Ipv4Addr::from_str("10.0.0.0").unwrap()));
-        assert_eq!(Iterator::max(i), Some(Ipv4Addr::from_str("10.0.0.3").unwrap()));
+        assert_eq!(
+            Iterator::min(i),
+            Some(Ipv4Addr::from_str("10.0.0.0").unwrap())
+        );
+        assert_eq!(
+            Iterator::max(i),
+            Some(Ipv4Addr::from_str("10.0.0.3").unwrap())
+        );
         assert_eq!(i.last(), Some(Ipv4Addr::from_str("10.0.0.3").unwrap()));
 
         let i = Ipv6AddrRange::new(
             Ipv6Addr::from_str("fd00::").unwrap(),
             Ipv6Addr::from_str("fd00::3").unwrap(),
         );
-        assert_eq!(Iterator::min(i), Some(Ipv6Addr::from_str("fd00::").unwrap()));
-        assert_eq!(Iterator::max(i), Some(Ipv6Addr::from_str("fd00::3").unwrap()));
+        assert_eq!(
+            Iterator::min(i),
+            Some(Ipv6Addr::from_str("fd00::").unwrap())
+        );
+        assert_eq!(
+            Iterator::max(i),
+            Some(Ipv6Addr::from_str("fd00::3").unwrap())
+        );
         assert_eq!(i.last(), Some(Ipv6Addr::from_str("fd00::3").unwrap()));
 
         // Nth
         let i = Ipv4AddrRange::new(
             Ipv4Addr::from_str("10.0.0.0").unwrap(),
-            Ipv4Addr::from_str("10.0.0.3").unwrap()
+            Ipv4Addr::from_str("10.0.0.3").unwrap(),
         );
-        assert_eq!(i.clone().nth(0), Some(Ipv4Addr::from_str("10.0.0.0").unwrap()));
-        assert_eq!(i.clone().nth(3), Some(Ipv4Addr::from_str("10.0.0.3").unwrap()));
+        assert_eq!(
+            i.clone().nth(0),
+            Some(Ipv4Addr::from_str("10.0.0.0").unwrap())
+        );
+        assert_eq!(
+            i.clone().nth(3),
+            Some(Ipv4Addr::from_str("10.0.0.3").unwrap())
+        );
         assert_eq!(i.clone().nth(4), None);
         assert_eq!(i.clone().nth(99), None);
         let mut i2 = i.clone();
@@ -916,8 +994,14 @@ mod tests {
             Ipv6Addr::from_str("fd00::").unwrap(),
             Ipv6Addr::from_str("fd00::3").unwrap(),
         );
-        assert_eq!(i.clone().nth(0), Some(Ipv6Addr::from_str("fd00::").unwrap()));
-        assert_eq!(i.clone().nth(3), Some(Ipv6Addr::from_str("fd00::3").unwrap()));
+        assert_eq!(
+            i.clone().nth(0),
+            Some(Ipv6Addr::from_str("fd00::").unwrap())
+        );
+        assert_eq!(
+            i.clone().nth(3),
+            Some(Ipv6Addr::from_str("fd00::3").unwrap())
+        );
         assert_eq!(i.clone().nth(4), None);
         assert_eq!(i.clone().nth(99), None);
         let mut i2 = i.clone();
@@ -931,15 +1015,27 @@ mod tests {
         // Nth Back
         let i = Ipv4AddrRange::new(
             Ipv4Addr::from_str("10.0.0.0").unwrap(),
-            Ipv4Addr::from_str("10.0.0.3").unwrap()
+            Ipv4Addr::from_str("10.0.0.3").unwrap(),
         );
-        assert_eq!(i.clone().nth_back(0), Some(Ipv4Addr::from_str("10.0.0.3").unwrap()));
-        assert_eq!(i.clone().nth_back(3), Some(Ipv4Addr::from_str("10.0.0.0").unwrap()));
+        assert_eq!(
+            i.clone().nth_back(0),
+            Some(Ipv4Addr::from_str("10.0.0.3").unwrap())
+        );
+        assert_eq!(
+            i.clone().nth_back(3),
+            Some(Ipv4Addr::from_str("10.0.0.0").unwrap())
+        );
         assert_eq!(i.clone().nth_back(4), None);
         assert_eq!(i.clone().nth_back(99), None);
         let mut i2 = i.clone();
-        assert_eq!(i2.nth_back(1), Some(Ipv4Addr::from_str("10.0.0.2").unwrap()));
-        assert_eq!(i2.nth_back(1), Some(Ipv4Addr::from_str("10.0.0.0").unwrap()));
+        assert_eq!(
+            i2.nth_back(1),
+            Some(Ipv4Addr::from_str("10.0.0.2").unwrap())
+        );
+        assert_eq!(
+            i2.nth_back(1),
+            Some(Ipv4Addr::from_str("10.0.0.0").unwrap())
+        );
         assert_eq!(i2.nth_back(0), None);
         let mut i3 = i.clone();
         assert_eq!(i3.nth_back(99), None);
@@ -949,8 +1045,14 @@ mod tests {
             Ipv6Addr::from_str("fd00::").unwrap(),
             Ipv6Addr::from_str("fd00::3").unwrap(),
         );
-        assert_eq!(i.clone().nth_back(0), Some(Ipv6Addr::from_str("fd00::3").unwrap()));
-        assert_eq!(i.clone().nth_back(3), Some(Ipv6Addr::from_str("fd00::").unwrap()));
+        assert_eq!(
+            i.clone().nth_back(0),
+            Some(Ipv6Addr::from_str("fd00::3").unwrap())
+        );
+        assert_eq!(
+            i.clone().nth_back(3),
+            Some(Ipv6Addr::from_str("fd00::").unwrap())
+        );
         assert_eq!(i.clone().nth_back(4), None);
         assert_eq!(i.clone().nth_back(99), None);
         let mut i2 = i.clone();
