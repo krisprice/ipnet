@@ -12,12 +12,13 @@ documentation = "https://docs.rs/ipnet"
 edition = "2018"
 
 [features]
-default = []
+default = ["std"]
+std = []
 # Implements "schemars::JsonSchema". Also implies "serde".
 json = ["serde", "schemars"]
 
 [dependencies]
-serde = { package = "serde", version = "1", features = ["derive"], optional = true }
+serde = { package = "serde", version = "1", features = ["derive"], optional = true, default-features=false }
 schemars = { version = "0.8", optional = true }
 
 [dev-dependencies]
