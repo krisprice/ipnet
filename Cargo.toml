@@ -16,10 +16,12 @@ default = ["std"]
 std = []
 # Implements "schemars::JsonSchema". Also implies "serde".
 json = ["serde", "schemars"]
+ser_as_str = ["heapless"]
 
 [dependencies]
 serde = { package = "serde", version = "1", features = ["derive"], optional = true, default-features=false }
 schemars = { version = "0.8", optional = true }
+heapless = { version = "*", optional = true }
 
 [dev-dependencies]
 serde_test = "1"
