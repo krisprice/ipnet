@@ -143,7 +143,7 @@ fn main() {
 extern crate ipnet;
 use ipnet::IpNet;
 
-fn main() {}
+fn main() {
     // Example input list of overlapping and adjacent prefixes.
 
     let strings = vec![
