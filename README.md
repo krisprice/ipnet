@@ -32,6 +32,11 @@ fn main() {
     let net4 = Ipv4Net::new(Ipv4Addr::new(10, 1, 1, 0), 24).unwrap();
     let net6 = Ipv6Net::new(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0), 24).unwrap();
 
+    // They can also be verified at compile time if the prefix length is known at compile time.
+
+    let net4 = Ipv4Net::new_const::<24>(Ipv4Addr::new(10, 1, 1, 0));
+    let net6 = Ipv6Net::new_const::<24>(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0));
+
     // They can also be created from string representations.
 
     let net4 = Ipv4Net::from_str("10.1.1.0/24").unwrap();

@@ -131,6 +131,11 @@ impl fmt::Display for PrefixLenError {
 
 impl Error for PrefixLenError {}
 
+struct AssertPrefixLen<const PREFIX_LEN: u8, const MAX_PREFIX_LEN: u8>;
+impl<const PREFIX_LEN: u8, const MAX_PREFIX_LEN: u8> AssertPrefixLen<PREFIX_LEN, MAX_PREFIX_LEN> {
+    const OK: () = assert!(PREFIX_LEN <= MAX_PREFIX_LEN, ("PREFIX_LEN too big for this type"));
+}
+
 impl IpNet {
     /// Creates a new IP network address from an `IpAddr` and prefix
     /// length.
@@ -152,6 +157,31 @@ impl IpNet {
             IpAddr::V4(a) => Ipv4Net::new(a, prefix_len)?.into(),
             IpAddr::V6(a) => Ipv6Net::new(a, prefix_len)?.into(),
         })
+    }
+
+    /// Creates a new IP network address from an `IpAddr` and prefix
+    /// length verified at compile time.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+    /// use ipnet::{IpNet};
+    ///
+    /// const NET: IpNet = IpNet::new_const::<24>(IpAddr::V4(Ipv4Addr::new(10, 1, 1, 0)));
+    /// assert_eq!(NET.prefix_len(), 24);
+    ///
+    /// let net = IpNet::new_const::<24>(Ipv6Addr::LOCALHOST.into());
+    /// assert_eq!(net.prefix_len(), 24);
+    ///
+    /// // This code does not compile:
+    /// // let bad_prefix_len = IpNet::new_const::<129>(Ipv6Addr::LOCALHOST.into());
+    /// ```
+    pub const fn new_const<const PREFIX_LEN: u8>(ip: IpAddr) -> IpNet {
+        match ip {
+            IpAddr::V4(a) => IpNet::V4(Ipv4Net::new_const::<PREFIX_LEN>(a)),
+            IpAddr::V6(a) => IpNet::V6(Ipv6Net::new_const::<PREFIX_LEN>(a)),
+        }
     }
 
     /// Creates a new IP network address from an `IpAddr` and netmask.
@@ -597,6 +627,30 @@ impl Ipv4Net {
         Ok(Ipv4Net { addr: ip, prefix_len: prefix_len })
     }
 
+    /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
+    /// length verified at compile time.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv4Addr;
+    /// use ipnet::{Ipv4Net};
+    ///
+    /// const NET: Ipv4Net = Ipv4Net::new_const::<24>(Ipv4Addr::new(10, 1, 1, 0));
+    /// assert_eq!(NET.prefix_len(), 24);
+    ///
+    /// let net = Ipv4Net::new_const::<24>(Ipv4Addr::new(10, 1, 1, 0));
+    /// assert_eq!(net.prefix_len(), 24);
+    ///
+    /// // This does not compile:
+    /// // let bad_prefix_len = Ipv4Net::new_const::<33>(Ipv4Addr::new(10, 1, 1, 0));
+    /// ```
+    #[inline]
+    pub const fn new_const<const PREFIX_LEN: u8>(ip: Ipv4Addr) -> Ipv4Net {
+        let _ = AssertPrefixLen::<PREFIX_LEN, 32>::OK;
+        Ipv4Net { addr: ip, prefix_len: PREFIX_LEN }
+    }
+
     /// Creates a new IPv4 network address from an `Ipv4Addr` and netmask.
     ///
     /// # Examples
@@ -952,6 +1006,30 @@ impl Ipv6Net {
             return Err(PrefixLenError);
         }
         Ok(Ipv6Net { addr: ip, prefix_len: prefix_len })
+    }
+
+    /// Creates a new IPv6 network address from an `Ipv6Addr` and prefix
+    /// length verified at compile time.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv6Addr;
+    /// use ipnet::{Ipv6Net};
+    ///
+    /// const NET: Ipv6Net = Ipv6Net::new_const::<24>(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0));
+    /// assert_eq!(NET.prefix_len(), 24);
+    ///
+    /// let net = Ipv6Net::new_const::<24>(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0));
+    /// assert_eq!(net.prefix_len(), 24);
+    ///
+    /// // This does not compile:
+    /// // let bad_prefix_len = Ipv6Net::new_const::<129>(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0));
+    /// ```
+    #[inline]
+    pub const fn new_const<const PREFIX_LEN: u8>(ip: Ipv6Addr) -> Ipv6Net {
+        let _ = AssertPrefixLen::<PREFIX_LEN, 128>::OK;
+        Ipv6Net { addr: ip, prefix_len: PREFIX_LEN }
     }
 
     /// Creates a new IPv6 network address from an `Ipv6Addr` and netmask.
@@ -1879,5 +1957,18 @@ mod tests {
     fn ipv6net_default() {
         let ipnet: Ipv6Net = "::/0".parse().unwrap();
         assert_eq!(ipnet, Ipv6Net::default());
+    }
+
+    #[test]
+    fn new_const() {
+        const _: Ipv4Net = Ipv4Net::new_const::<0>(Ipv4Addr::new(0, 0, 0, 0));
+        const _: Ipv4Net = Ipv4Net::new_const::<32>(Ipv4Addr::new(0, 0, 0, 0));
+        const _: Ipv6Net = Ipv6Net::new_const::<0>(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0));
+        const _: Ipv6Net = Ipv6Net::new_const::<128>(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0));
+
+        let _ = Ipv4Net::new_const::<0>(Ipv4Addr::new(0, 0, 0, 0));
+        let _ = Ipv4Net::new_const::<32>(Ipv4Addr::new(0, 0, 0, 0));
+        let _ = Ipv6Net::new_const::<0>(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0));
+        let _ = Ipv6Net::new_const::<128>(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0));
     }
 }
