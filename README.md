@@ -32,6 +32,16 @@ fn main() {
     let net4 = Ipv4Net::new(Ipv4Addr::new(10, 1, 1, 0), 24).unwrap();
     let net6 = Ipv6Net::new(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0), 24).unwrap();
 
+    // They can also be created by a constructor that panics when the prefix length is invalid,
+
+    let net4 = Ipv4Net::new_assert(Ipv4Addr::new(10, 1, 1, 0), 24);
+    let net6 = Ipv6Net::new_assert(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0), 24);
+
+    // or does not compile when called from a const context.
+
+    const NET4: Ipv4Net = Ipv4Net::new_assert(Ipv4Addr::new(10, 1, 1, 0), 24);
+    const NET6: Ipv6Net = Ipv6Net::new_assert(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0), 24);
+
     // They can also be created from string representations.
 
     let net4 = Ipv4Net::from_str("10.1.1.0/24").unwrap();
