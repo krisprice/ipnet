@@ -1,5 +1,10 @@
 # Releases
 
+## Version 2.10.0
+
+* Add new_assert implementations #57 
+* Remove redundant curly braces so that the example program can compile #53 
+
 ## Version 2.9.0
 
 *  Add ser_as_str feature to serialize using serialize_str() #52 
