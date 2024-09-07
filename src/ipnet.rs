@@ -154,6 +154,38 @@ impl IpNet {
         })
     }
 
+    /// Creates a new IP network address from an `IpAddr` and prefix
+    /// length. If called from a const context it will verify prefix length
+    /// at compile time. Otherwise it will panic at runtime if prefix length
+    /// is incorrect for a given IpAddr type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+    /// use ipnet::{IpNet};
+    ///
+    /// // This code is verified at compile time:
+    /// const NET: IpNet = IpNet::new_assert(IpAddr::V4(Ipv4Addr::new(10, 1, 1, 0)), 24);
+    /// assert_eq!(NET.prefix_len(), 24);
+    ///
+    /// // This code is verified at runtime:
+    /// let net = IpNet::new_assert(Ipv6Addr::LOCALHOST.into(), 24);
+    /// assert_eq!(net.prefix_len(), 24);
+    ///
+    /// // This code does not compile:
+    /// // const BAD_PREFIX_LEN: IpNet = IpNet::new_assert(IpAddr::V4(Ipv4Addr::new(10, 1, 1, 0)), 33);
+    ///
+    /// // This code panics at runtime:
+    /// // let bad_prefix_len = IpNet::new_assert(Ipv6Addr::LOCALHOST.into(), 129);
+    /// ```
+    pub const fn new_assert(ip: IpAddr, prefix_len: u8) -> IpNet {
+        match ip {
+            IpAddr::V4(a) => IpNet::V4(Ipv4Net::new_assert(a, prefix_len)),
+            IpAddr::V6(a) => IpNet::V6(Ipv6Net::new_assert(a, prefix_len)),
+        }
+    }
+
     /// Creates a new IP network address from an `IpAddr` and netmask.
     ///
     /// # Examples
@@ -597,6 +629,37 @@ impl Ipv4Net {
         Ok(Ipv4Net { addr: ip, prefix_len: prefix_len })
     }
 
+    /// Creates a new IPv4 network address from an `Ipv4Addr` and prefix
+    /// length. If called from a const context it will verify prefix length
+    /// at compile time. Otherwise it will panic at runtime if prefix length
+    /// is not less then or equal to 32.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv4Addr;
+    /// use ipnet::{Ipv4Net};
+    ///
+    /// // This code is verified at compile time:
+    /// const NET: Ipv4Net = Ipv4Net::new_assert(Ipv4Addr::new(10, 1, 1, 0), 24);
+    /// assert_eq!(NET.prefix_len(), 24);
+    ///
+    /// // This code is verified at runtime:
+    /// let net = Ipv4Net::new_assert(Ipv4Addr::new(10, 1, 1, 0), 24);
+    /// assert_eq!(NET.prefix_len(), 24);
+    ///
+    /// // This code does not compile:
+    /// // const BAD_PREFIX_LEN: Ipv4Net = Ipv4Net::new_assert(Ipv4Addr::new(10, 1, 1, 0), 33);
+    ///
+    /// // This code panics at runtime:
+    /// // let bad_prefix_len = Ipv4Net::new_assert(Ipv4Addr::new(10, 1, 1, 0), 33);
+    /// ```
+    #[inline]
+    pub const fn new_assert(ip: Ipv4Addr, prefix_len: u8) -> Ipv4Net {
+        assert!(prefix_len <= 32, "PREFIX_LEN must be less then or equal to 32 for Ipv4Net");
+        Ipv4Net { addr: ip, prefix_len: prefix_len }
+    }
+
     /// Creates a new IPv4 network address from an `Ipv4Addr` and netmask.
     ///
     /// # Examples
@@ -952,6 +1015,37 @@ impl Ipv6Net {
             return Err(PrefixLenError);
         }
         Ok(Ipv6Net { addr: ip, prefix_len: prefix_len })
+    }
+
+    /// Creates a new IPv6 network address from an `Ipv6Addr` and prefix
+    /// length. If called from a const context it will verify prefix length
+    /// at compile time. Otherwise it will panic at runtime if prefix length
+    /// is not less then or equal to 128.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::net::Ipv6Addr;
+    /// use ipnet::{Ipv6Net};
+    ///
+    /// // This code is verified at compile time:
+    /// const NET: Ipv6Net = Ipv6Net::new_assert(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0), 24);
+    /// assert_eq!(NET.prefix_len(), 24);
+    ///
+    /// // This code is verified at runtime:
+    /// let net = Ipv6Net::new_assert(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0), 24);
+    /// assert_eq!(net.prefix_len(), 24);
+    ///
+    /// // This code does not compile:
+    /// // const BAD_PREFIX_LEN: Ipv6Net = Ipv6Net::new_assert(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0), 129);
+    ///
+    /// // This code panics at runtime:
+    /// // let bad_prefix_len = Ipv6Addr::new_assert(Ipv6Addr::new(0xfd, 0, 0, 0, 0, 0, 0, 0), 129);
+    /// ```
+    #[inline]
+    pub const fn new_assert(ip: Ipv6Addr, prefix_len: u8) -> Ipv6Net {
+        assert!(prefix_len <= 128, "PREFIX_LEN must be less then or equal to 128 for Ipv6Net");
+        Ipv6Net { addr: ip, prefix_len: prefix_len }
     }
 
     /// Creates a new IPv6 network address from an `Ipv6Addr` and netmask.
@@ -1879,5 +1973,30 @@ mod tests {
     fn ipv6net_default() {
         let ipnet: Ipv6Net = "::/0".parse().unwrap();
         assert_eq!(ipnet, Ipv6Net::default());
+    }
+
+    #[test]
+    fn new_assert() {
+        const _: Ipv4Net = Ipv4Net::new_assert(Ipv4Addr::new(0, 0, 0, 0), 0);
+        const _: Ipv4Net = Ipv4Net::new_assert(Ipv4Addr::new(0, 0, 0, 0), 32);
+        const _: Ipv6Net = Ipv6Net::new_assert(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 0);
+        const _: Ipv6Net = Ipv6Net::new_assert(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 128);
+
+        let _ = Ipv4Net::new_assert(Ipv4Addr::new(0, 0, 0, 0), 0);
+        let _ = Ipv4Net::new_assert(Ipv4Addr::new(0, 0, 0, 0), 32);
+        let _ = Ipv6Net::new_assert(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 0);
+        let _ = Ipv6Net::new_assert(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 128);
+    }
+
+    #[test]
+    #[should_panic]
+    fn ipv4net_new_assert_panics() {
+        let _ = Ipv4Net::new_assert(Ipv4Addr::new(0, 0, 0, 0), 33);
+    }
+
+    #[test]
+    #[should_panic]
+    fn ipv6net_new_assert_panics() {
+        let _ = Ipv6Net::new_assert(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0), 129);
     }
 }
