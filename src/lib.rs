@@ -79,8 +79,6 @@
 //! [feature]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-features-section
 
 #![no_std]
-#![cfg_attr(not(feature = "std"), feature(error_in_core))]
-#![cfg_attr(not(feature = "std"), feature(ip_in_core))]
 
 #[cfg(feature = "std")]
 extern crate std;
