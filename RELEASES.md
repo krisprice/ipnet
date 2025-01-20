@@ -1,5 +1,9 @@
 # Releases
 
+## Version 2.11.0
+
+*  Remove nightly features for no_std #58 
+
 ## Version 2.10.1
 
 * ipnet-2.10.0 Rust crate has executable permission on source files. #59
