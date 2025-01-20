@@ -71,7 +71,6 @@ pub enum IpNet {
 /// # Examples
 ///
 /// ```
-/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
 /// # #[cfg(feature = "std")]
 /// # use std::net::Ipv6Addr;
 /// # #[cfg(not(feature = "std"))]

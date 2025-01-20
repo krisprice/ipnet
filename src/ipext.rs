@@ -21,7 +21,6 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 /// # Examples
 ///
 /// ```
-/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
 /// # #[cfg(not(feature = "std"))]
 /// # use core::net::{Ipv4Addr, Ipv6Addr};
 /// # #[cfg(feature = "std")]
@@ -65,7 +64,6 @@ pub trait IpAdd<RHS = Self> {
 /// # Examples
 ///
 /// ```
-/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
 /// # #[cfg(not(feature = "std"))]
 /// # use core::net::{Ipv4Addr, Ipv6Addr};
 /// # #[cfg(feature = "std")]
@@ -100,7 +98,6 @@ pub trait IpSub<RHS = Self> {
 /// # Examples
 ///
 /// ```
-/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
 /// # #[cfg(not(feature = "std"))]
 /// # use core::net::{Ipv4Addr, Ipv6Addr};
 /// # #[cfg(feature = "std")]
@@ -131,7 +128,6 @@ pub trait IpBitAnd<RHS = Self> {
 /// # Examples
 ///
 /// ```
-/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
 /// # #[cfg(not(feature = "std"))]
 /// # use core::net::{Ipv4Addr, Ipv6Addr};
 /// # #[cfg(feature = "std")]
@@ -309,7 +305,6 @@ pub enum IpAddrRange {
 /// # Examples
 ///
 /// ```
-/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
 /// # #[cfg(not(feature = "std"))]
 /// # use core::net::Ipv4Addr;
 /// # #[cfg(feature = "std")]
@@ -339,7 +334,6 @@ pub struct Ipv4AddrRange {
 /// # Examples
 ///
 /// ``` 
-/// # #![cfg_attr(not(feature = "std"), feature(ip_in_core))]
 /// # #[cfg(not(feature = "std"))]
 /// # use core::net::Ipv6Addr;
 /// # #[cfg(feature = "std")]
