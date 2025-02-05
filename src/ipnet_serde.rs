@@ -2,15 +2,16 @@ use crate::{IpNet, Ipv4Net, Ipv6Net};
 use core::fmt;
 #[cfg(not(feature = "std"))]
 use core::net::{Ipv4Addr, Ipv6Addr};
+use serde::de::{EnumAccess, Error, VariantAccess, Visitor};
+use serde::ser::SerializeTuple;
+use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "std")]
 use std::net::{Ipv4Addr, Ipv6Addr};
-use serde::{self, Serialize, Deserialize, Serializer, Deserializer};
-use serde::ser::SerializeTuple;
-use serde::de::{EnumAccess, Error, VariantAccess, Visitor};
 
 impl Serialize for IpNet {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         if serializer.is_human_readable() {
             match *self {
@@ -28,7 +29,8 @@ impl Serialize for IpNet {
 
 impl<'de> Deserialize<'de> for IpNet {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         if deserializer.is_human_readable() {
             struct IpNetVisitor;
@@ -41,7 +43,8 @@ impl<'de> Deserialize<'de> for IpNet {
                 }
 
                 fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-                    where E: Error
+                where
+                    E: Error,
                 {
                     s.parse().map_err(Error::custom)
                 }
@@ -65,7 +68,8 @@ impl<'de> Deserialize<'de> for IpNet {
                 }
 
                 fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
-                    where A: EnumAccess<'de>
+                where
+                    A: EnumAccess<'de>,
                 {
                     match data.variant()? {
                         (IpNetKind::V4, v) => v.newtype_variant().map(IpNet::V4),
@@ -81,7 +85,8 @@ impl<'de> Deserialize<'de> for IpNet {
 
 impl Serialize for Ipv4Net {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         if serializer.is_human_readable() {
             #[cfg(feature = "ser_as_str")]
@@ -105,7 +110,8 @@ impl Serialize for Ipv4Net {
 
 impl<'de> Deserialize<'de> for Ipv4Net {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         if deserializer.is_human_readable() {
             struct IpAddrVisitor;
@@ -118,7 +124,8 @@ impl<'de> Deserialize<'de> for Ipv4Net {
                 }
 
                 fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-                    where E: Error
+                where
+                    E: Error,
                 {
                     s.parse().map_err(Error::custom)
                 }
@@ -127,14 +134,16 @@ impl<'de> Deserialize<'de> for Ipv4Net {
             deserializer.deserialize_str(IpAddrVisitor)
         } else {
             let b = <[u8; 5]>::deserialize(deserializer)?;
-            Ipv4Net::new(Ipv4Addr::new(b[0], b[1], b[2], b[3]), b[4]).map_err(serde::de::Error::custom)
+            Ipv4Net::new(Ipv4Addr::new(b[0], b[1], b[2], b[3]), b[4])
+                .map_err(serde::de::Error::custom)
         }
     }
 }
 
 impl Serialize for Ipv6Net {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         if serializer.is_human_readable() {
             #[cfg(feature = "ser_as_str")]
@@ -158,7 +167,8 @@ impl Serialize for Ipv6Net {
 
 impl<'de> Deserialize<'de> for Ipv6Net {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         if deserializer.is_human_readable() {
             struct IpAddrVisitor;
@@ -171,7 +181,8 @@ impl<'de> Deserialize<'de> for Ipv6Net {
                 }
 
                 fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-                    where E: Error
+                where
+                    E: Error,
                 {
                     s.parse().map_err(Error::custom)
                 }
@@ -180,12 +191,20 @@ impl<'de> Deserialize<'de> for Ipv6Net {
             deserializer.deserialize_str(IpAddrVisitor)
         } else {
             let b = <[u8; 17]>::deserialize(deserializer)?;
-            Ipv6Net::new(Ipv6Addr::new(
-                ((b[0] as u16) << 8) | b[1] as u16, ((b[2] as u16) << 8) | b[3] as u16,
-                ((b[4] as u16) << 8) | b[5] as u16, ((b[6] as u16) << 8) | b[7] as u16,
-                ((b[8] as u16) << 8) | b[9] as u16, ((b[10] as u16) << 8) | b[11] as u16,
-                ((b[12] as u16) << 8) | b[13] as u16, ((b[14] as u16) << 8) | b[15] as u16
-            ), b[16]).map_err(Error::custom)
+            Ipv6Net::new(
+                Ipv6Addr::new(
+                    ((b[0] as u16) << 8) | b[1] as u16,
+                    ((b[2] as u16) << 8) | b[3] as u16,
+                    ((b[4] as u16) << 8) | b[5] as u16,
+                    ((b[6] as u16) << 8) | b[7] as u16,
+                    ((b[8] as u16) << 8) | b[9] as u16,
+                    ((b[10] as u16) << 8) | b[11] as u16,
+                    ((b[12] as u16) << 8) | b[13] as u16,
+                    ((b[14] as u16) << 8) | b[15] as u16,
+                ),
+                b[16],
+            )
+            .map_err(Error::custom)
         }
     }
 }
@@ -194,24 +213,30 @@ impl<'de> Deserialize<'de> for Ipv6Net {
 mod tests {
     extern crate serde_test;
 
-    use crate::{IpNet, Ipv4Net, Ipv6Net};
     use self::serde_test::{assert_tokens, Configure, Token};
+    use crate::{IpNet, Ipv4Net, Ipv6Net};
 
     #[test]
     fn test_serialize_ipnet_v4() {
         let net_str = "10.1.1.0/24";
         let net: IpNet = net_str.parse().unwrap();
         assert_tokens(&net.readable(), &[Token::Str(net_str)]);
-        assert_tokens(&net.compact(), &[
-            Token::NewtypeVariant { name: "IpNet", variant: "V4", },
-            Token::Tuple { len: 5 },
-            Token::U8(10),
-            Token::U8(1),
-            Token::U8(1),
-            Token::U8(0),
-            Token::U8(24),
-            Token::TupleEnd,
-        ]);
+        assert_tokens(
+            &net.compact(),
+            &[
+                Token::NewtypeVariant {
+                    name: "IpNet",
+                    variant: "V4",
+                },
+                Token::Tuple { len: 5 },
+                Token::U8(10),
+                Token::U8(1),
+                Token::U8(1),
+                Token::U8(0),
+                Token::U8(24),
+                Token::TupleEnd,
+            ],
+        );
     }
 
     #[test]
@@ -219,30 +244,36 @@ mod tests {
         let net_str = "fd00::/32";
         let net: IpNet = net_str.parse().unwrap();
         assert_tokens(&net.readable(), &[Token::Str(net_str)]);
-        assert_tokens(&net.compact(), &[
-            Token::NewtypeVariant { name: "IpNet", variant: "V6", },
-            // This is too painful, but Token::Bytes() seems to be
-            // an array with a length, which is not what we serialize.
-            Token::Tuple { len: 17 },
-            Token::U8(253u8),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(32),
-            Token::TupleEnd,
-        ]);
+        assert_tokens(
+            &net.compact(),
+            &[
+                Token::NewtypeVariant {
+                    name: "IpNet",
+                    variant: "V6",
+                },
+                // This is too painful, but Token::Bytes() seems to be
+                // an array with a length, which is not what we serialize.
+                Token::Tuple { len: 17 },
+                Token::U8(253u8),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(32),
+                Token::TupleEnd,
+            ],
+        );
     }
 
     #[test]
@@ -250,15 +281,18 @@ mod tests {
         let net_str = "10.1.1.0/24";
         let net: Ipv4Net = net_str.parse().unwrap();
         assert_tokens(&net.readable(), &[Token::Str(net_str)]);
-        assert_tokens(&net.compact(), &[
-            Token::Tuple { len: 5 },
-            Token::U8(10),
-            Token::U8(1),
-            Token::U8(1),
-            Token::U8(0),
-            Token::U8(24),
-            Token::TupleEnd,
-        ]);
+        assert_tokens(
+            &net.compact(),
+            &[
+                Token::Tuple { len: 5 },
+                Token::U8(10),
+                Token::U8(1),
+                Token::U8(1),
+                Token::U8(0),
+                Token::U8(24),
+                Token::TupleEnd,
+            ],
+        );
     }
 
     #[test]
@@ -266,28 +300,31 @@ mod tests {
         let net_str = "fd00::/32";
         let net: Ipv6Net = net_str.parse().unwrap();
         assert_tokens(&net.readable(), &[Token::Str(net_str)]);
-        assert_tokens(&net.compact(), &[
-            // This is too painful, but Token::Bytes() seems to be
-            // an array with a length, which is not what we serialize.
-            Token::Tuple { len: 17 },
-            Token::U8(253u8),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(0),
-            Token::U8(32),
-            Token::TupleEnd,
-        ]);
+        assert_tokens(
+            &net.compact(),
+            &[
+                // This is too painful, but Token::Bytes() seems to be
+                // an array with a length, which is not what we serialize.
+                Token::Tuple { len: 17 },
+                Token::U8(253u8),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(0),
+                Token::U8(32),
+                Token::TupleEnd,
+            ],
+        );
     }
 }
