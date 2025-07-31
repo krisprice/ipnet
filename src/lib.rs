@@ -7,7 +7,7 @@
 //! [`IpAddr`], [`Ipv4Addr`], and [`Ipv6Addr`] types already provided in
 //! Rust's standard library and align to their design to stay
 //! consistent.
-//! 
+//!
 //! The module also provides the [`IpSubnets`], [`Ipv4Subnets`], and
 //! [`Ipv6Subnets`] types for iterating over the subnets contained in
 //! an IP address range. The [`IpAddrRange`], [`Ipv4AddrRange`], and
@@ -61,7 +61,7 @@
 //!
 //! This library comes with support for [serde](https://serde.rs) but
 //! it's not enabled by default. Use the `serde` [feature] to enable.
-//! 
+//!
 //! ```toml
 //! [dependencies]
 //! ipnet = { version = "2", features = ["serde"] }
@@ -69,7 +69,7 @@
 //!
 //! For human readable formats (e.g. JSON) the `IpNet`, `Ipv4Net`, and
 //! `Ipv6Net` types will serialize to their `Display` strings.
-//! 
+//!
 //! For compact binary formats (e.g. Bincode) the `Ipv4Net` and
 //! `Ipv6Net` types will serialize to a string of 5 and 17 bytes that
 //! consist of the network address octects followed by the prefix
@@ -86,21 +86,23 @@ extern crate std;
 #[cfg_attr(test, macro_use)]
 extern crate alloc;
 
-#[cfg(feature = "serde")]
-extern crate serde;
 #[cfg(feature = "schemars")]
 extern crate schemars;
+#[cfg(feature = "serde")]
+extern crate serde;
 
-pub use self::ipext::{IpAdd, IpSub, IpBitAnd, IpBitOr, IpAddrRange, Ipv4AddrRange, Ipv6AddrRange};
-pub use self::ipnet::{IpNet, Ipv4Net, Ipv6Net, PrefixLenError, IpSubnets, Ipv4Subnets, Ipv6Subnets};
-pub use self::parser::AddrParseError;
+pub use self::ipext::{IpAdd, IpAddrRange, IpBitAnd, IpBitOr, IpSub, Ipv4AddrRange, Ipv6AddrRange};
+pub use self::ipnet::{
+    IpNet, IpSubnets, Ipv4Net, Ipv4Subnets, Ipv6Net, Ipv6Subnets, PrefixLenError,
+};
 pub use self::mask::{ip_mask_to_prefix, ipv4_mask_to_prefix, ipv6_mask_to_prefix};
+pub use self::parser::AddrParseError;
 
 mod ipext;
 mod ipnet;
-mod parser;
-mod mask;
-#[cfg(feature = "serde")]
-mod ipnet_serde;
 #[cfg(feature = "schemars")]
 mod ipnet_schemars;
+#[cfg(feature = "serde")]
+mod ipnet_serde;
+mod mask;
+mod parser;

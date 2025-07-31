@@ -1,17 +1,21 @@
+use crate::IpNet;
 use crate::Ipv4Net;
 use crate::Ipv6Net;
-use crate::IpNet;
 
 use alloc::{
     boxed::Box,
-    string::{
-        String,
-        ToString
-    },
+    string::{String, ToString},
     vec,
 };
 
-use schemars::{JsonSchema, gen::SchemaGenerator, schema::{SubschemaValidation, Schema, SchemaObject, StringValidation, Metadata, SingleOrVec, InstanceType}};
+use schemars::{
+    gen::SchemaGenerator,
+    schema::{
+        InstanceType, Metadata, Schema, SchemaObject, SingleOrVec, StringValidation,
+        SubschemaValidation,
+    },
+    JsonSchema,
+};
 
 impl JsonSchema for Ipv4Net {
     fn schema_name() -> String {
@@ -37,7 +41,7 @@ impl JsonSchema for Ipv4Net {
                 ..Default::default()
             })),
             ..Default::default()
-        }) 
+        })
     }
 }
 impl JsonSchema for Ipv6Net {
@@ -60,11 +64,13 @@ impl JsonSchema for Ipv6Net {
             string: Some(Box::new(StringValidation {
                 max_length: Some(43),
                 min_length: None,
-                pattern: Some(r#"^[0-9A-Fa-f:\.]+\/(?:[0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8])$"#.to_string()),
+                pattern: Some(
+                    r#"^[0-9A-Fa-f:\.]+\/(?:[0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8])$"#.to_string(),
+                ),
                 ..Default::default()
             })),
             ..Default::default()
-        }) 
+        })
     }
 }
 impl JsonSchema for IpNet {
@@ -83,13 +89,11 @@ impl JsonSchema for IpNet {
                 ],
                 ..Default::default()
             })),
-            subschemas: Some(Box::new(
-                SubschemaValidation {
-                    one_of: Some(vec![Ipv4Net::json_schema(gen), Ipv6Net::json_schema(gen)]),
-                    ..Default::default()
-                }
-            )),
+            subschemas: Some(Box::new(SubschemaValidation {
+                one_of: Some(vec![Ipv4Net::json_schema(gen), Ipv6Net::json_schema(gen)]),
+                ..Default::default()
+            })),
             ..Default::default()
-        }) 
+        })
     }
 }

@@ -4,14 +4,14 @@
 //! is private. It is copied and extended here with methods for parsing
 //! IP network addresses.
 
-use alloc::{str::FromStr, boxed::Box};
-use core::fmt;
+use alloc::{boxed::Box, str::FromStr};
 #[cfg(not(feature = "std"))]
 use core::error::Error;
-#[cfg(feature = "std")]
-use std::error::Error;
+use core::fmt;
 #[cfg(not(feature = "std"))]
 use core::net::{Ipv4Addr, Ipv6Addr};
+#[cfg(feature = "std")]
+use std::error::Error;
 #[cfg(feature = "std")]
 use std::net::{Ipv4Addr, Ipv6Addr};
 
@@ -36,7 +36,8 @@ impl<'a> Parser<'a> {
     }
 
     // Commit only if parser returns Some
-    fn read_atomically<T, F>(&mut self, cb: F) -> Option<T> where
+    fn read_atomically<T, F>(&mut self, cb: F) -> Option<T>
+    where
         F: FnOnce(&mut Parser) -> Option<T>,
     {
         let pos = self.pos;
@@ -48,20 +49,27 @@ impl<'a> Parser<'a> {
     }
 
     // Commit only if parser read till EOF
-    fn read_till_eof<T, F>(&mut self, cb: F) -> Option<T> where
+    fn read_till_eof<T, F>(&mut self, cb: F) -> Option<T>
+    where
         F: FnOnce(&mut Parser) -> Option<T>,
     {
-        self.read_atomically(move |p| {
-            match cb(p) {
-                Some(x) => if p.is_eof() {Some(x)} else {None},
-                None => None,
+        self.read_atomically(move |p| match cb(p) {
+            Some(x) => {
+                if p.is_eof() {
+                    Some(x)
+                } else {
+                    None
+                }
             }
+            None => None,
         })
     }
 
     // Return result of first successful parser
-    fn read_or<T>(&mut self, parsers: &mut [Box<dyn FnMut(&mut Parser) -> Option<T> + 'static>])
-               -> Option<T> {
+    fn read_or<T>(
+        &mut self,
+        parsers: &mut [Box<dyn FnMut(&mut Parser) -> Option<T> + 'static>],
+    ) -> Option<T> {
         for pf in parsers {
             if let Some(r) = self.read_atomically(|p: &mut Parser| pf(p)) {
                 return Some(r);
@@ -71,11 +79,8 @@ impl<'a> Parser<'a> {
     }
 
     // Apply 3 parsers sequentially
-    fn read_seq_3<A, B, C, PA, PB, PC>(&mut self,
-                                       pa: PA,
-                                       pb: PB,
-                                       pc: PC)
-                                       -> Option<(A, B, C)> where
+    fn read_seq_3<A, B, C, PA, PB, PC>(&mut self, pa: PA, pb: PB, pc: PC) -> Option<(A, B, C)>
+    where
         PA: FnOnce(&mut Parser) -> Option<A>,
         PB: FnOnce(&mut Parser) -> Option<B>,
         PC: FnOnce(&mut Parser) -> Option<C>,
@@ -86,7 +91,7 @@ impl<'a> Parser<'a> {
             let c = if b.is_some() { pc(p) } else { None };
             match (a, b, c) {
                 (Some(a), Some(b), Some(c)) => Some((a, b, c)),
-                _ => None
+                _ => None,
             }
         })
     }
@@ -104,11 +109,9 @@ impl<'a> Parser<'a> {
 
     // Return char and advance iff next char is equal to requested
     fn read_given_char(&mut self, c: char) -> Option<char> {
-        self.read_atomically(|p| {
-            match p.read_char() {
-                Some(next) if next == c => Some(next),
-                _ => None,
-            }
+        self.read_atomically(|p| match p.read_char() {
+            Some(next) if next == c => Some(next),
+            _ => None,
         })
     }
 
@@ -128,9 +131,7 @@ impl<'a> Parser<'a> {
             }
         }
 
-        self.read_atomically(|p| {
-            p.read_char().and_then(|c| parse_digit(c, radix))
-        })
+        self.read_atomically(|p| p.read_char().and_then(|c| parse_digit(c, radix)))
     }
 
     fn read_number_impl(&mut self, radix: u8, max_digits: u32, upto: u32) -> Option<u32> {
@@ -142,14 +143,14 @@ impl<'a> Parser<'a> {
                     r = r * (radix as u32) + (d as u32);
                     digit_count += 1;
                     if digit_count > max_digits || r >= upto {
-                        return None
+                        return None;
                     }
                 }
                 None => {
                     if digit_count == 0 {
-                        return None
+                        return None;
                     } else {
-                        return Some(r)
+                        return Some(r);
                     }
                 }
             };
@@ -189,12 +190,11 @@ impl<'a> Parser<'a> {
             assert!(head.len() + tail.len() <= 8);
             let mut gs = [0; 8];
             gs[..head.len()].copy_from_slice(head);
-            gs[(8 - tail.len()) .. 8].copy_from_slice(tail);
+            gs[(8 - tail.len())..8].copy_from_slice(tail);
             Ipv6Addr::new(gs[0], gs[1], gs[2], gs[3], gs[4], gs[5], gs[6], gs[7])
         }
 
-        fn read_groups(p: &mut Parser, groups: &mut [u16; 8], limit: usize)
-                       -> (usize, bool) {
+        fn read_groups(p: &mut Parser, groups: &mut [u16; 8], limit: usize) -> (usize, bool) {
             let mut i = 0;
             while i < limit {
                 if i < limit - 1 {
@@ -222,7 +222,7 @@ impl<'a> Parser<'a> {
                 });
                 match group {
                     Some(g) => groups[i] = g,
-                    None => return (i, false)
+                    None => return (i, false),
                 }
                 i += 1;
             }
@@ -234,13 +234,13 @@ impl<'a> Parser<'a> {
 
         if head_size == 8 {
             return Some(Ipv6Addr::new(
-                head[0], head[1], head[2], head[3],
-                head[4], head[5], head[6], head[7]))
+                head[0], head[1], head[2], head[3], head[4], head[5], head[6], head[7],
+            ));
         }
 
         // IPv4 part is not allowed before `::`
         if head_ipv4 {
-            return None
+            return None;
         }
 
         // read `::` if previous code parsed less than 8 groups
@@ -250,22 +250,23 @@ impl<'a> Parser<'a> {
 
         let mut tail = [0; 8];
         let (tail_size, _) = read_groups(self, &mut tail, 8 - head_size);
-        Some(ipv6_addr_from_head_tail(&head[..head_size], &tail[..tail_size]))
+        Some(ipv6_addr_from_head_tail(
+            &head[..head_size],
+            &tail[..tail_size],
+        ))
     }
 
     fn read_ipv6_addr(&mut self) -> Option<Ipv6Addr> {
         self.read_atomically(|p| p.read_ipv6_addr_impl())
     }
-    
+
     /* Additions for IpNet below. */
 
     // Read IPv4 network
     fn read_ipv4_net(&mut self) -> Option<Ipv4Net> {
         let ip_addr = |p: &mut Parser| p.read_ipv4_addr();
         let slash = |p: &mut Parser| p.read_given_char('/');
-        let prefix_len = |p: &mut Parser| {
-            p.read_number(10, 2, 33).map(|n| n as u8)
-        };
+        let prefix_len = |p: &mut Parser| p.read_number(10, 2, 33).map(|n| n as u8);
 
         self.read_seq_3(ip_addr, slash, prefix_len).map(|t| {
             let (ip, _, prefix_len): (Ipv4Addr, char, u8) = t;
@@ -277,9 +278,7 @@ impl<'a> Parser<'a> {
     fn read_ipv6_net(&mut self) -> Option<Ipv6Net> {
         let ip_addr = |p: &mut Parser| p.read_ipv6_addr();
         let slash = |p: &mut Parser| p.read_given_char('/');
-        let prefix_len = |p: &mut Parser| {
-            p.read_number(10, 3, 129).map(|n| n as u8)
-        };
+        let prefix_len = |p: &mut Parser| p.read_number(10, 3, 129).map(|n| n as u8);
 
         self.read_seq_3(ip_addr, slash, prefix_len).map(|t| {
             let (ip, _, prefix_len): (Ipv6Addr, char, u8) = t;
@@ -303,7 +302,7 @@ impl FromStr for IpNet {
     fn from_str(s: &str) -> Result<IpNet, AddrParseError> {
         match Parser::new(s).read_till_eof(|p| p.read_ip_net()) {
             Some(s) => Ok(s),
-            None => Err(AddrParseError(()))
+            None => Err(AddrParseError(())),
         }
     }
 }
@@ -313,7 +312,7 @@ impl FromStr for Ipv4Net {
     fn from_str(s: &str) -> Result<Ipv4Net, AddrParseError> {
         match Parser::new(s).read_till_eof(|p| p.read_ipv4_net()) {
             Some(s) => Ok(s),
-            None => Err(AddrParseError(()))
+            None => Err(AddrParseError(())),
         }
     }
 }
@@ -323,7 +322,7 @@ impl FromStr for Ipv6Net {
     fn from_str(s: &str) -> Result<Ipv6Net, AddrParseError> {
         match Parser::new(s).read_till_eof(|p| p.read_ipv6_net()) {
             Some(s) => Ok(s),
-            None => Err(AddrParseError(()))
+            None => Err(AddrParseError(())),
         }
     }
 }

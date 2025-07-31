@@ -14,7 +14,7 @@ Read the [documentation] for the full details. And find it on [Crates.io].
 
 ## Release 2.0 requirements
 
-Release 2.0 requires Rust 1.26 or later. Release 1.0 used a custom emulated 128-bit integer type (`Emu128`) to fully support IPv6 addresses. This has been replaced with Rust's built-in 128-bit integer, which is now stable as of Rust 1.26. There are reports of issues using Rust's 128-bit integers on some targets (e.g. Emscripten). If you have issues on your chosen target, please continue to use the 1.0 release until that has been resolved.
+Release 2.0 requires Rust 1.31 or later. Release 1.0 used a custom emulated 128-bit integer type (`Emu128`) to fully support IPv6 addresses. This has been replaced with Rust's built-in 128-bit integer, which is now stable as of Rust 1.26. There are reports of issues using Rust's 128-bit integers on some targets (e.g. Emscripten). If you have issues on your chosen target, please continue to use the 1.0 release until that has been resolved.
 
 ## Examples
 
