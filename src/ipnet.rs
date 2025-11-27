@@ -48,6 +48,7 @@ use crate::mask::{ip_mask_to_prefix, ipv4_mask_to_prefix, ipv6_mask_to_prefix};
 /// assert_eq!(Ok(net.network()), "fd00::".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum IpNet {
     V4(Ipv4Net),
     V6(Ipv6Net),
@@ -81,6 +82,7 @@ pub enum IpNet {
 /// assert_eq!(Ok(net.network()), "10.1.1.0".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Ipv4Net {
     addr: Ipv4Addr,
     prefix_len: u8,
@@ -111,6 +113,7 @@ pub struct Ipv4Net {
 /// assert_eq!(Ok(net.network()), "fd00::".parse());
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Ipv6Net {
     addr: Ipv6Addr,
     prefix_len: u8,
