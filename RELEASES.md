@@ -1,5 +1,9 @@
 # Releases
 
+## Version 2.12.0
+
+* Backwards compatible schemars 1.* support using version specific features#67
+
 ## Version 2.11.0
 
 *  Remove nightly features for no_std #58 
