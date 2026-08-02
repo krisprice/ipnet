@@ -1,5 +1,10 @@
 # Releases
 
+## Version 2.12.1
+
+* Fixes bug where Ipv4Subnets(0.0.0.0, u32::MAX-1, 0) and Ipv6Subnets(::, u128::MAX-1, 0) incorrectly included u32::MAX and u128::MAX. See issue #70.
+* Fixes some typos in documentation and error messages
+
 ## Version 2.12.0
 
 * Backwards compatible schemars 1.* support using version specific features#67
