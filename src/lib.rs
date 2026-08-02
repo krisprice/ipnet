@@ -84,7 +84,7 @@
 //!
 //! For compact binary formats (e.g. Bincode) the `Ipv4Net` and
 //! `Ipv6Net` types will serialize to a string of 5 and 17 bytes that
-//! consist of the network address octects followed by the prefix
+//! consist of the network address octets followed by the prefix
 //! length. The `IpNet` type will serialize to an Enum with the V4 or V6
 //! variant index prepending the above string of 5 or 17 bytes.
 //!
