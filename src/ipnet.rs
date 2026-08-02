@@ -1610,29 +1610,21 @@ impl Iterator for IpSubnets {
 }
 
 fn next_ipv4_subnet(start: Ipv4Addr, end: Ipv4Addr, min_prefix_len: u8) -> Ipv4Net {
-    if u32::from(start) == 0 && u32::from(end) == u32::MAX {
-        Ipv4Net::new(start, min_prefix_len).unwrap()
-    }
-    else {
-        let range = u32::from(end) - u32::from(start) + 1;
-        let range_pl = range.leading_zeros() + 1;
-        let start_pl = 32 - u32::from(start).trailing_zeros();
-        let new_prefix_len = max(max(range_pl as u8, start_pl as u8), min_prefix_len);
-        Ipv4Net::new(start, new_prefix_len).unwrap()
-    }
+    let range = u32::from(end) - u32::from(start);
+    let range_lz = range.leading_zeros();
+    let range_pl = if range_lz + range.trailing_ones() == u32::BITS { range_lz } else { range_lz + 1 };
+    let start_pl = 32 - u32::from(start).trailing_zeros();
+    let new_prefix_len = max(max(range_pl as u8, start_pl as u8), min_prefix_len);
+    Ipv4Net::new(start, new_prefix_len).unwrap()
 }
 
 fn next_ipv6_subnet(start: Ipv6Addr, end: Ipv6Addr, min_prefix_len: u8) -> Ipv6Net {
-    if u128::from(start) == 0 && u128::from(end) == u128::MAX {
-        Ipv6Net::new(start, min_prefix_len).unwrap()
-    }
-    else {
-        let range = u128::from(end) - u128::from(start) + 1;
-        let range_pl = range.leading_zeros() + 1;
-        let start_pl = 128 - u128::from(start).trailing_zeros();
-        let new_prefix_len = max(max(range_pl as u8, start_pl as u8), min_prefix_len);
-        Ipv6Net::new(start, new_prefix_len).unwrap()
-    }
+    let range = u128::from(end) - u128::from(start);
+    let range_lz = range.leading_zeros();
+    let range_pl = if range_lz + range.trailing_ones() == u128::BITS { range_lz } else { range_lz + 1 };
+    let start_pl = 128 - u128::from(start).trailing_zeros();
+    let new_prefix_len = max(max(range_pl as u8, start_pl as u8), min_prefix_len);
+    Ipv6Net::new(start, new_prefix_len).unwrap()
 }
 
 impl Iterator for Ipv4Subnets {
