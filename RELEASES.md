@@ -2,7 +2,7 @@
 
 ## Version 2.12.2
 
-* Fixes bug with `IpNet::aggregate()` where if a network containing `u32::MAX-1` or `u128::MAX-1` is provided, then `u32::MAX` and `u128::MAX` respectively are always included in the output.
+* Fixes bug with `IpNet::aggregate()` where if a network containing `u32::MAX-1` or `u128::MAX-1` is provided, then `u32::MAX` and `u128::MAX` respectively are always included in the output. See issue #71.
 
 ## Version 2.12.1
 
