@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use core::cmp::{min, max};
+use core::cmp::max;
 use core::cmp::Ordering::{Less, Equal};
 use core::convert::From;
 use core::fmt;
@@ -923,14 +923,6 @@ impl Ipv4Net {
         Contains::contains(self, other)
     }
 
-    // It is significantly faster to work on u32 than Ipv4Addr.
-    fn interval(&self) -> (u32, u32) {
-        (
-            u32::from(self.network()),
-            u32::from(self.broadcast()).saturating_add(1),
-        )
-    }
-
     /// Aggregate a `Vec` of `Ipv4Net`s and return the result as a new
     /// `Vec`.
     ///
@@ -950,17 +942,35 @@ impl Ipv4Net {
     ///     "10.0.2.0/24".parse().unwrap(),
     /// ]);
     pub fn aggregate(networks: &Vec<Ipv4Net>) -> Vec<Ipv4Net> {
-        let mut intervals: Vec<(_, _)> = networks.iter().map(|n| n.interval()).collect();
-        intervals = merge_intervals(intervals);
+        if networks.is_empty() {
+            return Vec::new();
+        }
+
+        let mut intervals: Vec<(u32, u32)> = networks.iter().map(|n| {
+            (u32::from(n.network()), u32::from(n.broadcast()))
+        }).collect();
+
+        intervals.sort_unstable();
+
+        let mut merged: Vec<(u32, u32)> = Vec::with_capacity(intervals.len());
+
+        for (start, end) in intervals {
+            if let Some((_, current_end)) = merged.last_mut() {
+                if start <= current_end.saturating_add(1) {
+                    *current_end = (*current_end).max(end);
+                    continue;
+                }
+            }
+
+            merged.push((start, end));
+        }
+
         let mut res: Vec<Ipv4Net> = Vec::new();
         
-        for (start, mut end) in intervals {
-            if end != core::u32::MAX {
-                end = end.saturating_sub(1)
-            }
-            let iter = Ipv4Subnets::new(start.into(), end.into(), 0);
-            res.extend(iter);
+        for (start, end) in merged {
+            res.extend(Ipv4Subnets::new(start.into(), end.into(), 0));
         }
+
         res
     }
 }
@@ -1299,14 +1309,6 @@ impl Ipv6Net {
         Contains::contains(self, other)
     }
 
-    // It is significantly faster to work on u128 that Ipv6Addr.
-    fn interval(&self) -> (u128, u128) {
-        (
-            u128::from(self.network()),
-            u128::from(self.broadcast()).saturating_add(1),
-        )
-    }
-
     /// Aggregate a `Vec` of `Ipv6Net`s and return the result as a new
     /// `Vec`.
     ///
@@ -1326,17 +1328,35 @@ impl Ipv6Net {
     /// ]);
     /// ```
     pub fn aggregate(networks: &Vec<Ipv6Net>) -> Vec<Ipv6Net> {
-        let mut intervals: Vec<(_, _)> = networks.iter().map(|n| n.interval()).collect();
-        intervals = merge_intervals(intervals);
-        let mut res: Vec<Ipv6Net> = Vec::new();
-
-        for (start, mut end) in intervals {
-            if end != core::u128::MAX {
-                end = end.saturating_sub(1)
-            }
-            let iter = Ipv6Subnets::new(start.into(), end.into(), 0);
-            res.extend(iter);
+        if networks.is_empty() {
+            return Vec::new();
         }
+
+        let mut intervals: Vec<(u128, u128)> = networks.iter().map(|n| {
+            (u128::from(n.network()), u128::from(n.broadcast()))
+        }).collect();
+
+        intervals.sort_unstable();
+
+        let mut merged: Vec<(u128, u128)> = Vec::with_capacity(intervals.len());
+
+        for (start, end) in intervals {
+            if let Some((_, current_end)) = merged.last_mut() {
+                if start <= current_end.saturating_add(1) {
+                    *current_end = (*current_end).max(end);
+                    continue;
+                }
+            }
+
+            merged.push((start, end));
+        }
+        
+        let mut res: Vec<Ipv6Net> = Vec::new();
+        
+        for (start, end) in merged {
+            res.extend(Ipv6Subnets::new(start.into(), end.into(), 0));
+        }
+
         res
     }
 }
@@ -1683,36 +1703,6 @@ impl FusedIterator for IpSubnets {}
 impl FusedIterator for Ipv4Subnets {}
 impl FusedIterator for Ipv6Subnets {}
 
-// Generic function for merging a vector of intervals.
-fn merge_intervals<T: Copy + Ord>(mut intervals: Vec<(T, T)>) -> Vec<(T, T)> {
-    if intervals.len() == 0 {
-        return intervals;
-    }
-
-    intervals.sort();
-    let mut res: Vec<(T, T)> = Vec::new();
-    let (mut start, mut end) = intervals[0];
-    
-    let mut i = 1;
-    let len = intervals.len();
-    while i < len {
-        let (next_start, next_end) = intervals[i];
-        if end >= next_start {
-            start = min(start, next_start);
-            end = max(end, next_end);
-        }
-        else {
-            res.push((start, end));
-            start = next_start;
-            end = next_end;
-        }
-        i += 1;
-    }
-
-    res.push((start, end));
-    res
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1738,34 +1728,6 @@ mod tests {
                 "fd00::3/126".parse().unwrap(),
             ]
         );
-    }
-
-    #[test]
-    fn test_merge_intervals() {
-        let v = vec![
-            (0, 1), (1, 2), (2, 3),
-            (11, 12), (13, 14), (10, 15), (11, 13),
-            (20, 25), (24, 29),
-        ];
-
-        let v_ok = vec![
-            (0, 3),
-            (10, 15),
-            (20, 29),
-        ];
-
-        let vv = vec![
-            ([0, 1], [0, 2]), ([0, 2], [0, 3]), ([0, 0], [0, 1]),
-            ([10, 15], [11, 0]), ([10, 0], [10, 16]),
-        ];
-
-        let vv_ok = vec![
-            ([0, 0], [0, 3]),
-            ([10, 0], [11, 0]),
-        ];
-
-        assert_eq!(merge_intervals(v), v_ok);
-        assert_eq!(merge_intervals(vv), vv_ok);
     }
 
     macro_rules! make_ipv4_subnets_test {
@@ -1936,21 +1898,20 @@ mod tests {
         assert_eq!(IpNet::aggregate(&ip_nets), ip_aggs);
         assert_eq!(Ipv4Net::aggregate(&ipv4_nets), ipv4_aggs);
         assert_eq!(Ipv6Net::aggregate(&ipv6_nets), ipv6_aggs);
-    }
-    
-    #[test]
-    fn test_aggregate_issue44() {
-        let nets: Vec<Ipv4Net> = vec!["128.0.0.0/1".parse().unwrap()];
-        assert_eq!(Ipv4Net::aggregate(&nets), nets);
-
-        let nets: Vec<Ipv4Net> = vec!["0.0.0.0/1".parse().unwrap(), "128.0.0.0/1".parse().unwrap()];
-        assert_eq!(Ipv4Net::aggregate(&nets), vec!["0.0.0.0/0".parse().unwrap()]);
-
-        let nets: Vec<Ipv6Net> = vec!["8000::/1".parse().unwrap()];
-        assert_eq!(Ipv6Net::aggregate(&nets), nets);
-
-        let nets: Vec<Ipv6Net> = vec!["::/1".parse().unwrap(), "8000::/1".parse().unwrap()];
-        assert_eq!(Ipv6Net::aggregate(&nets), vec!["::/0".parse().unwrap()]);
+        
+        // Issue #44
+        assert_eq!(IpNet::aggregate(&make_ipnet_vec!["128.0.0.0/1"]), make_ipnet_vec!["128.0.0.0/1"]);
+        assert_eq!(IpNet::aggregate(&make_ipnet_vec!["0.0.0.0/1", "128.0.0.0/1"]), make_ipnet_vec!["0.0.0.0/0"]);
+        assert_eq!(IpNet::aggregate(&make_ipnet_vec!["8000::/1"]), make_ipnet_vec!["8000::/1"]);
+        assert_eq!(IpNet::aggregate(&make_ipnet_vec!["::/1", "8000::/1"]), make_ipnet_vec!["::/0"]);
+        
+        // Issue #71
+        assert_eq!(IpNet::aggregate(&make_ipnet_vec!["255.255.255.254/32"]), make_ipnet_vec!["255.255.255.254/32"]);
+        assert_eq!(IpNet::aggregate(&make_ipnet_vec!["255.255.255.255/32"]), make_ipnet_vec!["255.255.255.255/32"]);
+        assert_eq!(IpNet::aggregate(&make_ipnet_vec!["255.255.255.252/31", "255.255.255.254/32"]), make_ipnet_vec!["255.255.255.252/31", "255.255.255.254/32"]);
+        assert_eq!(IpNet::aggregate(&make_ipnet_vec!["ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe/128"]), make_ipnet_vec!["ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe/128"]);
+        assert_eq!(IpNet::aggregate(&make_ipnet_vec!["ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"]), make_ipnet_vec!["ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"]);
+        assert_eq!(IpNet::aggregate(&make_ipnet_vec!["ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffc/127", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe/128"]), make_ipnet_vec!["ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffc/127", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe/128"]);
     }
 
     #[test]
