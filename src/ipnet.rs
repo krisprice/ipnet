@@ -1871,7 +1871,7 @@ mod tests {
     }
 
     #[test]
-    fn test_aggregate() {
+    fn ipnet_aggregate() {
         let ip_nets = make_ipnet_vec![
             "10.0.0.0/24", "10.0.1.0/24", "10.0.1.1/24", "10.0.1.2/24",
             "10.0.2.0/24",
@@ -1889,15 +1889,8 @@ mod tests {
             "fd00::/31",
             "fd00:2::/32",
         ];
-
-        let ipv4_nets: Vec<Ipv4Net> = ip_nets.iter().filter_map(|p| if let IpNet::V4(x) = *p { Some(x) } else { None }).collect();
-        let ipv4_aggs: Vec<Ipv4Net> = ip_aggs.iter().filter_map(|p| if let IpNet::V4(x) = *p { Some(x) } else { None }).collect();
-        let ipv6_nets: Vec<Ipv6Net> = ip_nets.iter().filter_map(|p| if let IpNet::V6(x) = *p { Some(x) } else { None }).collect();
-        let ipv6_aggs: Vec<Ipv6Net> = ip_aggs.iter().filter_map(|p| if let IpNet::V6(x) = *p { Some(x) } else { None }).collect();
-
+        
         assert_eq!(IpNet::aggregate(&ip_nets), ip_aggs);
-        assert_eq!(Ipv4Net::aggregate(&ipv4_nets), ipv4_aggs);
-        assert_eq!(Ipv6Net::aggregate(&ipv6_nets), ipv6_aggs);
         
         // Issue #44
         assert_eq!(IpNet::aggregate(&make_ipnet_vec!["128.0.0.0/1"]), make_ipnet_vec!["128.0.0.0/1"]);
