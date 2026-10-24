@@ -4,7 +4,7 @@
 //! is private. It is copied and extended here with methods for parsing
 //! IP network addresses.
 
-use alloc::{str::FromStr, boxed::Box};
+use core::str::FromStr;
 use core::fmt;
 #[cfg(not(feature = "std"))]
 use core::error::Error;
@@ -60,7 +60,7 @@ impl<'a> Parser<'a> {
     }
 
     // Return result of first successful parser
-    fn read_or<T>(&mut self, parsers: &mut [Box<dyn FnMut(&mut Parser) -> Option<T> + 'static>])
+    fn read_or<T>(&mut self, parsers: &mut [&mut dyn FnMut(&mut Parser) -> Option<T>])
                -> Option<T> {
         for pf in parsers {
             if let Some(r) = self.read_atomically(|p: &mut Parser| pf(p)) {
@@ -288,9 +288,9 @@ impl<'a> Parser<'a> {
     }
 
     fn read_ip_net(&mut self) -> Option<IpNet> {
-        let ipv4_net = |p: &mut Parser| p.read_ipv4_net().map(IpNet::V4);
-        let ipv6_net = |p: &mut Parser| p.read_ipv6_net().map(IpNet::V6);
-        self.read_or(&mut [Box::new(ipv4_net), Box::new(ipv6_net)])
+        let mut ipv4_net = |p: &mut Parser| p.read_ipv4_net().map(IpNet::V4);
+        let mut ipv6_net = |p: &mut Parser| p.read_ipv6_net().map(IpNet::V6);
+        self.read_or(&mut [&mut ipv4_net, &mut ipv6_net])
     }
 
     /* Additions for IpNet above. */

@@ -12,8 +12,9 @@ documentation = "https://docs.rs/ipnet"
 edition = "2018"
 
 [features]
-default = ["std"]
+default = ["std", "alloc"]
 std = []
+alloc = []
 serde = ["dep:serde"] # Implements "Serialize" and "Deserialize" using "serde@1.*".
 heapless = ["dep:heapless", "serde"] # Avoids dynamic allocations during serialization using "heapless@0.*". Also implies "serde".
 schemars08 = ["dep:schemars08"] # Implements "JsonSchema" using "schemars@0.8.*"

@@ -1,3 +1,4 @@
+#[cfg(feature = "alloc")]
 use alloc::vec::Vec;
 use core::cmp::max;
 use core::cmp::Ordering::{Less, Equal};
@@ -539,6 +540,7 @@ impl IpNet {
     ///     "fd00:8000::/18".parse().unwrap(),
     /// ]);
     /// ```
+    #[cfg(feature = "alloc")]
     pub fn aggregate(networks: &Vec<IpNet>) -> Vec<IpNet> {
         // It's 2.5x faster to split the input up and run them using the
         // specific IPv4 and IPV6 implementations. merge_intervals() and
@@ -941,6 +943,7 @@ impl Ipv4Net {
     ///     "10.0.0.0/23".parse::<Ipv4Net>().unwrap(),
     ///     "10.0.2.0/24".parse().unwrap(),
     /// ]);
+    #[cfg(feature = "alloc")]
     pub fn aggregate(networks: &Vec<Ipv4Net>) -> Vec<Ipv4Net> {
         if networks.is_empty() {
             return Vec::new();
@@ -1327,6 +1330,7 @@ impl Ipv6Net {
     ///     "fd00:8000::/18".parse().unwrap(),
     /// ]);
     /// ```
+    #[cfg(feature = "alloc")]
     pub fn aggregate(networks: &Vec<Ipv6Net>) -> Vec<Ipv6Net> {
         if networks.is_empty() {
             return Vec::new();
