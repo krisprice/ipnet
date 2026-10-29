@@ -66,7 +66,7 @@ impl JsonSchema for Ipv6Net {
                 max_length: Some(43),
                 min_length: None,
                 pattern: Some(
-                    r#"^[0-9A-Fa-f:\.]+\/(?:[0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8])$"#.to_string(),
+                    r#"^[0-9A-Fa-f]*:[0-9A-Fa-f:\.]+\/(?:[0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8])$"#.to_string(),
                 ),
                 ..Default::default()
             })),
