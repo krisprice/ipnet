@@ -249,7 +249,8 @@ impl<'a> Parser<'a> {
         }
 
         let mut tail = [0; 8];
-        let (tail_size, _) = read_groups(self, &mut tail, 8 - head_size);
+        // `::` must stand for at least one group, so leave room for it.
+        let (tail_size, _) = read_groups(self, &mut tail, 7 - head_size);
         Some(ipv6_addr_from_head_tail(&head[..head_size], &tail[..tail_size]))
     }
 
