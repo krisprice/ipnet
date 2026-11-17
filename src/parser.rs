@@ -169,7 +169,12 @@ impl<'a> Parser<'a> {
                 return None;
             }
 
+            // Disallow octal number in IPv4 octets, as std does.
+            let start = self.pos;
             let octet = self.read_number(10, 3, 0x100).map(|n| n as u8);
+            if self.pos - start > 1 && self.s[start] == b'0' {
+                return None;
+            }
             match octet {
                 Some(d) => bs[i] = d,
                 None => return None,

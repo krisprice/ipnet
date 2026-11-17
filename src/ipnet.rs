@@ -1870,6 +1870,17 @@ mod tests {
         assert!(!subnets[0].contains(&Ipv6Addr::from(u128::MAX)));
     }
 
+    // Issue #32
+    #[test]
+    fn test_ipv4_octet_leading_zero() {
+        for s in ["01.2.3.4/8", "1.2.03.4/24", "1.2.3.004/32", "::ffff:01.2.3.4/128"] {
+            assert!(s.parse::<IpNet>().is_err(), "{}", s);
+        }
+        for s in ["0.0.0.0/0", "10.0.0.0/8", "1.2.3.40/32", "1.2.3.100/32", "::ffff:1.2.3.0/120"] {
+            assert!(s.parse::<IpNet>().is_ok(), "{}", s);
+        }
+    }
+
     #[test]
     fn ipnet_aggregate() {
         let ip_nets = make_ipnet_vec![
