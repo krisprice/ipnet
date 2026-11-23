@@ -4,7 +4,7 @@
 //! is private. It is copied and extended here with methods for parsing
 //! IP network addresses.
 
-use alloc::{str::FromStr, boxed::Box};
+use alloc::str::FromStr;
 use core::fmt;
 #[cfg(not(feature = "std"))]
 use core::error::Error;
@@ -57,17 +57,6 @@ impl<'a> Parser<'a> {
                 None => None,
             }
         })
-    }
-
-    // Return result of first successful parser
-    fn read_or<T>(&mut self, parsers: &mut [Box<dyn FnMut(&mut Parser) -> Option<T> + 'static>])
-               -> Option<T> {
-        for pf in parsers {
-            if let Some(r) = self.read_atomically(|p: &mut Parser| pf(p)) {
-                return Some(r);
-            }
-        }
-        None
     }
 
     // Apply 3 parsers sequentially
@@ -288,9 +277,8 @@ impl<'a> Parser<'a> {
     }
 
     fn read_ip_net(&mut self) -> Option<IpNet> {
-        let ipv4_net = |p: &mut Parser| p.read_ipv4_net().map(IpNet::V4);
-        let ipv6_net = |p: &mut Parser| p.read_ipv6_net().map(IpNet::V6);
-        self.read_or(&mut [Box::new(ipv4_net), Box::new(ipv6_net)])
+        self.read_atomically(|p| p.read_ipv4_net().map(IpNet::V4))
+            .or_else(|| self.read_atomically(|p| p.read_ipv6_net().map(IpNet::V6)))
     }
 
     /* Additions for IpNet above. */
